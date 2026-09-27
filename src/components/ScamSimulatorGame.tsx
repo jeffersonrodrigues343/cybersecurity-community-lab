@@ -48,7 +48,7 @@ import {
 import { sound } from '../utils/audio';
 import confetti from 'canvas-confetti';
 import { AnimatedCounter } from './AnimatedCounter';
-import { DetectiveDiorama3D } from './DetectiveDiorama3D';
+import { ScenarioAnimation2D } from './ScenarioAnimation2D';
 import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 
 interface ScamSimulatorGameProps {
@@ -771,8 +771,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </div>
             </div>
 
-            {/* Diorama 3D Pericial com Bonecos em Cenário Hipotético (Three.js) */}
-            <DetectiveDiorama3D
+            {/* Teatro Pericial 2D Contextual com Bonecos e Cenário Hipotético */}
+            <ScenarioAnimation2D
               caseId={currentCase.id}
               scenarioType={getScenarioType(currentCase)}
               isScam={currentCase.isScam}
