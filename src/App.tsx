@@ -80,15 +80,17 @@ export function App() {
 
         {/* Notificação de Certificado Desbloqueado */}
         {allCompleted && (
-          <div className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 border border-emerald-500/60 text-emerald-300 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Award className="w-8 h-8 text-emerald-400 flex-shrink-0" />
+          <div className="mb-8 p-4 sm:p-5 rounded-3xl bg-[#1c1c1e] border border-[#30d158]/30 flex items-center justify-between shadow-lg">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-10 h-10 rounded-full bg-[#30d158]/15 flex items-center justify-center flex-shrink-0">
+                <Award className="w-5 h-5 text-[#30d158]" />
+              </div>
               <div>
-                <h4 className="font-bold text-white text-sm">Treinamento 100% Concluído!</h4>
-                <p className="text-xs text-slate-300">Seu Certificado de Cidadão Blindado está liberado logo abaixo.</p>
+                <h4 className="font-semibold text-white text-sm">Treinamento Concluído</h4>
+                <p className="text-xs text-[#86868b]">Seu Certificado de Cidadão Blindado está liberado abaixo.</p>
               </div>
             </div>
-            <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-900/50 px-3 py-1 rounded-lg border border-emerald-700/50">
+            <span className="text-xs font-semibold text-[#30d158] bg-[#30d158]/10 px-3 py-1 rounded-full border border-[#30d158]/20">
               {score} XP
             </span>
           </div>
