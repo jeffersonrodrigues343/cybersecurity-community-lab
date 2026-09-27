@@ -17,6 +17,8 @@ Diante do avanço expressivo de golpes virtuais (engenharia social, phishing, ro
 
 A aplicação foi construída utilizando uma stack moderna de engenharia front-end:
 
+- **C# & ASP.NET Core (.NET 8):** Web API Minimal robusta para validação de flags, cálculo criptográfico de entropia e ponte de persistência.
+- **Supabase (PostgreSQL):** Banco de dados relacional na nuvem para registro de depoimentos da comunidade e auditoria de extensão.
 - **React 19 & TypeScript:** Estruturação de componentes reutilizáveis e tipagem estática rigorosa.
 - **Three.js (`threejs.org`):** Núcleo criptográfico 3D interativo holográfico em WebGL com LERP tracking e anéis orbitais.
 - **GSAP & ScrollTrigger:** Transições de página com animações de rolagem escalonadas (*stagger*), timelines e ambient cursor follower.
