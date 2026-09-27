@@ -31,3 +31,8 @@ backend/bin/
 *.db
 *.db-wal
 *.db-shm
+
+# Secrets & local env
+.env
+.env.local
+backend/appsettings.Development.json

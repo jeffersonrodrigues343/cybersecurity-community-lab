@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Flag, Terminal, CheckCircle2, XCircle, Code2, Eye, EyeOff } from 'lucide-react';
+import { apiService } from '../services/api';
 
 interface TaskWebCTFProps {
   isCompleted: boolean;
@@ -11,23 +12,27 @@ export const TaskWebCTF: React.FC<TaskWebCTFProps> = ({ isCompleted, onComplete 
   const [flagInput, setFlagInput] = useState('');
   const [showSimulatedDevTools, setShowSimulatedDevTools] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const SECRET_FLAG = 'HACKLEARN{seguranca_web_iniciante_2024}';
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = flagInput.trim();
+    if (!clean) return;
 
-    if (clean === SECRET_FLAG) {
+    setLoading(true);
+    const res = await apiService.validateFlag(clean);
+    setLoading(false);
+
+    if (res.success) {
       setFeedback({
         type: 'success',
-        message: 'FLAG CAPTURADA COM SUCESSO! Você dominou o conceito de inspeção de DOM e código cliente.',
+        message: res.message || 'Parabéns! Flag correta, desafio concluído!',
       });
       onComplete();
     } else {
       setFeedback({
         type: 'error',
-        message: 'Flag inválida! Lembre-se de incluir o prefixo HACKLEARN{...}. Inspecione o comentário HTML.',
+        message: res.message || 'Flag incorreta. Tente inspecionar o código com o F12.',
       });
     }
   };
@@ -44,10 +49,15 @@ export const TaskWebCTF: React.FC<TaskWebCTFProps> = ({ isCompleted, onComplete 
           : 'bg-slate-900/80 border-slate-800'
       }`}
     >
-      {/* Real HTML comment for DevTools inspection (F12) */}
-      {/* <!-- FLAG_SECRETA_DO_DESAFIO: HACKLEARN{seguranca_web_iniciante_2024} --> */}
+      {/* comentario real injetado no DOM pro aluno achar no F12 */}
+      <div
+        style={{ display: 'none' }}
+        dangerouslySetInnerHTML={{
+          __html: '<!-- FLAG_DO_DESAFIO_WEB: HACKLEARN{seguranca_web_iniciante_2024} -->',
+        }}
+      />
 
-      {/* Header */}
+      {/* cabecalho da missao */}
       <div className="p-6 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-sm ${
@@ -57,14 +67,14 @@ export const TaskWebCTF: React.FC<TaskWebCTFProps> = ({ isCompleted, onComplete 
           </div>
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span>Web CTF: Inspecionando o Front-end (F12 / DevTools)</span>
+              <span>Web CTF: Inspecionando o Front-end (F12)</span>
               {isCompleted && (
                 <span className="text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">
-                  Resolvido
+                  Concluído
                 </span>
               )}
             </h2>
-            <p className="text-xs text-slate-400 font-mono">Trilha: Análise de Superfície de Ataque Web</p>
+            <p className="text-xs text-slate-400 font-mono">Trilha: Segurança no Navegador e Código Aberto</p>
           </div>
         </div>
 
@@ -75,41 +85,39 @@ export const TaskWebCTF: React.FC<TaskWebCTFProps> = ({ isCompleted, onComplete 
 
       <div className="p-6 space-y-6">
         
-        {/* Concept description */}
+        {/* explicacao teorica */}
         <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2">
           <div className="flex items-center space-x-2 text-emerald-400 font-semibold uppercase tracking-wider font-mono">
             <Terminal className="w-4 h-4" />
-            <span>Fundamento: Segurança do Lado do Cliente (Client-Side Security)</span>
+            <span>Conceito: Código no Cliente é Público</span>
           </div>
           <p className="text-slate-400 leading-relaxed">
-            No desenvolvimento web, tudo o que é enviado para o navegador (HTML, JavaScript, CSS) é público e visível. Um erro grave cometido por programadores novatos é deixar comentários com senhas de homologação, chaves de API ou rotas de administração no código front-end.
+            Tudo o que é baixado pelo navegador (HTML, JavaScript, CSS) pode ser lido pelo usuário. Um erro muito comum de iniciantes é esquecer comentários com senhas de teste, tokens de acesso ou rotas internas no código da página.
           </p>
         </div>
 
-        {/* Challenge Box */}
+        {/* caixa do desafio */}
         <div className="bg-slate-950 border border-dashed border-slate-700/80 rounded-xl p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center space-x-2 text-xs font-mono text-slate-300">
               <Code2 className="w-4 h-4 text-blue-400" />
-              <span><strong>Missão:</strong> Encontre a FLAG secreta escondida no código desta página.</span>
+              <span><strong>Desafio:</strong> Encontre a FLAG secreta escondida no código desta página.</span>
             </div>
 
-            {/* Toggle Helper for Mobile / Beginners */}
             <button
               type="button"
               onClick={() => setShowSimulatedDevTools(!showSimulatedDevTools)}
               className="text-xs font-mono flex items-center space-x-1.5 px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:text-emerald-400 hover:border-emerald-600 transition"
             >
               {showSimulatedDevTools ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span>{showSimulatedDevTools ? 'Ocultar Simulador F12' : 'Ver Dica / Console DevTools'}</span>
+              <span>{showSimulatedDevTools ? 'Ocultar Dica' : 'Ver Dica / Console'}</span>
             </button>
           </div>
 
           <p className="text-xs text-slate-400 font-mono">
-            💡 <em>Dica Pro:</em> No computador, pressione <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-white border border-slate-700">F12</kbd> ou <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-white border border-slate-700">Ctrl + Shift + I</kbd> para abrir o Inspecionar Elemento e procurar o comentário HTML neste bloco.
+            💡 <em>Dica:</em> Pressione <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-white border border-slate-700">F12</kbd> ou <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-white border border-slate-700">Ctrl + Shift + I</kbd> para abrir as Ferramentas do Desenvolvedor e inspecionar os elementos desta seção.
           </p>
 
-          {/* Simulated DevTools Panel */}
           <AnimatePresence>
             {showSimulatedDevTools && (
               <motion.div
@@ -120,17 +128,17 @@ export const TaskWebCTF: React.FC<TaskWebCTFProps> = ({ isCompleted, onComplete 
               >
                 <div className="bg-[#0b101b] border border-emerald-950/70 rounded-lg p-3 font-mono text-[11px] text-slate-300 space-y-1">
                   <div className="text-slate-500 border-b border-slate-800 pb-1 flex justify-between">
-                    <span>DOM Inspector (Elementos HTML)</span>
-                    <span className="text-emerald-400">Elemento Selecionado: &lt;section id="task3"&gt;</span>
+                    <span>Console do Navegador (Elementos HTML)</span>
+                    <span className="text-emerald-400">&lt;section id="task3-ctf"&gt;</span>
                   </div>
                   <div className="text-slate-400 pt-1">
-                    &lt;div class="task-ctf-container"&gt;
+                    &lt;div class="container-ctf"&gt;
                   </div>
                   <div className="pl-4 text-emerald-400/90 font-bold bg-emerald-950/20 py-1 rounded px-2">
-                    &lt;!-- TODO: Remover antes do deploy de produção! FLAG: {SECRET_FLAG} --&gt;
+                    &lt;!-- TODO: remover antes de publicar! FLAG: HACKLEARN&#123;seguranca_web_iniciante_2024&#125; --&gt;
                   </div>
                   <div className="pl-4 text-slate-400">
-                    &lt;p&gt;O usuário não deveria conseguir ver isso...&lt;/p&gt;
+                    &lt;p&gt;Conteudo visivel da pagina...&lt;/p&gt;
                   </div>
                   <div className="text-slate-400">
                     &lt;/div&gt;
@@ -141,10 +149,10 @@ export const TaskWebCTF: React.FC<TaskWebCTFProps> = ({ isCompleted, onComplete 
           </AnimatePresence>
         </div>
 
-        {/* Flag Submission */}
+        {/* formulario de envio da flag */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider">
-            Capture The Flag (Submeta o token no formato HACKLEARN&#123;...&#125;):
+            Digite a Flag encontrada (formato HACKLEARN&#123;...&#125;):
           </label>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -155,23 +163,23 @@ export const TaskWebCTF: React.FC<TaskWebCTFProps> = ({ isCompleted, onComplete 
                 value={flagInput}
                 onChange={(e) => setFlagInput(e.target.value)}
                 placeholder="HACKLEARN{...}"
-                disabled={isCompleted}
+                disabled={isCompleted || loading}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-emerald-500 disabled:opacity-50"
               />
             </div>
 
             <motion.button
               type="submit"
-              whileHover={{ scale: isCompleted ? 1 : 1.02 }}
-              whileTap={{ scale: isCompleted ? 1 : 0.98 }}
-              disabled={isCompleted}
+              whileHover={{ scale: isCompleted || loading ? 1 : 1.02 }}
+              whileTap={{ scale: isCompleted || loading ? 1 : 0.98 }}
+              disabled={isCompleted || loading}
               className={`px-6 py-2 rounded-xl font-mono text-xs uppercase font-bold tracking-wider transition-all flex items-center justify-center space-x-2 ${
                 isCompleted
                   ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/60 cursor-not-allowed'
                   : 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-900/30'
               }`}
             >
-              <span>{isCompleted ? '✓ Flag Capturada' : 'Submeter Flag'}</span>
+              <span>{loading ? 'Validando...' : isCompleted ? '✓ Flag Validada' : 'Submeter Flag'}</span>
             </motion.button>
           </div>
 

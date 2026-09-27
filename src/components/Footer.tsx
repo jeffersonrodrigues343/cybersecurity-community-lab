@@ -25,11 +25,11 @@ export const Footer = () => {
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500 text-center sm:text-left">
           <p>
-            Desenvolvido como projeto de transferência do saber acadêmico para capacitação e letramento digital da comunidade.
+            Desenvolvido como projeto de extensão universitária para conscientização e segurança digital da comunidade.
           </p>
 
           <p className="flex items-center justify-center space-x-1">
-            <span>Construído com React, TypeScript, GSAP, Motion & Three.js</span>
+            <span>Desenvolvido com React, C# .NET 8 e Tailwind CSS</span>
           </p>
         </div>
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Copy, Check, FileText } from 'lucide-react';
+import { X, Copy, Check, Info } from 'lucide-react';
 import { sound } from '../utils/audio';
 
 interface ReportModalProps {
@@ -14,22 +14,22 @@ export const ReportModal = ({ isOpen, onClose }: ReportModalProps) => {
   const sections = [
     {
       key: 'ods',
-      title: '1. Metas dos Objetivos de Desenvolvimento Sustentável (ODS)',
+      title: '1. Objetivos de Desenvolvimento Sustentável (ODS)',
       content: `ODS 4: Educação de Qualidade\n- Meta 4.4: Até 2030, aumentar substancialmente o número de jovens e adultos que tenham habilidades relevantes, inclusive competências técnicas e profissionais, para emprego, trabalho decente e empreendedorismo.\n\nODS 9: Indústria, Inovação e Infraestrutura\n- Meta 9.c: Aumentar significativamente o acesso às tecnologias de informação e comunicação e procurar proporcionar o acesso universal e a preços acessíveis à internet.`,
     },
     {
       key: 'local',
-      title: '2. Local de Realização da Atividade Extensionista',
+      title: '2. Local de Realização da Atividade',
       content: `Ambiente Virtual / Redes de Internet (Plataforma Web Aberta HackLearn e Repositório Digital).`,
     },
     {
       key: 'durante',
-      title: '3. Durante a Ação',
-      content: `Foi desenvolvida e disponibilizada publicamente a plataforma web educacional e interativa "HackLearn", inspirada no modelo gamificado do TryHackMe. O objetivo da ação foi fornecer letramento digital e noções práticas de cibersegurança e segurança web para membros da comunidade e estudantes iniciantes. Durante a ação, usuários tiveram acesso a desafios práticos de identificação de golpes de phishing, cálculo de resistência de senhas contra ataques de força bruta e exploração básica de código front-end (inspeção de elementos HTML/DOM) para captura de flags educativas.`,
+      title: '3. Durante a Ação Extensionista',
+      content: `Foi desenvolvida e disponibilizada publicamente a plataforma web educacional e interativa "HackLearn", inspirada no modelo gamificado do TryHackMe. O objetivo da ação foi fornecer noções práticas de cibersegurança e segurança web para membros da comunidade e estudantes iniciantes. Durante a ação, usuários tiveram acesso a desafios práticos de identificação de golpes de phishing, cálculo de resistência de senhas contra ataques de força bruta e exploração básica de código front-end (inspeção de elementos HTML/DOM) para captura de flags educativas.`,
     },
     {
       key: 'estrategia',
-      title: '4. Caso Necessário, Houve Mudança de Estratégia',
+      title: '4. Mudança de Estratégia',
       content: `Inicialmente, cogitou-se a elaboração de uma cartilha puramente teórica em formato PDF. No entanto, visando maximizar o engajamento dos participantes e colocar em prática os conhecimentos de programação web e algoritmos do curso de ADS, a estratégia foi alterada para a criação de um ambiente gamificado web interativo (estilo CTF/TryHackMe), o que aumentou a retenção do aprendizado prático por parte dos participantes.`,
     },
     {
@@ -39,12 +39,12 @@ export const ReportModal = ({ isOpen, onClose }: ReportModalProps) => {
     },
     {
       key: 'percepcao',
-      title: '6. Percepção das Ações Extensionistas (Mínimo de 15 Linhas)',
+      title: '6. Percepção Discente sobre a Ação Extensionista',
       content: `A vivência proporcionada pelo desenvolvimento deste projeto de extensão foi de extrema relevância tanto para minha formação técnica quanto cidadã. Como discente do Curso Superior de Tecnologia em Análise e Desenvolvimento de Sistemas, a oportunidade de aplicar os conceitos teóricos de algoritmos, lógica de programação e arquitetura web na construção de uma ferramenta socialmente útil evidenciou o impacto direto que a computação possui sobre a sociedade. Durante a concepção da plataforma HackLearn, pude compreender que a barreira técnica enfrentada por usuários leigos em relação à segurança digital decorre frequentemente da falta de ferramentas acessíveis e didáticas. A transposição dos fundamentos de cibersegurança e manipulação do DOM em desafios interativos exigiu criatividade, capacidade de síntese e rigor lógico no desenvolvimento do código. Essa prática permitiu consolidar competências essenciais de desenvolvimento front-end com HTML, CSS e JavaScript, além de aprimorar minha visão sobre usabilidade, acessibilidade e experiência do usuário (UX). Percebi que o papel do desenvolvedor de software vai muito além de codificar rotinas para o mercado corporativo; trata-se de um agente de transformação capaz de democratizar o saber e promover o letramento digital. A receptividade positiva dos participantes comprovou que soluções simples e bem estruturadas podem sanar problemas reais da comunidade, como a vulnerabilidade a golpes virtuais, tornando o processo de extensão universitária uma experiência transformadora e altamente enriquecedora para o egresso.`,
     },
     {
       key: 'depoimento',
-      title: '7. Depoimento da Comunidade / Instituição Participante',
+      title: '7. Depoimento da Comunidade Participante',
       content: `"A plataforma foi muito intuitiva e dinâmica. Muitas vezes ouvimos falar sobre golpes na internet e senhas fracas, mas ver isso na prática através dos desafios e entender como funciona o código por trás ajudou muito a entender os perigos reais. A iniciativa trouxe um aprendizado que com certeza vou levar para o meu dia a dia digital."\nIdentificação: Lucas M. Silva – Usuário Beneficiário / Comunidade Digital de Estudantes de TI.`,
     },
     {
@@ -77,23 +77,20 @@ export const ReportModal = ({ isOpen, onClose }: ReportModalProps) => {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-4xl max-h-[88vh] bg-[#0c1322] border border-slate-700 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+            className="w-full max-w-4xl max-h-[88vh] bg-[#0c1322] border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
-            {/* Modal Header */}
+            {/* Cabecalho do modal */}
             <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
-                  <FileText className="w-5 h-5" />
+                  <Info className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <span>Central do Relatório Acadêmico (Anhanguera ADS)</span>
-                    <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">
-                      100% Conforme
-                    </span>
+                  <h3 className="text-lg font-bold text-white">
+                    Sobre o Projeto de Extensão Universitária
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono">
-                    Todos os campos obrigatórios para o arquivo 1706028772865.docx prontos para cópia
+                  <p className="text-xs text-slate-400">
+                    HackLearn: conscientização em segurança digital alinhada aos ODS 4 e 9
                   </p>
                 </div>
               </div>
@@ -101,10 +98,10 @@ export const ReportModal = ({ isOpen, onClose }: ReportModalProps) => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={handleCopyAll}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-mono font-bold text-xs transition"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs transition"
                 >
                   {copiedKey === 'ALL' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  <span>{copiedKey === 'ALL' ? 'Tudo Copiado!' : 'Copiar Relatório Completo'}</span>
+                  <span>{copiedKey === 'ALL' ? 'Copiado!' : 'Copiar Textos'}</span>
                 </button>
                 <button
                   onClick={onClose}
@@ -115,12 +112,12 @@ export const ReportModal = ({ isOpen, onClose }: ReportModalProps) => {
               </div>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto space-y-6 text-xs font-mono">
+            {/* Conteudo do modal */}
+            <div className="p-6 overflow-y-auto space-y-4 text-xs">
               {sections.map((sec) => (
-                <div key={sec.key} className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-5 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="text-emerald-400 font-bold text-sm tracking-wide">
+                <div key={sec.key} className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <span className="text-emerald-400 font-semibold text-sm">
                       {sec.title}
                     </span>
                     <button
@@ -140,16 +137,16 @@ export const ReportModal = ({ isOpen, onClose }: ReportModalProps) => {
                       )}
                     </button>
                   </div>
-                  <pre className="text-slate-300 whitespace-pre-wrap leading-relaxed text-xs font-mono">
+                  <pre className="text-slate-300 whitespace-pre-wrap leading-relaxed text-xs font-sans">
                     {sec.content}
                   </pre>
                 </div>
               ))}
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950 flex items-center justify-between text-xs text-slate-400 font-mono">
-              <span>Arquivo de destino: /ProjetoDeExtensao/1706028772865.docx</span>
+            {/* Rodapé */}
+            <div className="p-4 border-t border-slate-800 bg-slate-950 flex items-center justify-between text-xs text-slate-400">
+              <span>Projeto de Extensão I • CST Análise e Desenvolvimento de Sistemas</span>
               <button
                 onClick={onClose}
                 className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition"

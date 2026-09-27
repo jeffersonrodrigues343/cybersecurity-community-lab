@@ -1,82 +1,63 @@
-# 🛡️ Cybersecurity Community Lab (HackLearn)
-> **Projeto de Extensão Universitária I (Programa de Contexto à Comunidade)**  
-> **Curso:** CST em Análise e Desenvolvimento de Sistemas (ADS) — Anhanguera  
-> **Aluno:** Jefferson Rodrigues | **Alinhamento:** ODS 4 e ODS 9 (ONU)
+# HackLearn - Laboratório Prático de Cibersegurança
+
+Projeto prático de extensão universitária desenvolvido para o curso de **Análise e Desenvolvimento de Sistemas (ADS)**.
+
+O objetivo do projeto é oferecer uma experiência interativa e gamificada para quem está começando na área de tecnologia e segurança da informação, ensinando conceitos essenciais de forma direta no navegador:
+
+1. **Engenharia Social & Phishing:** como analisar e diferenciar URLs verdadeiras de links maliciosos.
+2. **Força e Entropia de Senhas:** laboratório interativo para testar resistência a ataques de dicionário e força bruta (baseado nas diretrizes do CERT.br e NIST).
+3. **Web CTF (Capture The Flag):** noções de segurança no front-end e inspeção de elementos no DevTools (F12).
+4. **Terminal Simulado:** terminal interativo para praticar comandos básicos de linha de comando (`ls`, `cat`, `nmap`, etc.).
 
 ---
 
-## 📌 Sobre o Projeto
+## Tecnologias Utilizadas
 
-O **Cybersecurity Community Lab (HackLearn)** é uma plataforma web gamificada e de código aberto, inspirada no modelo do *TryHackMe*, desenvolvida com o objetivo de promover o **letramento digital e a capacitação em cibersegurança** para estudantes iniciantes e membros da comunidade.
-
-Diante do avanço expressivo de golpes virtuais (engenharia social, phishing, roubo de senhas e clonagem de contas), o projeto traduz conceitos fundamentais de segurança da informação e computação em **desafios práticos e interativos**, democratizando o saber técnico por meio de redes de internet.
-
----
-
-## 🚀 Tecnologias Utilizadas
-
-A aplicação foi construída utilizando uma stack moderna de engenharia front-end:
-
-- **C# & ASP.NET Core (.NET 8):** Web API Minimal robusta para validação de flags, cálculo criptográfico de entropia e ponte de persistência.
-- **Supabase (PostgreSQL):** Banco de dados relacional na nuvem para registro de depoimentos da comunidade e auditoria de extensão.
-- **React 19 & TypeScript:** Estruturação de componentes reutilizáveis e tipagem estática rigorosa.
-- **Three.js (`threejs.org`):** Núcleo criptográfico 3D interativo holográfico em WebGL com LERP tracking e anéis orbitais.
-- **GSAP & ScrollTrigger:** Transições de página com animações de rolagem escalonadas (*stagger*), timelines e ambient cursor follower.
-- **Motion Dev (`motion/react`):** Micro-interações, barra de entropia física em tempo real, gavetas expansíveis e modais dinâmicos.
-- **Web Audio API:** Sintetizador sonoro algorítmico procedural para feedbacks acústicos em ações e comandos sem dependência de assets externos.
-- **Tailwind CSS v4:** Design responsivo com estética *cyberpunk / dark mode* de alto contraste.
-- **Canvas Confetti:** Efeito comemorativo ao completar 100% da sala de desafios.
+- **Front-end:** React 19, TypeScript, Vite, Tailwind CSS, Three.js (canvas 3D) e Lucide React.
+- **Back-end:** C# ASP.NET Core (.NET 8 Minimal API).
+- **Banco de Dados:** SQLite local (via Entity Framework Core 8) com sincronização em nuvem via Supabase.
 
 ---
 
-## 🏗️ Arquitetura do Sistema (Draw.io)
+## Como Executar Localmente
 
-![Arquitetura Modular](./print_arquitetura_drawio.png)
+### 1. Pré-requisitos
+- Node.js (v18+)
+- .NET SDK 8.0
 
----
-
-## 🎯 As Missões Práticas
-
-| Missão | Tema Técnico | Mecânica Gamificada |
-| :--- | :--- | :--- |
-| **01. Engenharia Social** | Detecção de Phishing & Typosquatting | Análise de URLs forjadas vs oficiais de bancos com feedback analítico. |
-| **02. Higiene de Senhas** | Ataques de Força Bruta & Entropia | Laboratório dinâmico com medição de entropia e tempo de quebra via *hashcat*. |
-| **03. Web CTF & DOM** | Segurança Client-Side | Desafio estilo *Capture The Flag* usando DevTools (F12) para inspecionar segredos no front-end. |
-| **Bônus: AttackBox** | Terminal Linux Kali Emulado | Console web interativo capaz de rodar comandos de rede (`nmap`, `cat`, `ls`, `whoami`). |
-
----
-
-## 🏆 Certificação & Validação Comunitária
-
-Ao concluir as três missões da sala (atingindo 300 XP), a plataforma emite instantaneamente um **Certificado de Extensão Universitária** personalizado e disponibiliza um canal de registro de depoimentos para os usuários beneficiários.
-
----
-
-## 📦 Como Rodar o Projeto Localmente
-
+### 2. Rodando o Front-end
 ```bash
-# 1. Clone o repositório
-git clone git@github.com:jeffersonrodrigues343/cybersecurity-community-lab.git
-
-# 2. Acesse a pasta
-cd cybersecurity-community-lab
-
-# 3. Instale as dependências
+# Entrar na pasta e instalar as dependencias
 npm install
 
-# 4. Inicie o servidor de desenvolvimento
+# Iniciar o servidor de desenvolvimento
 npm run dev
 ```
+Acesse `http://localhost:5173`.
 
-Abra [http://localhost:5173/](http://localhost:5173/) no seu navegador.
+### 3. Rodando o Back-end (C#)
+```bash
+cd backend
+dotnet run
+```
+A API iniciará em `http://localhost:5100` com documentação interativa no Swagger: `http://localhost:5100/swagger`.
 
 ---
 
-## 🎓 Alinhamento com os ODS da ONU
+## Estrutura do Projeto
 
-- **ODS 4 (Educação de Qualidade) — Meta 4.4:** Desenvolvimento de competências técnicas essenciais para o mercado de tecnologia.
-- **ODS 9 (Indústria, Inovação e Infraestrutura) — Meta 9.c:** Acesso seguro e consciente às tecnologias de informação e comunicação.
+```text
+├── backend/                  # API em C# .NET 8 e banco SQLite
+│   ├── Program.cs            # Endpoints, CORS e regras de validacao
+│   ├── cyberlab.db           # Banco SQLite local gerado na execucao
+│   └── appsettings.json      # Configuracoes da aplicacao
+├── src/                      # Codigo fonte do Front-end (React + TS)
+│   ├── components/           # Componentes dos desafios e telas
+│   ├── services/             # Integracao com a API e servicos
+│   └── App.tsx               # Componente principal
+└── README.md
+```
 
 ---
 
-*Licença: MIT — Projeto de Extensão Comunitária Acadêmica.*
+*Projeto desenvolvido com fins educacionais e de extensão comunitária.*

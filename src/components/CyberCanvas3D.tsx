@@ -236,7 +236,7 @@ export const CyberCanvas3D = ({ className = '', completedCount = 0 }: CyberCanva
     <div
       ref={containerRef}
       className={`relative w-full h-[320px] sm:h-[400px] flex items-center justify-center cursor-pointer select-none ${className}`}
-      title="Clique para emitir um pulso no núcleo 3D"
+      title="Clique para interagir com o modelo 3D"
     />
   );
 };

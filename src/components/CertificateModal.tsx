@@ -144,7 +144,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, scor
               "{testimonial}"
             </p>
             <p className="text-[10px] text-emerald-400 pt-1">
-              ✓ Você pode copiar este relato para o campo "Depoimento da Instituição/Comunidade" do seu relatório acadêmico.
+              ✓ Obrigado pela sua contribuição! Seu feedback foi registrado com sucesso.
             </p>
           </motion.div>
         )}

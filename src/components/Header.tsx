@@ -55,15 +55,15 @@ export const Header = ({ score, totalScore, completedCount, onOpenReportModal }:
             {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
           </button>
 
-          {/* Academic Report Quick Exporter Button */}
+          {/* Botao Sobre o Projeto */}
           {onOpenReportModal && (
             <button
               onClick={onOpenReportModal}
-              className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-950/60 border border-blue-800/60 text-blue-300 hover:bg-blue-900/60 transition text-xs font-mono"
-              title="Visualizar e Exportar Dados do Relatório Anhanguera"
+              className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-emerald-500 transition text-xs font-mono"
+              title="Sobre o Projeto de Extensão"
             >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Dados do Relatório</span>
+              <FileText className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Sobre o Projeto</span>
             </button>
           )}
 

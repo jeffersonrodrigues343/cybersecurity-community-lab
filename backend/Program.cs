@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
@@ -5,31 +7,40 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "Cybersecurity Community Lab API (C# .NET 8 + SQLite/Supabase)", Version = "v1" });
+    c.SwaggerDoc("v1", new() { Title = "HackLearn API", Version = "v1" });
 });
 
-// Configure SQLite Database
+// banco sqlite local
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=cyberlab.db";
-builder.Services.AddDbContext<CyberLabDbContext>(options =>
-    options.UseSqlite(connectionString));
+builder.Services.AddDbContext<CyberLabDbContext>(options => options.UseSqlite(connectionString));
 
-// Enable CORS for React Frontend and Vercel
+// cors seguro para o front local e deploy na vercel
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(_ => true)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrEmpty(origin)) return false;
+            try
+            {
+                var uri = new Uri(origin);
+                return uri.Host == "localhost" || uri.Host == "127.0.0.1" || uri.Host.EndsWith("vercel.app");
+            }
+            catch
+            {
+                return false;
+            }
+        })
+        .AllowAnyMethod()
+        .AllowAnyHeader();
     });
 });
 
-// HttpClient for optional Supabase synchronization
+// cliente http pro supabase (se as chaves estiverem no appsettings ou variavel de ambiente)
 builder.Services.AddHttpClient("SupabaseClient", (sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
@@ -53,11 +64,11 @@ app.UseCors("AllowFrontend");
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "CyberLab API v1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "HackLearn v1");
     c.RoutePrefix = "swagger";
 });
 
-// Ensure SQLite Database is initialized and seeded
+// inicializa as tabelas do sqlite e popula se tiver vazio
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<CyberLabDbContext>();
@@ -87,160 +98,171 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// -------------------------------------------------------------
-// ENDPOINTS
-// -------------------------------------------------------------
+// controle simples de rate limit em memoria pra evitar ataques de brute force
+var rateLimits = new ConcurrentDictionary<string, (int attempts, DateTime resetTime)>();
 
-// 1. Healthcheck
+// healthcheck da api
 app.MapGet("/api/health", async (CyberLabDbContext db, IConfiguration config) =>
 {
-    var supabaseConfigured = !string.IsNullOrEmpty(config["Supabase:Url"]) ||
-                             !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SUPABASE_URL"));
-
+    var supabaseUrl = config["Supabase:Url"] ?? Environment.GetEnvironmentVariable("SUPABASE_URL");
     var totalFeedbacks = await db.Feedbacks.CountAsync();
-    var totalFlagsValidated = await db.FlagLogs.CountAsync(f => f.Success);
+    var totalFlags = await db.FlagLogs.CountAsync(f => f.Success);
 
     return Results.Ok(new
     {
-        status = "Healthy",
-        platform = "Cybersecurity Community Lab - Backend C# (.NET 8)",
-        project = "Projeto de Extensão I - ADS (Anhanguera)",
-        database = "SQLite (cyberlab.db) + Supabase Ready",
-        metrics = new
-        {
-            feedbacksStored = totalFeedbacks,
-            flagsValidated = totalFlagsValidated
-        },
-        supabaseActive = supabaseConfigured,
-        timestamp = DateTime.UtcNow
+        status = "ok",
+        app = "HackLearn API (.NET 8)",
+        db = "SQLite local + Supabase sync",
+        feedbacks = totalFeedbacks,
+        flagsCaptured = totalFlags,
+        supabaseConfigured = !string.IsNullOrEmpty(supabaseUrl),
+        time = DateTime.UtcNow
     });
-})
-.WithName("HealthCheck")
-.WithOpenApi();
+});
 
-// 2. Validate CTF Flag (Records in Database)
-app.MapPost("/api/flags/validate", async ([FromBody] FlagValidationRequest request, CyberLabDbContext db) =>
+// valida a flag enviada pelo usuario com protecao contra forca bruta
+app.MapPost("/api/flags/validate", async ([FromBody] FlagValidationRequest request, HttpContext ctx, CyberLabDbContext db, IConfiguration config) =>
 {
-    const string VALID_FLAG = "HACKLEARN{seguranca_web_iniciante_2024}";
-    var cleanFlag = request.Flag?.Trim() ?? string.Empty;
-    var isSuccess = string.Equals(cleanFlag, VALID_FLAG, StringComparison.Ordinal);
+    var clientIp = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    var now = DateTime.UtcNow;
 
-    // Save attempt in SQLite
+    // checa tentativas do ip nos ultimos 60 segundos (max 15 tentativas)
+    var limit = rateLimits.GetOrAdd(clientIp, _ => (0, now.AddMinutes(1)));
+    if (now > limit.resetTime)
+    {
+        rateLimits[clientIp] = (1, now.AddMinutes(1));
+    }
+    else
+    {
+        if (limit.attempts >= 15)
+        {
+            return Results.StatusCode(429); // Too Many Requests
+        }
+        rateLimits[clientIp] = (limit.attempts + 1, limit.resetTime);
+    }
+
+    // valida tamanho do payload
+    var cleanFlag = (request.Flag ?? "").Trim();
+    if (cleanFlag.Length > 100)
+    {
+        return Results.BadRequest(new { success = false, message = "Flag muito longa (tamanho suspeito)." });
+    }
+
+    var validFlag = config["Ctf:ValidFlag"] ?? "HACKLEARN{seguranca_web_iniciante_2024}";
+    var isCorrect = string.Equals(cleanFlag, validFlag, StringComparison.Ordinal);
+
+    // registra a tentativa no banco
     db.FlagLogs.Add(new FlagLogEntity
     {
-        Flag = cleanFlag.Length > 200 ? cleanFlag.Substring(0, 200) : cleanFlag,
-        TaskId = request.TaskId ?? "task3-webctf",
-        Success = isSuccess,
+        Flag = cleanFlag.Length > 80 ? cleanFlag[..80] : cleanFlag,
+        TaskId = (request.TaskId ?? "task3-webctf")[..Math.Min((request.TaskId ?? "").Length, 30)],
+        Success = isCorrect,
         Timestamp = DateTime.UtcNow
     });
     await db.SaveChangesAsync();
 
-    if (isSuccess)
+    if (isCorrect)
     {
         return Results.Ok(new FlagValidationResponse(
             Success: true,
-            Message: "FLAG VALIDADA COM SUCESSO! Você inspecionou o código com perfeição.",
+            Message: "Parabéns! Flag correta, desafio concluído!",
             XpEarned: 100
         ));
     }
 
     return Results.BadRequest(new FlagValidationResponse(
         Success: false,
-        Message: "Flag incorreta. Verifique o comentário HTML ou execute 'cat flag.txt' no terminal.",
+        Message: "Flag incorreta. Verifique o código-fonte inspecionado.",
         XpEarned: 0
     ));
-})
-.WithName("ValidateFlag")
-.WithOpenApi();
+});
 
-// 3. Get Community Testimonials (from SQLite Database)
+// lista os depoimentos
 app.MapGet("/api/feedback", async (CyberLabDbContext db) =>
 {
     var list = await db.Feedbacks
         .OrderByDescending(f => f.CreatedAt)
-        .Select(f => new CommunityFeedbackDto(
-            f.Id,
-            f.Author,
-            f.Text,
-            f.Rating,
-            f.CreatedAt
-        ))
+        .Take(50) // limite de seguranca
+        .Select(f => new CommunityFeedbackDto(f.Id, f.Author, f.Text, f.Rating, f.CreatedAt))
         .ToListAsync();
 
     return Results.Ok(list);
-})
-.WithName("GetFeedbacks")
-.WithOpenApi();
+});
 
-// 4. Submit Community Testimonial (Inserts to SQLite and syncs to Supabase if configured)
+// cadastra novo depoimento com sanitizacao html contra xss
 app.MapPost("/api/feedback", async ([FromBody] FeedbackSubmission submission, CyberLabDbContext db, IHttpClientFactory httpFactory, IConfiguration config) =>
 {
-    if (string.IsNullOrWhiteSpace(submission.Text) || submission.Text.Length < 3)
+    if (string.IsNullOrWhiteSpace(submission.Text) || submission.Text.Trim().Length < 3)
     {
         return Results.BadRequest(new { message = "O depoimento deve ter no mínimo 3 caracteres." });
     }
 
-    var newEntry = new FeedbackEntity
+    if (submission.Text.Length > 500)
+    {
+        return Results.BadRequest(new { message = "O depoimento não pode ter mais de 500 caracteres." });
+    }
+
+    // sanitiza campos pra evitar xss injetado no banco
+    var cleanAuthor = WebUtility.HtmlEncode((submission.Author ?? "Participante da Comunidade").Trim());
+    if (cleanAuthor.Length > 80) cleanAuthor = cleanAuthor[..80];
+
+    var cleanText = WebUtility.HtmlEncode(submission.Text.Trim());
+    var rating = Math.Clamp(submission.Rating, 1, 5);
+
+    var entry = new FeedbackEntity
     {
         Id = Guid.NewGuid().ToString(),
-        Author = string.IsNullOrWhiteSpace(submission.Author) ? "Participante da Comunidade" : submission.Author.Trim(),
-        Text = submission.Text.Trim(),
-        Rating = Math.Clamp(submission.Rating, 1, 5),
+        Author = cleanAuthor,
+        Text = cleanText,
+        Rating = rating,
         CreatedAt = DateTime.UtcNow
     };
 
-    // Save to SQLite
-    db.Feedbacks.Add(newEntry);
+    db.Feedbacks.Add(entry);
     await db.SaveChangesAsync();
 
-    // Mirror to Supabase if credentials are provided
+    // se tiver supabase configurado, manda uma copia pra la tb
     var supabaseUrl = config["Supabase:Url"] ?? Environment.GetEnvironmentVariable("SUPABASE_URL");
     if (!string.IsNullOrEmpty(supabaseUrl))
     {
         try
         {
             var client = httpFactory.CreateClient("SupabaseClient");
-            var payload = new StringContent(
-                JsonSerializer.Serialize(new
-                {
-                    id = newEntry.Id,
-                    author = newEntry.Author,
-                    text = newEntry.Text,
-                    rating = newEntry.Rating,
-                    created_at = newEntry.CreatedAt.ToString("o")
-                }),
-                System.Text.Encoding.UTF8,
-                "application/json"
-            );
-            await client.PostAsync("/rest/v1/feedbacks", payload);
+            var json = JsonSerializer.Serialize(new
+            {
+                id = entry.Id,
+                author = entry.Author,
+                text = entry.Text,
+                rating = entry.Rating,
+                created_at = entry.CreatedAt.ToString("o")
+            });
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            await client.PostAsync("/rest/v1/feedbacks", content);
         }
         catch
         {
-            // SQLite already has the data safely stored
+            // se o supabase falhar, o sqlite ja garantiu a gravacao
         }
     }
 
-    var responseDto = new CommunityFeedbackDto(
-        newEntry.Id,
-        newEntry.Author,
-        newEntry.Text,
-        newEntry.Rating,
-        newEntry.CreatedAt
-    );
-
-    return Results.Created($"/api/feedback/{newEntry.Id}", new
+    return Results.Created($"/api/feedback/{entry.Id}", new
     {
-        message = "Depoimento registrado com sucesso no banco de dados!",
-        feedback = responseDto
+        message = "Depoimento salvo com sucesso!",
+        feedback = new CommunityFeedbackDto(entry.Id, entry.Author, entry.Text, entry.Rating, entry.CreatedAt)
     });
-})
-.WithName("SubmitFeedback")
-.WithOpenApi();
+});
 
-// 5. Server-side Password Entropy Calculation
+// calcula entropia e forca da senha no backend
 app.MapPost("/api/crypto/entropy", ([FromBody] EntropyRequest request) =>
 {
-    var pwd = request.Password ?? string.Empty;
+    var pwd = request.Password ?? "";
+
+    // trava senhas muito longas pra evitar ataque de dos
+    if (pwd.Length > 128)
+    {
+        return Results.BadRequest(new { message = "Senha muito longa para análise (limite de 128 caracteres)." });
+    }
+
     var length = pwd.Length;
     var score = 0;
 
@@ -252,63 +274,55 @@ app.MapPost("/api/crypto/entropy", ([FromBody] EntropyRequest request) =>
 
     string strength;
     string timeToCrack;
-    string recommendations;
+    string tips;
 
     if (score < 40)
     {
         strength = "Muito Fraca";
-        timeToCrack = "< 1 segundo (Vulnerável a ataques de dicionário e rainbow tables)";
-        recommendations = "Adicione ao menos 12 caracteres misturando maiúsculas, números e símbolos.";
+        timeToCrack = "< 1 segundo (Vulnerável a ataques de força bruta)";
+        tips = "Adicione mais caracteres, misturando maiúsculas, números e símbolos.";
     }
     else if (score < 75)
     {
         strength = "Média";
         timeToCrack = "Alguns dias a meses";
-        recommendations = "Aumente o comprimento para mais de 14 caracteres para resistir a ataques de força bruta com GPUs.";
+        tips = "Aumente o tamanho para mais de 12 caracteres para maior segurança.";
     }
     else
     {
         strength = "Forte";
-        timeToCrack = "Milhares a milhões de anos";
-        recommendations = "Excelente resistência criptográfica compatível com padrões NIST SP 800-63B.";
+        timeToCrack = "Anos ou séculos";
+        tips = "Excelente senha, resistente a dicionários e ataques de força bruta.";
     }
 
-    return Results.Ok(new EntropyResponse(score, strength, timeToCrack, recommendations));
-})
-.WithName("AnalyzeEntropy")
-.WithOpenApi();
+    return Results.Ok(new EntropyResponse(score, strength, timeToCrack, tips));
+});
 
-// 6. General Statistics Endpoint
+// estatisticas simples do projeto
 app.MapGet("/api/stats", async (CyberLabDbContext db) =>
 {
-    var totalFeedbacks = await db.Feedbacks.CountAsync();
-    var flagLogs = await db.FlagLogs.ToListAsync();
-    var successfulFlags = flagLogs.Count(f => f.Success);
-    var totalAttempts = flagLogs.Count;
+    var feedbacksCount = await db.Feedbacks.CountAsync();
+    var flagsCount = await db.FlagLogs.CountAsync(f => f.Success);
+    var attemptsCount = await db.FlagLogs.CountAsync();
 
     return Results.Ok(new
     {
-        feedbacks = totalFeedbacks,
-        flagsCaptured = successfulFlags,
-        flagAttempts = totalAttempts,
-        storageEngine = "SQLite (Microsoft.EntityFrameworkCore.Sqlite)",
-        databaseFile = "cyberlab.db",
+        feedbacks = feedbacksCount,
+        flagsCaptured = flagsCount,
+        flagAttempts = attemptsCount,
+        storage = "SQLite + Supabase",
         uptime = DateTime.UtcNow
     });
-})
-.WithName("GetStats")
-.WithOpenApi();
+});
 
 app.Run();
 
-// -------------------------------------------------------------
-// ENTITY FRAMEWORK CORE MODELS & DBCONTEXT
-// -------------------------------------------------------------
+// modelos do entity framework
 public class FeedbackEntity
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string Author { get; set; } = string.Empty;
-    public string Text { get; set; } = string.Empty;
+    public string Author { get; set; } = "";
+    public string Text { get; set; } = "";
     public int Rating { get; set; } = 5;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
@@ -316,8 +330,8 @@ public class FeedbackEntity
 public class FlagLogEntity
 {
     public int Id { get; set; }
-    public string Flag { get; set; } = string.Empty;
-    public string TaskId { get; set; } = string.Empty;
+    public string Flag { get; set; } = "";
+    public string TaskId { get; set; } = "";
     public bool Success { get; set; }
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
@@ -332,25 +346,23 @@ public class CyberLabDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.Entity<FeedbackEntity>(entity =>
+        modelBuilder.Entity<FeedbackEntity>(e =>
         {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Author).HasMaxLength(150);
-            entity.Property(e => e.Text).HasMaxLength(2000);
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Author).HasMaxLength(100);
+            e.Property(x => x.Text).HasMaxLength(600);
         });
 
-        modelBuilder.Entity<FlagLogEntity>(entity =>
+        modelBuilder.Entity<FlagLogEntity>(e =>
         {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Flag).HasMaxLength(255);
-            entity.Property(e => e.TaskId).HasMaxLength(100);
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Flag).HasMaxLength(120);
+            e.Property(x => x.TaskId).HasMaxLength(50);
         });
     }
 }
 
-// -------------------------------------------------------------
-// RECORDS / DTOs
-// -------------------------------------------------------------
+// dtos
 public record FlagValidationRequest(string? Flag, string? TaskId);
 public record FlagValidationResponse(bool Success, string Message, int XpEarned);
 

@@ -94,11 +94,11 @@ export function App() {
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
         
-        {/* Academic Banner Quick-Access */}
-        <div className="mt-4 p-3 bg-gradient-to-r from-blue-950/40 to-slate-900/60 border border-blue-800/40 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+        {/* Banner do Projeto */}
+        <div className="mt-4 p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
           <div className="flex items-center space-x-2 text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-            <span>Projeto de Extensão I • CST Análise e Desenvolvimento de Sistemas (Anhanguera)</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>HackLearn: Laboratório Prático de Segurança da Informação</span>
           </div>
 
           <button
@@ -106,10 +106,10 @@ export function App() {
               sound.playBlip();
               setIsReportOpen(true);
             }}
-            className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow-sm"
+            className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition text-xs"
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Ver Dados do Relatório Docx</span>
+            <FileText className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Sobre o Projeto</span>
           </button>
         </div>
 
