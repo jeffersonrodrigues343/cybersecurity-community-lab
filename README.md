@@ -27,6 +27,12 @@ A aplicação foi construída utilizando uma stack moderna de engenharia front-e
 
 ---
 
+## 🏗️ Arquitetura do Sistema (Draw.io)
+
+![Arquitetura Modular](./print_arquitetura_drawio.png)
+
+---
+
 ## 🎯 As Missões Práticas
 
 | Missão | Tema Técnico | Mecânica Gamificada |
