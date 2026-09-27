@@ -12,9 +12,10 @@ import {
   Search,
   BookOpen,
   Trophy,
-  HeartHandshake,
-  Wifi,
-  Battery,
+  MessageSquare,
+  Phone,
+  Mail,
+  FileText,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -50,7 +51,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
   // Pistas investigadas no caso atual
   const [discoveredClues, setDiscoveredClues] = useState<{ [caseId: string]: string[] }>({});
-  const [activeClueModal, setActiveClueModal] = useState<InvestigativeClue | null>(null);
+  const [expandedClueId, setExpandedClueId] = useState<string | null>(null);
 
   // Gamificação pedagógica
   const [streak, setStreak] = useState(0);
@@ -106,7 +107,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   // Jogador clica para investigar uma pista específica
   const handleInspectClue = (clue: InvestigativeClue) => {
     sound.playBlip();
-    setActiveClueModal(clue);
+    setExpandedClueId((prev) => (prev === clue.id ? null : clue.id));
 
     const alreadyDiscovered = currentCaseDiscovered.includes(clue.id);
     if (!alreadyDiscovered) {
@@ -130,7 +131,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
     const isCorrect = choiceIsScam === currentCase.isScam;
     const cluesFoundCount = (discoveredClues[currentCase.id] || []).length;
-    
+
     // Bônus de 10 XP por cada pista investigada antes do veredito
     const bonusXp = isCorrect ? cluesFoundCount * 10 : 0;
 
@@ -198,7 +199,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
   const handleNextCase = () => {
     sound.playBlip();
-    setActiveClueModal(null);
+    setExpandedClueId(null);
 
     if (currentCaseIndex < levelCases.length - 1) {
       setCurrentCaseIndex((prev) => prev + 1);
@@ -217,39 +218,54 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     sound.playBlip();
     setCurrentLevel(level);
     setCurrentCaseIndex(0);
-    setActiveClueModal(null);
+    setExpandedClueId(null);
   };
 
   const currentAnswerData = answers[currentCase.id];
 
+  const getChannelIcon = (channel: string) => {
+    switch (channel) {
+      case 'whatsapp':
+        return <MessageSquare className="w-3.5 h-3.5 text-[#30d158]" />;
+      case 'call':
+        return <Phone className="w-3.5 h-3.5 text-[#0071e3]" />;
+      case 'sms':
+        return <MessageSquare className="w-3.5 h-3.5 text-[#ff9f0a]" />;
+      case 'document':
+        return <FileText className="w-3.5 h-3.5 text-[#bf5af2]" />;
+      default:
+        return <Mail className="w-3.5 h-3.5 text-[#2997ff]" />;
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-xl mx-auto">
-      
+    <div className="space-y-6 w-full">
       {/* Toast Apple de Conquista */}
       <AnimatePresence>
         {recentBadgeUnlocked && (
           <motion.div
-            initial={{ opacity: 0, y: -15, scale: 0.95 }}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -15, scale: 0.95 }}
-            className="p-3.5 rounded-2xl bg-[#1c1c1e] border border-white/[0.15] shadow-2xl flex items-center justify-between text-white"
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="p-4 rounded-2xl bg-[#1c1c1e] border border-white/[0.15] shadow-2xl flex items-center justify-between text-white max-w-lg mx-auto"
           >
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl p-1.5 bg-white/[0.08] rounded-xl">
+            <div className="flex items-center space-x-3.5">
+              <span className="text-2xl p-2 bg-white/[0.08] rounded-xl flex-shrink-0">
                 {recentBadgeUnlocked.icon}
               </span>
               <div>
                 <span className="text-[11px] text-[#ff9f0a] font-medium block">
                   Conquista Desbloqueada
                 </span>
-                <h4 className="font-semibold text-xs text-white">
+                <h4 className="font-semibold text-sm text-white">
                   {recentBadgeUnlocked.title}
                 </h4>
+                <p className="text-xs text-[#86868b]">{recentBadgeUnlocked.description}</p>
               </div>
             </div>
             <button
               onClick={() => setRecentBadgeUnlocked(null)}
-              className="px-3 py-1 rounded-full bg-white/[0.1] hover:bg-white/[0.15] text-white text-xs font-medium transition"
+              className="px-3 py-1.5 rounded-full bg-white/[0.1] hover:bg-white/[0.15] text-white text-xs font-medium transition cursor-pointer"
             >
               OK
             </button>
@@ -257,331 +273,398 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         )}
       </AnimatePresence>
 
-      {/* Barra de Navegação Superior Apple (Segmented Pill) */}
-      <div className="flex items-center justify-between gap-2 px-1">
-        
-        {/* Apple Segmented Control */}
-        <div className="flex p-0.5 rounded-full bg-white/[0.06] border border-white/[0.08]">
-          <button
-            onClick={() => handleSelectLevel('basico')}
-            className={`px-3.5 py-1 rounded-full text-xs font-medium transition ${
-              currentLevel === 'basico'
-                ? 'bg-white/20 text-white shadow-sm'
-                : 'text-[#86868b] hover:text-white'
-            }`}
-          >
-            Básico
-          </button>
-          <button
-            onClick={() => handleSelectLevel('medio')}
-            className={`px-3.5 py-1 rounded-full text-xs font-medium transition ${
-              currentLevel === 'medio'
-                ? 'bg-white/20 text-white shadow-sm'
-                : 'text-[#86868b] hover:text-white'
-            }`}
-          >
-            Médio
-          </button>
-          <button
-            onClick={() => handleSelectLevel('avancado')}
-            className={`px-3.5 py-1 rounded-full text-xs font-medium transition ${
-              currentLevel === 'avancado'
-                ? 'bg-white/20 text-white shadow-sm'
-                : 'text-[#86868b] hover:text-white'
-            }`}
-          >
-            Avançado
-          </button>
+      {/* Barra de Controles Desktop (Segmented Control Apple + Ferramentas) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#161617] border border-white/[0.08] rounded-2xl p-2.5 sm:px-4">
+        {/* Apple Segmented Pill */}
+        <div className="flex items-center space-x-1 p-1 rounded-full bg-black/40 border border-white/[0.06]">
+          {(['basico', 'medio', 'avancado'] as ScamLevel[]).map((level) => {
+            const levelCasesList = SCAM_CASES.filter((c) => c.level === level);
+            const levelFinishedCount = levelCasesList.filter((c) => answers[c.id]?.answered).length;
+            const isCurrent = currentLevel === level;
+
+            return (
+              <button
+                key={level}
+                onClick={() => handleSelectLevel(level)}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-2 cursor-pointer ${
+                  isCurrent
+                    ? 'bg-white/15 text-white shadow-sm'
+                    : 'text-[#86868b] hover:text-white'
+                }`}
+              >
+                <span className="capitalize">{level}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    isCurrent ? 'bg-white/20 text-white' : 'bg-white/5 text-[#86868b]'
+                  }`}
+                >
+                  {levelFinishedCount}/{levelCasesList.length}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Atalhos Rápidos */}
-        <div className="flex items-center space-x-1.5">
+        {/* Indicador de Caso e Atalhos de Apoio */}
+        <div className="flex items-center space-x-2">
           {streak > 1 && (
-            <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-[#ff9f0a]/15 text-[#ff9f0a] text-xs font-medium">
-              <Flame className="w-3 h-3 fill-[#ff9f0a]" />
-              <span>{streak}x</span>
+            <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-[#ff9f0a]/15 text-[#ff9f0a] text-xs font-semibold">
+              <Flame className="w-3.5 h-3.5 fill-[#ff9f0a]" />
+              <span>{streak}x Combo</span>
             </div>
           )}
+
           <button
             onClick={() => {
               sound.playBlip();
               setIsBadgesModalOpen(true);
             }}
-            className="p-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-white transition"
-            title="Conquistas"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-medium transition cursor-pointer"
           >
             <Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" />
+            <span className="hidden sm:inline">Conquistas</span>
+            <span className="text-[10px] text-[#86868b]">
+              ({unlockedBadgeIds.length}/{BADGES.length})
+            </span>
           </button>
+
           <button
             onClick={() => {
               sound.playBlip();
               setIsFamilyGuideOpen(true);
             }}
-            className="p-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-[#2997ff] transition"
-            title="Cartilha da Família"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#2997ff] text-xs font-medium transition cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Cartilha da Família</span>
           </button>
+        </div>
+      </div>
+
+      {/* CONSOLE PRINCIPAL DESKTOP (Split View: Janela macOS de Inspeção + Deck de Auditoria) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* COLUNA ESQUERDA: Janela macOS de Exibição do Incidente (7 colunas) */}
+        <motion.div
+          key={currentCase.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="lg:col-span-7 apple-macos-window"
+        >
+          {/* macOS Window Header */}
+          <div className="apple-window-header">
+            <div className="apple-window-dots">
+              <div className="apple-dot apple-dot-red" />
+              <div className="apple-dot apple-dot-yellow" />
+              <div className="apple-dot apple-dot-green" />
+            </div>
+
+            <div className="text-xs font-medium text-[#86868b] flex items-center space-x-2">
+              <span>{currentCase.title}</span>
+              <span>•</span>
+              <span className="text-white/80">{currentCase.category}</span>
+            </div>
+
+            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-white/[0.08] text-[#d2d2d7]">
+              Caso {currentCaseIndex + 1} de {levelCases.length}
+            </span>
+          </div>
+
+          {/* Janela de Conteúdo do Incidente */}
+          <div className="p-6 space-y-5">
+            {/* Linha de Metadados da Mensagem (Remetente, Canal e Horário) */}
+            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-white/10 to-white/20 border border-white/10 flex items-center justify-center font-semibold text-white text-sm">
+                  {currentCase.sender.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white text-sm">{currentCase.sender}</h3>
+                  <div className="flex items-center space-x-2 text-xs text-[#86868b]">
+                    <span className="flex items-center space-x-1">
+                      {getChannelIcon(currentCase.channel)}
+                      <span className="capitalize">{currentCase.channel}</span>
+                    </span>
+                    <span>•</span>
+                    <span>Hoje às {currentCase.time}</span>
+                  </div>
+                </div>
+              </div>
+
+              <span className="text-xs font-medium text-[#30d158] bg-[#30d158]/10 px-3 py-1 rounded-full border border-[#30d158]/20">
+                +{currentCase.xpReward} XP Base
+              </span>
+            </div>
+
+            {/* Caixa de Texto do Incidente (Autêntica e Confortável para Leitura Desktop) */}
+            <div className="bg-[#0c0c0d] border border-white/[0.08] rounded-2xl p-6 shadow-inner">
+              <div className="text-[11px] text-[#86868b] uppercase tracking-wider mb-2 font-mono">
+                Conteúdo Original Recebido:
+              </div>
+              <p className="text-white text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap select-text font-normal font-sans">
+                {currentCase.messageContent}
+              </p>
+            </div>
+
+            {/* Painel Pedagógico Integrado (Alternador Jovens / Adultos) */}
+            <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4 text-[#2997ff]" />
+                  <span className="text-xs font-semibold text-white">Análise Pedagógica do Caso</span>
+                </div>
+
+                <div className="flex p-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs">
+                  <button
+                    onClick={() => setPedagogicalMode('kids')}
+                    className={`px-3 py-1 rounded-full font-medium transition cursor-pointer ${
+                      pedagogicalMode === 'kids'
+                        ? 'bg-white/20 text-white'
+                        : 'text-[#86868b] hover:text-white'
+                    }`}
+                  >
+                    Jovens & Família
+                  </button>
+                  <button
+                    onClick={() => setPedagogicalMode('adult')}
+                    className={`px-3 py-1 rounded-full font-medium transition cursor-pointer ${
+                      pedagogicalMode === 'adult'
+                        ? 'bg-white/20 text-white'
+                        : 'text-[#86868b] hover:text-white'
+                    }`}
+                  >
+                    Adultos & Jurídico
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-xs text-[#d2d2d7] leading-relaxed">
+                {pedagogicalMode === 'kids' ? (
+                  <p>
+                    <strong className="text-white">🧒 Analogia para Jovens: </strong>
+                    {currentCase.pedagogy.kidsAnalogy}
+                  </p>
+                ) : (
+                  <p>
+                    <strong className="text-white">⚖️ Protocolo para Adultos: </strong>
+                    {currentCase.pedagogy.adultRemedy}
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
+                <span className="text-[#86868b]">
+                  <strong className="text-[#ff9f0a]">Gatilho mental: </strong>
+                  {currentCase.pedagogy.emotionalTrigger}
+                </span>
+                <span className="text-[#30d158] font-medium">
+                  "{currentCase.pedagogy.goldenRule}"
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* COLUNA DIREITA: Deck Pericial & Ação de Veredito (5 colunas) */}
+        <div className="lg:col-span-5 space-y-6">
+          
+          {/* Deck de Ferramentas Forenses */}
+          <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
+                  <Search className="w-4 h-4 text-[#2997ff]" />
+                  <span>Auditoria Pericial</span>
+                </h4>
+                <p className="text-xs text-[#86868b]">
+                  Inspecione as pistas antes de decidir (+10 XP cada)
+                </p>
+              </div>
+
+              <span className="text-xs font-semibold text-[#2997ff] bg-[#2997ff]/10 px-2.5 py-1 rounded-full">
+                {currentCaseDiscovered.length}/{currentCase.clues.length}
+              </span>
+            </div>
+
+            {/* Lista das 3 Pistas Periciais */}
+            <div className="space-y-2.5">
+              {currentCase.clues.map((clue) => {
+                const isDiscovered = currentCaseDiscovered.includes(clue.id);
+                const isExpanded = expandedClueId === clue.id;
+
+                return (
+                  <div
+                    key={clue.id}
+                    className={`rounded-xl border transition overflow-hidden ${
+                      isExpanded
+                        ? 'border-[#2997ff]/50 bg-[#1c1c1e]'
+                        : isDiscovered
+                        ? 'border-white/[0.12] bg-[#1a1a1c]'
+                        : 'border-white/[0.06] bg-[#141415] hover:border-white/[0.12]'
+                    }`}
+                  >
+                    <button
+                      onClick={() => handleInspectClue(clue)}
+                      className="w-full p-3.5 text-left flex items-center justify-between cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <span className="text-xs font-medium text-white">{clue.buttonLabel}</span>
+                        {isDiscovered && (
+                          <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.5 rounded-full">
+                            ✓ Auditado (+10 XP)
+                          </span>
+                        )}
+                      </div>
+                      <ChevronRight
+                        className={`w-4 h-4 text-[#86868b] transition-transform ${
+                          isExpanded ? 'rotate-90 text-[#2997ff]' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* Laudo Pericial Aberto */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="px-3.5 pb-3.5 pt-1 space-y-2.5 text-xs border-t border-white/[0.06]"
+                        >
+                          <div
+                            className={`p-3 rounded-xl border ${
+                              clue.evidenceResult.status === 'suspicious'
+                                ? 'bg-[#ff3b30]/10 border-[#ff3b30]/30 text-white'
+                                : 'bg-[#30d158]/10 border-[#30d158]/30 text-white'
+                            }`}
+                          >
+                            <div className="font-semibold flex items-center gap-1.5 mb-1 text-xs">
+                              {clue.evidenceResult.status === 'suspicious' ? (
+                                <AlertTriangle className="w-3.5 h-3.5 text-[#ff3b30] flex-shrink-0" />
+                              ) : (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-[#30d158] flex-shrink-0" />
+                              )}
+                              <span>{clue.evidenceResult.headline}</span>
+                            </div>
+                            <p className="text-[#d2d2d7] leading-relaxed text-[11px]">
+                              {clue.evidenceResult.details}
+                            </p>
+                          </div>
+
+                          <div className="text-[11px] text-[#86868b] bg-white/[0.02] p-2 rounded-lg border border-white/[0.04]">
+                            <strong className="text-[#ff9f0a]">💡 Fato Forense: </strong>
+                            <span>{clue.evidenceResult.forensicFact}</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Painel de Veredito / Ação */}
+          <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4">
+            {!currentAnswerData?.answered ? (
+              <div className="space-y-3.5">
+                <div>
+                  <h4 className="font-semibold text-sm text-white">Veredito do Caso</h4>
+                  <p className="text-xs text-[#86868b]">
+                    Com base no conteúdo e nas pistas periciais, qual é a sua conclusão?
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <button
+                    onClick={() => handleVerdict(true)}
+                    className="apple-btn-red flex items-center justify-center space-x-2 cursor-pointer text-sm"
+                  >
+                    <ShieldAlert className="w-4 h-4 text-white" />
+                    <span>É GOLPE</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleVerdict(false)}
+                    className="apple-btn-blue flex items-center justify-center space-x-2 cursor-pointer text-sm"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-white" />
+                    <span>É SEGURO</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Resposta Emitida: Card de Resultado e Aprendizado */
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                {/* Banner de Resultado */}
+                <div
+                  className={`p-4 rounded-xl border flex items-start space-x-3 ${
+                    currentAnswerData.isCorrect
+                      ? 'bg-[#30d158]/10 border-[#30d158]/30 text-white'
+                      : 'bg-[#ff3b30]/10 border-[#ff3b30]/30 text-white'
+                  }`}
+                >
+                  {currentAnswerData.isCorrect ? (
+                    <CheckCircle2 className="w-5 h-5 text-[#30d158] flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-[#ff3b30] flex-shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">
+                      {currentAnswerData.isCorrect
+                        ? `Veredito Correto! +${currentCase.xpReward} XP Base`
+                        : 'Veredito Incorreto! Você caiu na armadilha.'}
+                    </h4>
+                    {currentAnswerData.bonusXp > 0 && (
+                      <p className="text-xs text-[#30d158]">
+                        +{currentAnswerData.bonusXp} XP bônus por pistas periciais investigadas!
+                      </p>
+                    )}
+                    {currentAnswerData.comboBonus > 0 && (
+                      <p className="text-xs text-[#ff9f0a]">
+                        +{currentAnswerData.comboBonus} XP bônus de combo consecutivo!
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Explicação Real do Golpe */}
+                <div className="space-y-2 text-xs text-[#d2d2d7]">
+                  <p className="leading-relaxed">{currentCase.explanation}</p>
+                  <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[11px]">
+                    <strong className="text-[#30d158]">🛡️ Dica Prática de Defesa: </strong>
+                    <span>{currentCase.realWorldTip}</span>
+                  </div>
+                </div>
+
+                {/* Botão de Avanço */}
+                <button
+                  onClick={handleNextCase}
+                  className="w-full py-3.5 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold text-xs flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg"
+                >
+                  <span>
+                    {currentCaseIndex < levelCases.length - 1
+                      ? 'Próximo Caso'
+                      : currentLevel !== 'avancado'
+                      ? 'Avançar para o Próximo Nível'
+                      : 'Ver Resultado Final'}
+                  </span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+          </div>
+
         </div>
 
       </div>
 
-      {/* Frame de iPhone 16 Pro com Dynamic Island */}
-      <motion.div
-        key={currentCase.id}
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className="apple-iphone-frame"
-      >
-        {/* Dynamic Island com sensor */}
-        <div className="apple-dynamic-island">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#1c1c1e] border border-white/10" />
-          <div className="w-2 h-2 rounded-full bg-[#0071e3]/40" />
-        </div>
-
-        {/* Status Bar Oficial do iOS */}
-        <div className="px-6 py-1 flex items-center justify-between text-[11px] font-semibold text-white/90">
-          <span>9:41</span>
-          <div className="flex items-center space-x-1.5">
-            <Wifi className="w-3 h-3 text-white" />
-            <Battery className="w-3.5 h-3.5 text-white" />
-          </div>
-        </div>
-
-        {/* Header do Contato (WhatsApp / SMS / Ligação) */}
-        <div className="px-5 py-3 border-b border-white/[0.08] flex items-center justify-between bg-[#161617]/90">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-white/10 to-white/20 flex items-center justify-center font-semibold text-white text-xs border border-white/10">
-              {currentCase.sender.charAt(0)}
-            </div>
-            <div>
-              <div className="font-semibold text-white text-xs tracking-tight">{currentCase.sender}</div>
-              <div className="text-[10px] text-[#86868b]">{currentCase.category}</div>
-            </div>
-          </div>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.08] text-[#86868b]">
-            Caso {currentCaseIndex + 1}/{levelCases.length}
-          </span>
-        </div>
-
-        {/* Tela Interna da Conversa (Apple iOS Message View) */}
-        <div className="p-4 sm:p-5 bg-black space-y-3 min-h-[170px] flex flex-col justify-end">
-          <div className="text-center text-[10px] text-[#86868b] my-1">
-            Hoje • {currentCase.time}
-          </div>
-
-          {/* Bolha de Mensagem do iOS */}
-          <div className="apple-ios-bubble self-start max-w-[90%]">
-            <p className="whitespace-pre-wrap">{currentCase.messageContent}</p>
-          </div>
-        </div>
-
-        {/* Deck de Ferramentas Forenses (Kit do Investigador) */}
-        <div className="p-4 bg-[#161617] border-t border-white/[0.08] space-y-2.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-white flex items-center gap-1.5">
-              <Search className="w-3 h-3 text-[#2997ff]" />
-              <span>Inspecionar Pistas ({currentCaseDiscovered.length}/{currentCase.clues.length}):</span>
-            </span>
-            <span className="text-[10px] text-[#30d158] font-medium">+{currentCase.xpReward} XP Base</span>
-          </div>
-
-          {/* 3 Chips de Pistas Apple */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {currentCase.clues.map((clue) => {
-              const isDiscovered = currentCaseDiscovered.includes(clue.id);
-              return (
-                <button
-                  key={clue.id}
-                  onClick={() => handleInspectClue(clue)}
-                  className={`apple-tool-chip text-left cursor-pointer ${
-                    isDiscovered
-                      ? 'border-[#2997ff]/50 bg-[#0071e3]/15 text-white'
-                      : 'text-[#d2d2d7]'
-                  }`}
-                >
-                  <div className="font-medium text-xs mb-0.5 leading-snug">
-                    {clue.buttonLabel}
-                  </div>
-                  <div className="text-[10px] text-[#86868b]">
-                    {isDiscovered ? '✓ Analisado' : 'Toque para auditar'}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Gaveta do Laudo Pericial Apple */}
-        <AnimatePresence>
-          {activeClueModal && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="p-4 bg-[#1c1c1e] border-t border-white/[0.08] text-xs space-y-2"
-            >
-              <div className="flex items-center justify-between border-b border-white/[0.08] pb-1.5">
-                <span className="font-semibold text-white text-xs">
-                  {activeClueModal.name}
-                </span>
-                <button
-                  onClick={() => setActiveClueModal(null)}
-                  className="text-[#86868b] hover:text-white px-2 py-0.5 rounded-full bg-white/[0.08] text-[10px]"
-                >
-                  Fechar ✕
-                </button>
-              </div>
-
-              <div
-                className={`p-3 rounded-2xl border ${
-                  activeClueModal.evidenceResult.status === 'suspicious'
-                    ? 'bg-[#ff3b30]/10 border-[#ff3b30]/30 text-white'
-                    : 'bg-[#30d158]/10 border-[#30d158]/30 text-white'
-                }`}
-              >
-                <div className="font-semibold text-xs flex items-center gap-1.5 mb-1">
-                  {activeClueModal.evidenceResult.status === 'suspicious' ? (
-                    <AlertTriangle className="w-3.5 h-3.5 text-[#ff3b30] flex-shrink-0" />
-                  ) : (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#30d158] flex-shrink-0" />
-                  )}
-                  <span>{activeClueModal.evidenceResult.headline}</span>
-                </div>
-                <p className="text-[#d2d2d7] text-xs leading-relaxed">
-                  {activeClueModal.evidenceResult.details}
-                </p>
-              </div>
-
-              <div className="text-[11px] text-[#86868b]">
-                <strong className="text-[#ff9f0a]">💡 Fato: </strong>
-                <span>{activeClueModal.evidenceResult.forensicFact}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Rodapé da Decisão: Os 2 Botões Apple de Ação */}
-        {!currentAnswerData?.answered ? (
-          <div className="p-4 bg-[#161617] border-t border-white/[0.08]">
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => handleVerdict(true)}
-                className="apple-btn-red flex items-center justify-center space-x-1.5 cursor-pointer"
-              >
-                <ShieldAlert className="w-4 h-4 text-white" />
-                <span>É GOLPE</span>
-              </button>
-
-              <button
-                onClick={() => handleVerdict(false)}
-                className="apple-btn-blue flex items-center justify-center space-x-1.5 cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4 text-white" />
-                <span>É SEGURO</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Resultado e Explicação Pedagógica */
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 bg-[#161617] border-t border-white/[0.08] space-y-3"
-          >
-            {/* Banner de Resultado */}
-            <div
-              className={`p-3.5 rounded-2xl border flex items-center space-x-3 ${
-                currentAnswerData.isCorrect
-                  ? 'bg-[#30d158]/10 border-[#30d158]/30 text-white'
-                  : 'bg-[#ff3b30]/10 border-[#ff3b30]/30 text-white'
-              }`}
-            >
-              {currentAnswerData.isCorrect ? (
-                <CheckCircle2 className="w-6 h-6 text-[#30d158] flex-shrink-0" />
-              ) : (
-                <XCircle className="w-6 h-6 text-[#ff3b30] flex-shrink-0" />
-              )}
-              <div>
-                <h4 className="font-semibold text-xs">
-                  {currentAnswerData.isCorrect
-                    ? `Veredito Correto! +${currentCase.xpReward} XP ${currentAnswerData.bonusXp > 0 ? `(+${currentAnswerData.bonusXp} XP pistas)` : ''}`
-                    : 'Veredito Incorreto! Você caiu na armadilha.'}
-                </h4>
-                <p className="text-[11px] text-[#86868b]">
-                  {currentCase.isScam ? 'Esta mensagem era um golpe financeiro.' : 'Esta mensagem era legítima e segura.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Acolhimento em caso de erro */}
-            {!currentAnswerData.isCorrect && (
-              <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-xs flex items-start space-x-2">
-                <HeartHandshake className="w-4 h-4 text-[#bf5af2] flex-shrink-0 mt-0.5" />
-                <p className="text-[#86868b] text-[11px] leading-relaxed">
-                  <strong className="text-white">Dica Pedagógica: </strong>
-                  Golpistas usam urgência para travar o raciocínio. O aprendizado aqui protege sua família no mundo real!
-                </p>
-              </div>
-            )}
-
-            {/* Lente Pedagógica */}
-            <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-2xl p-3.5 space-y-2 text-xs">
-              <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
-                <span className="text-xs font-semibold text-white flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-[#2997ff]" />
-                  <span>Lição do Caso</span>
-                </span>
-                <div className="flex p-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[10px]">
-                  <button
-                    onClick={() => setPedagogicalMode('kids')}
-                    className={`px-2 py-0.5 rounded-full font-medium transition ${
-                      pedagogicalMode === 'kids' ? 'bg-white/20 text-white' : 'text-[#86868b]'
-                    }`}
-                  >
-                    Jovens
-                  </button>
-                  <button
-                    onClick={() => setPedagogicalMode('adult')}
-                    className={`px-2 py-0.5 rounded-full font-medium transition ${
-                      pedagogicalMode === 'adult' ? 'bg-white/20 text-white' : 'text-[#86868b]'
-                    }`}
-                  >
-                    Adultos
-                  </button>
-                </div>
-              </div>
-
-              {pedagogicalMode === 'kids' ? (
-                <p className="text-[#d2d2d7] text-xs leading-relaxed">
-                  <strong>🧒 Analogia: </strong>{currentCase.pedagogy.kidsAnalogy}
-                </p>
-              ) : (
-                <p className="text-[#d2d2d7] text-xs leading-relaxed">
-                  <strong>⚖️ Como Agir: </strong>{currentCase.pedagogy.adultRemedy}
-                </p>
-              )}
-
-              <div className="pt-1 text-[#30d158] font-medium text-[11px]">
-                "{currentCase.pedagogy.goldenRule}"
-              </div>
-            </div>
-
-            {/* Próximo Caso */}
-            <button
-              onClick={handleNextCase}
-              className="w-full py-3 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer"
-            >
-              <span>Próximo Caso</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
-
-      </motion.div>
-
-      {/* MODAL 1: Sala de Conquistas (Apple Sheet) */}
+      {/* MODAL 1: Sala de Conquistas (Desktop Modal) */}
       <AnimatePresence>
         {isBadgesModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl">
@@ -589,34 +672,40 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#1c1c1e] border border-white/[0.1] rounded-[32px] max-w-md w-full p-5 space-y-4 shadow-2xl"
+              className="bg-[#1c1c1e] border border-white/[0.1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
                 <div>
-                  <h3 className="font-semibold text-sm text-white">Sala de Conquistas</h3>
-                  <p className="text-xs text-[#86868b]">{unlockedBadgeIds.length} de {BADGES.length} desbloqueadas</p>
+                  <h3 className="font-semibold text-base text-white">Sala de Conquistas</h3>
+                  <p className="text-xs text-[#86868b]">
+                    {unlockedBadgeIds.length} de {BADGES.length} conquistas desbloqueadas
+                  </p>
                 </div>
                 <button
                   onClick={() => setIsBadgesModalOpen(false)}
-                  className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white text-xs font-medium"
+                  className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white text-xs font-medium cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
                 {BADGES.map((badge) => {
                   const isUnlocked = unlockedBadgeIds.includes(badge.id);
                   return (
                     <div
                       key={badge.id}
-                      className={`p-3 rounded-2xl border transition flex items-center space-x-3 ${
-                        isUnlocked ? 'bg-white/[0.06] border-white/[0.15]' : 'bg-white/[0.02] border-white/[0.04] opacity-40'
+                      className={`p-3.5 rounded-2xl border transition flex items-center space-x-3.5 ${
+                        isUnlocked
+                          ? 'bg-white/[0.06] border-white/[0.15]'
+                          : 'bg-white/[0.02] border-white/[0.04] opacity-40'
                       }`}
                     >
-                      <span className="text-2xl p-1.5 bg-white/[0.08] rounded-xl">{badge.icon}</span>
+                      <span className="text-2xl p-2 bg-white/[0.08] rounded-xl flex-shrink-0">
+                        {badge.icon}
+                      </span>
                       <div className="flex-1">
-                        <h4 className="font-medium text-xs text-white">{badge.title}</h4>
+                        <h4 className="font-semibold text-xs text-white">{badge.title}</h4>
                         <p className="text-[11px] text-[#86868b]">{badge.description}</p>
                       </div>
                     </div>
@@ -628,7 +717,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         )}
       </AnimatePresence>
 
-      {/* MODAL 2: Cartilha da Família (Apple Sheet) */}
+      {/* MODAL 2: Cartilha da Família (Desktop Modal) */}
       <AnimatePresence>
         {isFamilyGuideOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl">
@@ -636,56 +725,69 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#1c1c1e] border border-white/[0.1] rounded-[32px] max-w-md w-full p-5 space-y-3.5 shadow-2xl"
+              className="bg-[#1c1c1e] border border-white/[0.1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
                 <div>
-                  <h3 className="font-semibold text-sm text-white">Cartilha da Família</h3>
-                  <p className="text-xs text-[#86868b]">Regras de ouro e termos essenciais</p>
+                  <h3 className="font-semibold text-base text-white">Cartilha de Defesa Familiar</h3>
+                  <p className="text-xs text-[#86868b]">Regras de ouro e termos essenciais de cibersegurança</p>
                 </div>
                 <button
                   onClick={() => setIsFamilyGuideOpen(false)}
-                  className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white text-xs font-medium"
+                  className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white text-xs font-medium cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="flex p-0.5 rounded-full bg-white/[0.06] border border-white/[0.08]">
+              {/* Tabs */}
+              <div className="flex p-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs">
                 <button
                   onClick={() => setFamilyGuideTab('rules')}
-                  className={`flex-1 py-1 rounded-full text-xs font-medium transition ${
-                    familyGuideTab === 'rules' ? 'bg-white/20 text-white' : 'text-[#86868b]'
+                  className={`flex-1 py-1 rounded-full font-medium transition cursor-pointer ${
+                    familyGuideTab === 'rules'
+                      ? 'bg-white/20 text-white'
+                      : 'text-[#86868b] hover:text-white'
                   }`}
                 >
                   Regras de Ouro
                 </button>
                 <button
                   onClick={() => setFamilyGuideTab('glossary')}
-                  className={`flex-1 py-1 rounded-full text-xs font-medium transition ${
-                    familyGuideTab === 'glossary' ? 'bg-white/20 text-white' : 'text-[#86868b]'
+                  className={`flex-1 py-1 rounded-full font-medium transition cursor-pointer ${
+                    familyGuideTab === 'glossary'
+                      ? 'bg-white/20 text-white'
+                      : 'text-[#86868b] hover:text-white'
                   }`}
                 >
                   Glossário
                 </button>
               </div>
 
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
                 {familyGuideTab === 'rules' ? (
                   FAMILY_GOLDEN_RULES.map((item) => (
-                    <div key={item.id} className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1">
+                    <div
+                      key={item.id}
+                      className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1.5"
+                    >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-white">{item.icon} {item.title}</span>
+                        <span className="font-semibold text-white">
+                          {item.icon} {item.title}
+                        </span>
                         <span className="text-[10px] text-[#86868b]">{item.targetLabel}</span>
                       </div>
-                      <p className="text-[11px] text-[#d2d2d7]">{item.practicalAction}</p>
+                      <p className="text-xs text-[#d2d2d7] leading-relaxed">{item.practicalAction}</p>
                     </div>
                   ))
                 ) : (
                   GLOSSARY_ITEMS.map((item, idx) => (
-                    <div key={idx} className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-0.5 text-xs">
-                      <h4 className="font-medium text-[#2997ff]">{item.term}</h4>
-                      <p className="text-[11px] text-[#d2d2d7]">{item.simpleMeaning}</p>
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1 text-xs"
+                    >
+                      <h4 className="font-semibold text-[#2997ff]">{item.term}</h4>
+                      <p className="text-xs text-[#d2d2d7] leading-relaxed">{item.simpleMeaning}</p>
                     </div>
                   ))
                 )}
@@ -694,7 +796,6 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };

@@ -68,7 +68,7 @@ export function App() {
         onOpenReportModal={() => setIsReportOpen(true)}
       />
 
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Hero Section Direto e Limpo */}
         <Hero />

@@ -25,7 +25,7 @@ export const Header = ({ score, totalScore, completedCount, onOpenReportModal }:
 
   return (
     <header className="sticky top-0 z-50 h-12 bg-black/80 backdrop-blur-xl border-b border-white/[0.08] transition-all">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         
         {/* Apple-style Brand / Logo */}
         <div className="flex items-center space-x-2.5">
