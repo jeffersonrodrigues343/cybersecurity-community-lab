@@ -24,8 +24,6 @@ import {
   Brain,
   Server,
   Clock,
-  Smile,
-  Scale,
   Lightbulb,
   Zap,
   ShoppingBag,
@@ -33,6 +31,7 @@ import {
   Lock,
   Gavel,
   Eye,
+  RotateCcw,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -44,6 +43,7 @@ import {
   type ScamLevel,
   type InvestigativeClue,
   type Badge,
+  type ReinforcementOption,
 } from '../data/scamsData';
 import { sound } from '../utils/audio';
 import confetti from 'canvas-confetti';
@@ -81,9 +81,13 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const [selectedVerdict, setSelectedVerdict] = useState<boolean | null>(null);
   const [selectedHypothesis, setSelectedHypothesis] = useState<number | null>(null);
 
+  // Treino de Reforço em caso de erro
+  const [drillSelectedOptionId, setDrillSelectedOptionId] = useState<string | null>(null);
+  const [drillSuccess, setDrillSuccess] = useState<boolean>(false);
+  const [drillBonusAwarded, setDrillBonusAwarded] = useState<boolean>(false);
+
   // Gamificação pedagógica
   const [streak, setStreak] = useState(0);
-  const [pedagogicalMode, setPedagogicalMode] = useState<'kids' | 'adult'>('kids');
 
   // Sistema de Medalhas / Conquistas
   const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<string[]>(() => {
@@ -276,12 +280,58 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     onScoreUpdate(newTotalXp, newCompletedCount, allCompleted);
   };
 
+  const handleDrillOptionSelect = (option: ReinforcementOption) => {
+    sound.playBlip();
+    setDrillSelectedOptionId(option.id);
+    if (option.isCorrect) {
+      sound.playSuccess();
+      setDrillSuccess(true);
+      if (!drillBonusAwarded) {
+        setDrillBonusAwarded(true);
+        setFloatingXp(15);
+        confetti({
+          particleCount: 35,
+          spread: 50,
+          origin: { y: 0.65 },
+          colors: ['#30d158', '#2997ff', '#ffffff'],
+        });
+        const currentAnswer = answers[currentCase.id];
+        if (currentAnswer) {
+          const updatedAnswers = {
+            ...answers,
+            [currentCase.id]: {
+              ...currentAnswer,
+              bonusXp: (currentAnswer.bonusXp || 0) + 15,
+            },
+          };
+          setAnswers(updatedAnswers);
+          const newTotalXp = Math.max(0, Object.entries(updatedAnswers).reduce((acc, [caseId, data]) => {
+            const found = SCAM_CASES.find((c) => c.id === caseId);
+            if (data.isCorrect) {
+              const baseReward = data.hypothesisCorrect !== false ? (found?.xpReward || 0) : Math.round((found?.xpReward || 0) * 0.5);
+              return acc + baseReward + (data.bonusXp || 0) + (data.comboBonus || 0);
+            } else {
+              return acc - (data.penaltyXp || 0) + (data.bonusXp || 0);
+            }
+          }, 0));
+          onScoreUpdate(newTotalXp, Object.keys(updatedAnswers).length, Object.keys(updatedAnswers).length === totalCases);
+        }
+      }
+    } else {
+      sound.playError();
+      setDrillSuccess(false);
+    }
+  };
+
   const handleNextCase = () => {
     sound.playBlip();
     setExpandedClueId(null);
     setFloatingXp(null);
     setSelectedVerdict(null);
     setSelectedHypothesis(null);
+    setDrillSelectedOptionId(null);
+    setDrillSuccess(false);
+    setDrillBonusAwarded(false);
 
     if (currentCaseIndex < levelCases.length - 1) {
       setCurrentCaseIndex((prev) => prev + 1);
@@ -304,6 +354,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     setFloatingXp(null);
     setSelectedVerdict(null);
     setSelectedHypothesis(null);
+    setDrillSelectedOptionId(null);
+    setDrillSuccess(false);
+    setDrillBonusAwarded(false);
   };
 
   const getChannelIcon = (channel: string) => {
@@ -531,52 +584,6 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               transition={{ duration: 0.4 }}
               className="h-full bg-gradient-to-r from-[#0071e3] to-[#2997ff] rounded-full"
             />
-          </div>
-        </div>
-
-        {/* Banner Informativo de Metodologia e Dificuldade */}
-        <div className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all ${
-          currentLevel === 'basico'
-            ? 'bg-[#30d158]/5 border-[#30d158]/20'
-            : currentLevel === 'medio'
-            ? 'bg-[#ff9f0a]/5 border-[#ff9f0a]/20'
-            : 'bg-[#ff3b30]/10 border-[#ff3b30]/25'
-        }`}>
-          <div className="flex items-center space-x-3">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center border flex-shrink-0 ${
-              currentLevel === 'basico'
-                ? 'bg-[#30d158]/15 border-[#30d158]/30 text-[#30d158]'
-                : currentLevel === 'medio'
-                ? 'bg-[#ff9f0a]/15 border-[#ff9f0a]/30 text-[#ff9f0a]'
-                : 'bg-[#ff3b30]/20 border-[#ff3b30]/35 text-[#ff3b30]'
-            }`}>
-              {getLevelIcon(currentLevel)}
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-white flex flex-wrap items-center gap-2">
-                <span>
-                  {currentLevel === 'basico' && 'Nível 1: Básico • Pistas Guiadas & Sinais Evidentes'}
-                  {currentLevel === 'medio' && 'Nível 2: Médio • Engenharia Social & Evidências Mistas'}
-                  {currentLevel === 'avancado' && 'Nível 3: Avançado • Perícia Forense Real & Risco Ativo'}
-                </span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                  currentLevel === 'basico'
-                    ? 'bg-[#30d158]/15 text-[#30d158]'
-                    : currentLevel === 'medio'
-                    ? 'bg-[#ff9f0a]/15 text-[#ff9f0a]'
-                    : 'bg-[#ff3b30]/20 text-[#ff3b30]'
-                }`}>
-                  {currentLevel === 'basico' && '+50 XP Base'}
-                  {currentLevel === 'medio' && '+100 XP Base'}
-                  {currentLevel === 'avancado' && '+150 XP • -25 XP se errar'}
-                </span>
-              </div>
-              <p className="text-[11px] text-[#86868b] leading-relaxed mt-0.5">
-                {currentLevel === 'basico' && 'Casos do dia a dia com erros claros de remetente ou domínio. Ideal para aprender a metodologia.'}
-                {currentLevel === 'medio' && 'Criminosos mascaram a fraude com dados reais e spoofing. Cuidado: há comunicações legítimas desafiadoras!'}
-                {currentLevel === 'avancado' && 'Ataques técnicos sofisticados (Punycode cirílico, Proxy Reverso AiTM) e notificações autênticas da Receita Federal. Erro desconta XP!'}
-              </p>
-            </div>
           </div>
         </div>
       </div>
@@ -1047,159 +1054,187 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   const isFail = !currentAnswerData.isCorrect;
 
                   return (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      animate={
-                        isHonor
-                          ? { opacity: 1, scale: 1 }
-                          : isPartial
-                          ? { opacity: 1, scale: 1 }
-                          : { opacity: 1, scale: 1, x: [-8, 8, -6, 6, -3, 3, 0] }
-                      }
-                      transition={
-                        isFail
-                          ? { duration: 0.45, ease: "easeInOut" }
-                          : { type: "spring", stiffness: 350, damping: 25 }
-                      }
-                      className={`p-4 rounded-2xl border flex items-start space-x-3.5 shadow-lg ${
-                        isHonor
-                          ? 'bg-[#30d158]/10 border-[#30d158]/35 text-white'
-                          : isPartial
-                          ? 'bg-[#ff9f0a]/10 border-[#ff9f0a]/35 text-white'
-                          : 'bg-[#ff3b30]/10 border-[#ff3b30]/35 text-white'
-                      }`}
-                    >
+                    <div className="space-y-4">
+                      {/* Cartão de Status do Veredito */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`p-3.5 rounded-2xl border flex items-center space-x-3 shadow-md ${
+                          isHonor
+                            ? 'bg-[#30d158]/10 border-[#30d158]/35 text-white'
+                            : isPartial
+                            ? 'bg-[#ff9f0a]/10 border-[#ff9f0a]/35 text-white'
+                            : 'bg-[#ff3b30]/10 border-[#ff3b30]/35 text-white'
+                        }`}
+                      >
+                        {isHonor ? (
+                          <CheckCircle2 className="w-5 h-5 text-[#30d158] flex-shrink-0" />
+                        ) : isPartial ? (
+                          <AlertTriangle className="w-5 h-5 text-[#ff9f0a] flex-shrink-0" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-[#ff3b30] flex-shrink-0" />
+                        )}
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-xs sm:text-sm">
+                            {isHonor && (currentCase.isScam ? '🏆 GOLPE DESMASCARADO!' : '🛡️ LIBERADO COM SUCESSO!')}
+                            {isPartial && '⚠️ Veredito correto, mas a prova decisiva era outra!'}
+                            {isFail && (currentAnswerData.penaltyXp ? `❌ VOCÊ CAIU NO GOLPE! (-${currentAnswerData.penaltyXp} XP)` : '❌ VOCÊ CAIU NO GOLPE!')}
+                          </h4>
+                          <p className="text-[11px] text-[#d2d2d7]">
+                            {isHonor && 'Percepção forense impecável! Você protegeu a vítima com precisão.'}
+                            {isPartial && 'Você acertou o resultado, mas precisa dominar a evidência técnica.'}
+                            {isFail && 'Você foi enganado pelo truque do criminoso. Vamos treinar para não cair mais!'}
+                          </p>
+                        </div>
+                      </motion.div>
+
+                      {/* FLUXO A: Se ACERTOU com honra, exibe resumo conciso e botão de avanço */}
                       {isHonor ? (
-                        <CheckCircle2 className="w-5 h-5 text-[#30d158] flex-shrink-0 mt-0.5" />
-                      ) : isPartial ? (
-                        <AlertTriangle className="w-5 h-5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="space-y-3"
+                        >
+                          {/* Prova Decisiva */}
+                          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-1 text-xs">
+                            <span className="text-[#2997ff] font-semibold text-[11px] flex items-center gap-1.5">
+                              <Search className="w-3.5 h-3.5" /> A Prova Decisiva:
+                            </span>
+                            <p className="text-[#f5f5f7] leading-relaxed">
+                              {currentCase.keyEvidenceReason}
+                            </p>
+                          </div>
+
+                          {/* Regra de Ouro */}
+                          <div className="p-3.5 rounded-2xl bg-[#30d158]/10 border border-[#30d158]/20 flex items-start gap-2.5 text-xs text-white">
+                            <ShieldCheck className="w-4 h-4 text-[#30d158] flex-shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="text-[#30d158]">Regra de Ouro para a Família: </strong>
+                              <span className="text-[#d2d2d7]">"{currentCase.pedagogy.goldenRule}"</span>
+                            </div>
+                          </div>
+
+                          {/* Botão de Avanço Imediato */}
+                          <motion.button
+                            whileHover={{ scale: 1.02, y: -1 }}
+                            whileTap={{ scale: 0.97 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                            onClick={handleNextCase}
+                            className="w-full py-3.5 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold text-xs flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg shadow-blue-500/25"
+                          >
+                            <span>
+                              {currentCaseIndex < levelCases.length - 1
+                                ? 'Próximo Caso da Investigação'
+                                : currentLevel !== 'avancado'
+                                ? 'Avançar para o Próximo Nível'
+                                : 'Ver Conclusão da Investigação'}
+                            </span>
+                            <ChevronRight className="w-4 h-4" />
+                          </motion.button>
+                        </motion.div>
                       ) : (
-                        <XCircle className="w-5 h-5 text-[#ff3b30] flex-shrink-0 mt-0.5" />
+                        /* FLUXO B: Se ERROU ou ACERTOU PARCIAL, aciona o TREINO DE REFORÇO FORENSE */
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 rounded-2xl bg-[#1c1c1e] border border-[#ff9f0a]/30 space-y-3.5 shadow-xl"
+                        >
+                          <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
+                            <div className="flex items-center space-x-2 text-xs font-semibold text-[#ff9f0a]">
+                              <RotateCcw className="w-4 h-4" />
+                              <span>{currentCase.reinforcementDrill.title}</span>
+                            </div>
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#ff9f0a]/15 text-[#ff9f0a] border border-[#ff9f0a]/30">
+                              Reforço Prático (+15 XP)
+                            </span>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-white leading-relaxed">
+                              {currentCase.reinforcementDrill.question}
+                            </p>
+                            {currentCase.reinforcementDrill.context && (
+                              <p className="text-[11px] text-[#86868b]">
+                                💡 {currentCase.reinforcementDrill.context}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* 3 Opções de Reforço Interativo */}
+                          <div className="space-y-2 pt-1">
+                            {currentCase.reinforcementDrill.options.map((opt) => {
+                              const isSelected = drillSelectedOptionId === opt.id;
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() => handleDrillOptionSelect(opt)}
+                                  className={`w-full p-3 rounded-xl border text-left transition flex flex-col space-y-1.5 cursor-pointer ${
+                                    isSelected
+                                      ? opt.isCorrect
+                                        ? 'bg-[#30d158]/15 border-[#30d158] text-white shadow-md shadow-green-500/10'
+                                        : 'bg-[#ff3b30]/15 border-[#ff3b30] text-white'
+                                      : 'bg-white/[0.03] border-white/[0.08] text-[#d2d2d7] hover:border-white/[0.2] hover:text-white'
+                                  }`}
+                                >
+                                  <div className="flex items-start space-x-2">
+                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 text-[9px] font-bold ${
+                                      isSelected
+                                        ? opt.isCorrect
+                                          ? 'border-[#30d158] bg-[#30d158] text-black'
+                                          : 'border-[#ff3b30] bg-[#ff3b30] text-white'
+                                        : 'border-white/[0.2] text-[#86868b]'
+                                    }`}>
+                                      {isSelected ? (opt.isCorrect ? '✓' : '✕') : '•'}
+                                    </div>
+                                    <span className="text-xs leading-relaxed font-medium">
+                                      {opt.text}
+                                    </span>
+                                  </div>
+
+                                  {/* Feedback imediato */}
+                                  {isSelected && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: 'auto' }}
+                                      className={`text-[11px] p-2 rounded-lg leading-relaxed ${
+                                        opt.isCorrect
+                                          ? 'bg-[#30d158]/20 text-[#30d158] font-medium'
+                                          : 'bg-[#ff3b30]/20 text-[#ff453a]'
+                                      }`}
+                                    >
+                                      {opt.feedback}
+                                    </motion.div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Botão de Avançar Liberado Somente ao Acertar o Reforço */}
+                          {drillSuccess && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="pt-2"
+                            >
+                              <motion.button
+                                whileHover={{ scale: 1.02, y: -1 }}
+                                whileTap={{ scale: 0.97 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                                onClick={handleNextCase}
+                                className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#30d158] to-[#28cd41] text-black font-bold text-xs flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg shadow-green-500/25"
+                              >
+                                <span>Conceito Dominado! Avançar para o Próximo Caso</span>
+                                <ChevronRight className="w-4 h-4 text-black" />
+                              </motion.button>
+                            </motion.div>
+                          )}
+                        </motion.div>
                       )}
-                      <div className="space-y-1">
-                        <h4 className="font-semibold text-sm">
-                          {isHonor && (currentCase.isScam ? '🏆 GOLPE DESMASCARADO!' : '🛡️ LIBERADO COM SUCESSO!')}
-                          {isPartial && '⚠️ Acertou que era Golpe, mas vacilou na pista!'}
-                          {isFail && (currentAnswerData.penaltyXp ? `❌ VOCÊ CAIU NO GOLPE! (-${currentAnswerData.penaltyXp} XP)` : '❌ VOCÊ CAIU NO GOLPE!')}
-                        </h4>
-                        <p className="text-xs text-[#d2d2d7] leading-relaxed">
-                          {isHonor && (currentCase.isScam ? 'Mandou muito bem! Você pegou o truque do criminoso e protegeu a vítima.' : 'Boa percepção! Você reconheceu a comunicação oficial sem cair em paranoia.')}
-                          {isPartial && 'Você desconfiou certo, mas a pista que comprovava tudo era outra. Na vida real, repare sempre nos detalhes (+50% XP).'}
-                          {isFail && (currentCase.isScam ? 'Você acreditou na mensagem e teria caído no golpe do criminoso!' : 'Você desconfiou de uma notificação oficial verdadeira e importante.')}
-                        </p>
-                        {currentAnswerData.bonusXp > 0 && (
-                          <p className="text-xs text-[#30d158]">
-                            +{currentAnswerData.bonusXp} XP bônus por pistas investigadas!
-                          </p>
-                        )}
-                        {currentAnswerData.comboBonus > 0 && (
-                          <p className="text-xs text-[#ff9f0a]">
-                            +{currentAnswerData.comboBonus} XP bônus de combo consecutivo!
-                          </p>
-                        )}
-                      </div>
-                    </motion.div>
+                    </div>
                   );
                 })()}
-
-                {/* A Pista Principal */}
-                <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] space-y-1 text-xs">
-                  <div className="flex items-center gap-1.5 text-[#2997ff] font-semibold text-xs">
-                    <Search className="w-3.5 h-3.5" />
-                    <span>A Prova Pericial Decisiva:</span>
-                  </div>
-                  <p className="text-white font-medium leading-relaxed text-xs">
-                    {currentCase.keyEvidenceReason}
-                  </p>
-                </div>
-
-                {/* Síntese Pedagógica de Proteção Familiar (Pílula Educativa) */}
-                <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 shadow-md">
-                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                    <div className="flex items-center space-x-2">
-                      <Brain className="w-4 h-4 text-[#ff9f0a]" />
-                      <span className="text-xs font-semibold text-white">Análise Pedagógica do Caso</span>
-                    </div>
-
-                    <div className="flex p-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px]">
-                      <button
-                        onClick={() => setPedagogicalMode('kids')}
-                        className={`px-2.5 py-0.5 rounded-full font-medium transition cursor-pointer flex items-center space-x-1 ${
-                          pedagogicalMode === 'kids'
-                            ? 'bg-white/20 text-white'
-                            : 'text-[#86868b] hover:text-white'
-                        }`}
-                      >
-                        <Smile className="w-3 h-3" />
-                        <span>Jovens</span>
-                      </button>
-                      <button
-                        onClick={() => setPedagogicalMode('adult')}
-                        className={`px-2.5 py-0.5 rounded-full font-medium transition cursor-pointer flex items-center space-x-1 ${
-                          pedagogicalMode === 'adult'
-                            ? 'bg-white/20 text-white'
-                            : 'text-[#86868b] hover:text-white'
-                        }`}
-                      >
-                        <Scale className="w-3 h-3" />
-                        <span>Adultos</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Gatilho Mental */}
-                  <div className="text-xs text-[#d2d2d7] leading-relaxed flex items-start gap-2">
-                    <span className="text-[#ff9f0a] font-semibold flex-shrink-0">Gatilho mental:</span>
-                    <span>{currentCase.pedagogy.emotionalTrigger}</span>
-                  </div>
-
-                  {/* Analogia ou Protocolo */}
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.04] text-xs text-[#d2d2d7] leading-relaxed">
-                    {pedagogicalMode === 'kids' ? (
-                      <p>
-                        <strong className="text-white">Analogia para Jovens: </strong>
-                        {currentCase.pedagogy.kidsAnalogy}
-                      </p>
-                    ) : (
-                      <p>
-                        <strong className="text-white">Protocolo para Adultos: </strong>
-                        {currentCase.pedagogy.adultRemedy}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Regra de Ouro Familiar */}
-                  <div className="p-3 rounded-xl bg-[#30d158]/10 border border-[#30d158]/20 text-[11px] flex items-start gap-2 text-white">
-                    <ShieldCheck className="w-4 h-4 text-[#30d158] flex-shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="text-[#30d158]">Regra de Ouro para a Família: </strong>
-                      <span className="text-[#f5f5f7] font-medium">"{currentCase.pedagogy.goldenRule}"</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Explicação Geral da Investigação */}
-                <div className="text-xs text-[#a1a1a6] leading-relaxed px-1">
-                  <p>{currentCase.explanation}</p>
-                </div>
-
-                {/* Botão de Avanço com Spring Hover */}
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -1 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                  onClick={handleNextCase}
-                  className="w-full py-3.5 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold text-xs flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg shadow-blue-500/25"
-                >
-                  <span>
-                    {currentCaseIndex < levelCases.length - 1
-                      ? 'Próximo Caso da Investigação'
-                      : currentLevel !== 'avancado'
-                      ? 'Avançar para o Próximo Nível'
-                      : 'Ver Conclusão da Investigação'}
-                  </span>
-                  <ChevronRight className="w-4 h-4" />
-                </motion.button>
               </motion.div>
             )}
           </div>

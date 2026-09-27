@@ -35,6 +35,20 @@ export interface CasePedagogy {
   goldenRule: string;
 }
 
+export interface ReinforcementOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+  feedback: string;
+}
+
+export interface ReinforcementDrill {
+  title: string;
+  question: string;
+  context?: string;
+  options: ReinforcementOption[];
+}
+
 export interface ScamCase {
   id: string;
   level: ScamLevel;
@@ -57,6 +71,7 @@ export interface ScamCase {
   explanation: string;
   realWorldTip: string;
   pedagogy: CasePedagogy;
+  reinforcementDrill: ReinforcementDrill;
 }
 
 export interface Badge {
@@ -213,6 +228,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Se transferiu, acione o botão "Contestar Pix / MED" no app do banco nos primeiros 30 minutos.',
       goldenRule: 'Número novo pedindo dinheiro? Ligue no número antigo e fale por voz!',
     },
+    reinforcementDrill: {
+      title: "Treino de Olho: O Parente com Número Novo",
+      question: "Seu filho ou mãe te mandou mensagem de um número novo dizendo que quebrou o celular e precisa de R$ 900 com urgência. Qual é a ÚNICA atitude correta?",
+      context: "Na vida real, a pressa e o medo de deixar o parente desamparado fazem milhares de pessoas transferirem sem pensar.",
+      options: [
+            {
+                  id: "opt-1-a",
+                  text: "Ligar imediatamente para o número ANTIGO dele ou fazer uma chamada de vídeo para ouvir a voz real.",
+                  isCorrect: true,
+                  feedback: "Exato! A voz humana em tempo real no contato conhecido é a defesa definitiva contra golpistas."
+            },
+            {
+                  id: "opt-1-b",
+                  text: "Pedir uma foto do documento dele pelo próprio chat do WhatsApp novo.",
+                  isCorrect: false,
+                  feedback: "Perigoso! Golpistas costumam ter fotos de documentos vazados na internet."
+            },
+            {
+                  id: "opt-1-c",
+                  text: "Fazer o Pix para a chave indicada, pois a foto do perfil é realmente a dele.",
+                  isCorrect: false,
+                  feedback: "Armadilha! Fotos de perfil do WhatsApp são públicas e qualquer criminoso pode copiar em 5 segundos."
+            }
+      ]
+},
   },
   {
     id: 'case-2-correios',
@@ -325,6 +365,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Se pagou o Pix falso, tire prints da tela e abra contestação MED imediata no app do seu banco.',
       goldenRule: 'Correios nunca mandam link de Pix por SMS!',
     },
+    reinforcementDrill: {
+      title: "Treino de Olho: Endereços Oficiais vs Falsos",
+      question: "Qual dos links abaixo é o ÚNICO endereço autêntico dos Correios do Brasil para rastrear encomendas?",
+      context: "Criminosos compram domínios com finais estranhos (.online, .top, .site) para clonar páginas oficiais.",
+      options: [
+            {
+                  id: "opt-2-a",
+                  text: "https://rastreamento.correios.com.br (domínio oficial terminando em .com.br)",
+                  isCorrect: true,
+                  feedback: "Correto! Os Correios do Brasil sempre utilizam o domínio oficial correios.com.br."
+            },
+            {
+                  id: "opt-2-b",
+                  text: "https://correios-taxas-alfandega.online/pagar",
+                  isCorrect: false,
+                  feedback: "Incorreto! Finais como .online ou .site são comprados anonimamente para aplicar golpes."
+            },
+            {
+                  id: "opt-2-c",
+                  text: "https://rastreio-correios.com.br.tk/encomenda",
+                  isCorrect: false,
+                  feedback: "Atenção ao truque! O domínio real aqui é .tk no final; o correios.com.br é apenas um subdomínio falso."
+            }
+      ]
+},
   },
   {
     id: 'case-3-compra-aprovada',
@@ -432,6 +497,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Se realmente não reconhecer a compra no app, use a função "Bloquear Cartão" direto no aplicativo oficial.',
       goldenRule: 'Notificação do app oficial sem link externo é proteção, não golpe!',
     },
+    reinforcementDrill: {
+      title: "Treino de Vigilância: Notificação Real vs Golpe",
+      question: "Como você diferencia um aviso legítimo do seu banco de uma notificação forjada por golpistas?",
+      context: "Muitas pessoas entram em pânico com notificações de compras e acabam caindo em armadilhas de falsas centrais.",
+      options: [
+            {
+                  id: "opt-3-a",
+                  text: "Avisos reais do app apenas informam a compra e NUNCA incluem links de internet nem pedem para fazer Pix.",
+                  isCorrect: true,
+                  feedback: "Perfeito! Bancos usam o push para transparência. Golpistas sempre colocam um link ou um número para você ligar no desespero."
+            },
+            {
+                  id: "opt-3-b",
+                  text: "Avisos reais exigem que você ligue em até 10 minutos para confirmar seu CPF.",
+                  isCorrect: false,
+                  feedback: "Incorreto! Impor contagem regressiva para falar com atendente é tática clássica de engenharia social."
+            },
+            {
+                  id: "opt-3-c",
+                  text: "Avisos reais cobram uma taxa de cancelamento caso você não reconheça o débito.",
+                  isCorrect: false,
+                  feedback: "Incorreto! O cancelamento de compras fraudulentas é direito do consumidor garantido sem nenhuma cobrança."
+            }
+      ]
+},
   },
 
   // ==========================================
@@ -548,6 +638,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Desligue e espere 5 minutos (para limpar a linha telefônica) antes de discar para o número oficial.',
       goldenRule: 'O banco NUNCA liga pedindo para você fazer um Pix!',
     },
+    reinforcementDrill: {
+      title: "Treino de Reação: A Ligação da Falsa Central",
+      question: "Uma gravação profissional te liga dizendo que uma compra de R$ 3.800 foi aprovada no seu cartão e transfere para um atendente. O que você faz?",
+      context: "Golpistas conseguem mascarar o número no visor do celular para parecer o 0800 do banco (BINA Spoofing).",
+      options: [
+            {
+                  id: "opt-4-a",
+                  text: "Desligar na hora, pegar seu cartão de crédito físico e discar você mesmo para o telefone do verso.",
+                  isCorrect: true,
+                  feedback: "Ação de mestre! Nunca aceite atendimento de chamada recebida. Desligue e você mesmo inicie a ligação pelo número oficial."
+            },
+            {
+                  id: "opt-4-b",
+                  text: "Fazer o Pix para a \"conta segura do Banco Central\" indicada pelo atendente para proteger seu saldo.",
+                  isCorrect: false,
+                  feedback: "Alerta grave! Não existe \"conta de segurança\" no sistema financeiro. Esse Pix vai direto para o bolso do criminoso."
+            },
+            {
+                  id: "opt-4-c",
+                  text: "Passar sua senha de 4 ou 6 dígitos para o atendente bloquear o cartão no sistema.",
+                  isCorrect: false,
+                  feedback: "Jamais! Funcionários do banco nunca solicitam a senha da sua conta ou cartão por telefone."
+            }
+      ]
+},
   },
   {
     id: 'case-5-loja-falsa-promocao',
@@ -660,6 +775,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Denuncie o anúncio no Instagram e nunca faça Pix para compras em sites desconhecidos.',
       goldenRule: 'Promoção boa demais? Entre no site oficial digitando pelo navegador!',
     },
+    reinforcementDrill: {
+      title: "Treino de Compras: Descontos Miraculosos na Internet",
+      question: "Você vê um anúncio nas redes sociais com um smartphone top de linha por R$ 399 no Pix (preço normal R$ 3.500). Qual é a conclusão pericial?",
+      context: "Preços abaixo do custo de fábrica combinados com exclusividade de Pix imediato são 100% de probabilidade de fraude.",
+      options: [
+            {
+                  id: "opt-5-a",
+                  text: "É golpe de engenharia social: produtos de alta demanda não são vendidos por uma fração do preço em sites que só aceitam Pix.",
+                  isCorrect: true,
+                  feedback: "Exatamente! Nenhuma loja real vende mercadorias com 90% de prejuízo. O objetivo é pegar seu Pix irreversível."
+            },
+            {
+                  id: "opt-5-b",
+                  text: "É seguro comprar se o site tiver o logotipo oficial da loja e o selo de frete grátis.",
+                  isCorrect: false,
+                  feedback: "Cuidado! Criminosos copiam logotipos e designs inteiros de lojas famosas em menos de 10 minutos."
+            },
+            {
+                  id: "opt-5-c",
+                  text: "É uma oportunidade real de liquidação de queima de estoque autorizada.",
+                  isCorrect: false,
+                  feedback: "Ilusão perigosa! Essa é a isca clássica que pega vítimas desavisadas no gatilho da ganância."
+            }
+      ]
+},
   },
   {
     id: 'case-6-sms-seguranca-real',
@@ -767,6 +907,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Se alguém te ligar pedindo o código recebido, desligue imediatamente.',
       goldenRule: 'Código de SMS é pessoal: nunca passe para ninguém por telefone!',
     },
+    reinforcementDrill: {
+      title: "Treino de Autenticação: O Código de 2 Fatores (2FA)",
+      question: "Você recebe um SMS do seu banco com o texto: \"Seu codigo de acesso: 829104. Nao informe a ninguem\". Em seguida, alguém te liga pedindo esse código. O que fazer?",
+      context: "O golpista já tem sua senha inicial e precisa apenas do código do SMS para esvaziar sua conta.",
+      options: [
+            {
+                  id: "opt-6-a",
+                  text: "NUNCA ditar nem enviar o código para ninguém: códigos de SMS são de uso exclusivo e pessoal.",
+                  isCorrect: true,
+                  feedback: "Correto! Códigos de 2FA são como chaves físicas da sua casa: se você entregar pelo telefone, o invasor entra."
+            },
+            {
+                  id: "opt-6-b",
+                  text: "Informar o código apenas se a pessoa souber seu nome completo e CPF.",
+                  isCorrect: false,
+                  feedback: "Perigo! Seus dados cadastrais básicos já vazaram na internet há anos. Isso não prova que a pessoa é do banco."
+            },
+            {
+                  id: "opt-6-c",
+                  text: "Digitar o código no teclado numérico da chamada telefônica.",
+                  isCorrect: false,
+                  feedback: "Incorreto! Teclados de telefone emitem tons DTMF que gravam o código digitado com facilidade."
+            }
+      ]
+},
   },
 
   // ==========================================
@@ -883,6 +1048,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Nunca transfira dinheiro de "garantia de tarefa". Se já transferiu, registre boletim de ocorrência e acione o MED no banco.',
       goldenRule: 'Trabalho de verdade NUNCA pede para você pagar para ser contratado!',
     },
+    reinforcementDrill: {
+      title: "Treino Trabalhista: A Oferta de Renda Extra Fácil",
+      question: "Uma suposta empresa te contrata para dar curtidas em vídeos no YouTube e promete R$ 300 por dia, mas exige um \"depósito de garantia de R$ 150\" para liberar pagamentos. O que isso significa?",
+      context: "O golpe da tarefa paga R$ 20 no primeiro dia como isca para induzir a vítima a transferir milhares de reais depois.",
+      options: [
+            {
+                  id: "opt-7-a",
+                  text: "É um golpe de pirâmide financeira: trabalho honesto NUNCA cobra dinheiro do trabalhador para poder trabalhar.",
+                  isCorrect: true,
+                  feedback: "Regra de ouro! Se você precisa pagar para receber seu salário, você não é funcionário: é a vítima."
+            },
+            {
+                  id: "opt-7-b",
+                  text: "É uma taxa de treinamento comum em plataformas de contratação remota.",
+                  isCorrect: false,
+                  feedback: "Falso! Nenhuma empresa séria cobra taxa de treinamento ou garantia financeira de candidatos."
+            },
+            {
+                  id: "opt-7-c",
+                  text: "É seguro pagar os R$ 150 se eles tiverem cumprido o primeiro pagamento de R$ 20.",
+                  isCorrect: false,
+                  feedback: "Armadilha! Os primeiros R$ 20 são exatamente a isca usada para fazer você confiar e perder quantias muito maiores."
+            }
+      ]
+},
   },
   {
     id: 'case-8-receita-ecac',
@@ -990,6 +1180,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Basta entrar na aba "Meu Imposto de Renda" no e-CAC e anexar a foto da nota fiscal do médico.',
       goldenRule: 'Dentro do portal oficial Gov.br, a notificação é real: não ignore prazos!',
     },
+    reinforcementDrill: {
+      title: "Treino de Cidadania: Como Auditar Intimações Governamentais",
+      question: "Você quer verificar se uma suposta notificação de malha fina do Imposto de Renda é verdadeira. Como proceder sem risco?",
+      context: "Golpistas mandam e-mails falsos com boletos. A Receita Federal oficial atua exclusivamente pela Caixa Postal do Gov.br.",
+      options: [
+            {
+                  id: "opt-8-a",
+                  text: "Abrir seu navegador, digitar cav.receita.fazenda.gov.br e entrar com seu Gov.br nível Prata ou Ouro para checar a Caixa Postal interna.",
+                  isCorrect: true,
+                  feedback: "Perfeito! Essa é a cadeia de custódia oficial. O portal Gov.br acessado voluntariamente é imune a phishing externo."
+            },
+            {
+                  id: "opt-8-b",
+                  text: "Clicar no link recebido no e-mail que diz \"Acesse aqui sua guia DARF com desconto de 50%\".",
+                  isCorrect: false,
+                  feedback: "Golpe perigoso! A Receita Federal nunca envia boletos ou cobranças tributárias diretas por e-mail."
+            },
+            {
+                  id: "opt-8-c",
+                  text: "Ignorar qualquer notificação fiscal porque a Receita só tem autoridade se intimar pessoalmente por viatura policial.",
+                  isCorrect: false,
+                  feedback: "Erro grave! Ignorar intimações legítimas dentro do e-CAC causa cancelamento de CPF e retenção de restituição."
+            }
+      ]
+},
   },
   {
     id: 'case-9-mao-fantasma-suporte',
@@ -1102,6 +1317,31 @@ export const SCAM_CASES: ScamCase[] = [
       adultRemedy: 'Se instalou e passou o código, desligue o Wi-Fi e os dados móveis do celular imediatamente ou desligue o aparelho na tomada/botão.',
       goldenRule: 'Nunca instale aplicativos no seu celular a pedido de quem te ligou!',
     },
+    reinforcementDrill: {
+      title: "Treino de Dispositivos: O Golpe do Acesso Remoto (Mão Fantasma)",
+      question: "Um atendente telefônico diz que seu celular tem um vírus perigoso e ordena que você instale o app \"AnyDesk\" ou \"TeamViewer\" para limpeza. Por que isso é um golpe?",
+      context: "Esses aplicativos concedem permissão de espelhamento e controle remoto da tela, permitindo ao criminoso operar seu app bancário.",
+      options: [
+            {
+                  id: "opt-9-a",
+                  text: "Esses apps são softwares de controle remoto total: se você instalar e passar o código, o criminoso mexe no seu celular e faz Pix de longe.",
+                  isCorrect: true,
+                  feedback: "Na mosca! Nenhum banco do Brasil jamais pede para clientes instalarem aplicativos de controle remoto."
+            },
+            {
+                  id: "opt-9-b",
+                  text: "O golpe ocorre apenas porque o AnyDesk é um vírus ilegal proibido na Google Play Store.",
+                  isCorrect: false,
+                  feedback: "Incorreto! O AnyDesk é um software legítimo para profissionais de TI, mas criminosos o usam como ferramenta de invasão em leigos."
+            },
+            {
+                  id: "opt-9-c",
+                  text: "Não há perigo se você mantiver o celular virado para baixo durante a ligação.",
+                  isCorrect: false,
+                  feedback: "Mito! O controle remoto funciona pela internet. Virar o aparelho não impede transferências em segundo plano."
+            }
+      ]
+},
   },
 ];
 
