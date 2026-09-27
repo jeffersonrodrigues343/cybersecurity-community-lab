@@ -174,11 +174,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   // Veredito e Julgamento do Caso pelo Detetive
   const handleProtocolReport = () => {
     if (selectedVerdict === null) return;
-    if (selectedVerdict === true && selectedHypothesis === null) return;
+    if (selectedHypothesis === null) return;
     if (answers[currentCase.id]?.answered) return;
 
     const isCorrect = selectedVerdict === currentCase.isScam;
-    const hypothesisCorrect = selectedVerdict === true ? selectedHypothesis === currentCase.correctEvidenceIndex : true;
+    const hypothesisCorrect = selectedHypothesis === currentCase.correctEvidenceIndex;
     const cluesFoundCount = (discoveredClues[currentCase.id] || []).length;
 
     // Bônus de 10 XP por cada pista investigada antes do laudo
@@ -698,62 +698,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </p>
             </div>
 
-            {/* Bloco Pedagógico Integrado (Lentes Jovens vs Adultos) */}
-            <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-[#2997ff]" />
-                  <span className="text-xs font-semibold text-white">Análise Pedagógica do Caso</span>
-                </div>
-
-                <div className="flex p-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs">
-                  <button
-                    onClick={() => setPedagogicalMode('kids')}
-                    className={`px-3 py-1 rounded-full font-medium transition cursor-pointer flex items-center space-x-1.5 ${
-                      pedagogicalMode === 'kids'
-                        ? 'bg-white/20 text-white'
-                        : 'text-[#86868b] hover:text-white'
-                    }`}
-                  >
-                    <Smile className="w-3.5 h-3.5" />
-                    <span>Jovens & Família</span>
-                  </button>
-                  <button
-                    onClick={() => setPedagogicalMode('adult')}
-                    className={`px-3 py-1 rounded-full font-medium transition cursor-pointer flex items-center space-x-1.5 ${
-                      pedagogicalMode === 'adult'
-                        ? 'bg-white/20 text-white'
-                        : 'text-[#86868b] hover:text-white'
-                    }`}
-                  >
-                    <Scale className="w-3.5 h-3.5" />
-                    <span>Adultos & Jurídico</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="text-xs text-[#d2d2d7] leading-relaxed">
-                {pedagogicalMode === 'kids' ? (
-                  <p>
-                    <strong className="text-white">Analogia para Jovens: </strong>
-                    {currentCase.pedagogy.kidsAnalogy}
-                  </p>
-                ) : (
-                  <p>
-                    <strong className="text-white">Protocolo para Adultos: </strong>
-                    {currentCase.pedagogy.adultRemedy}
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
-                <span className="text-[#86868b] flex items-center gap-1.5">
-                  <Brain className="w-3.5 h-3.5 text-[#ff9f0a]" />
-                  <span><strong className="text-[#ff9f0a]">Gatilho mental: </strong>{currentCase.pedagogy.emotionalTrigger}</span>
-                </span>
-                <span className="text-[#30d158] font-medium flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#30d158]" />
-                  "{currentCase.pedagogy.goldenRule}"
+            {/* Orientação ao Investigador (Sem Spoilers) */}
+            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between text-xs text-[#86868b]">
+              <div className="flex items-center space-x-2">
+                <Search className="w-4 h-4 text-[#2997ff] flex-shrink-0" />
+                <span className="leading-relaxed">
+                  Use as <strong className="text-white">Ferramentas de Investigação</strong> ao lado para auditar dados, titulares e canais antes de emitir seu veredito.
                 </span>
               </div>
             </div>
@@ -979,18 +929,22 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   </motion.button>
                 </div>
 
-                {/* Etapa 2: Se marcou golpe, abre a gaveta das pistas que entregaram o golpista */}
+                {/* Etapa 2: Abre a gaveta de evidências para sustentar o laudo */}
                 <AnimatePresence>
-                  {selectedVerdict === true && (
+                  {selectedVerdict !== null && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="space-y-2 pt-2 border-t border-white/[0.08]"
+                      className="space-y-2.5 pt-2 border-t border-white/[0.08]"
                     >
                       <label className="text-xs font-semibold text-white flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-[#ff9f0a]" />
-                        <span>O que entregou o golpista? (Escolha a pista principal)</span>
+                        <span>
+                          {selectedVerdict === true
+                            ? 'Qual evidência comprova o golpe? (Fundamentação Pericial)'
+                            : 'Qual evidência atesta que é seguro? (Fator de Legitimidade)'}
+                        </span>
                       </label>
                       <div className="space-y-2">
                         {currentCase.evidenceHypotheses.map((hypo, idx) => {
@@ -1025,25 +979,27 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   )}
                 </AnimatePresence>
 
-                {/* Botão de Confirmação Rápida */}
+                {/* Botão de Confirmação com Martelo */}
                 {selectedVerdict !== null && (
                   <motion.button
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    whileHover={selectedVerdict === false || selectedHypothesis !== null ? { scale: 1.02, y: -1 } : {}}
-                    whileTap={selectedVerdict === false || selectedHypothesis !== null ? { scale: 0.98 } : {}}
-                    disabled={selectedVerdict === true && selectedHypothesis === null}
+                    whileHover={selectedHypothesis !== null ? { scale: 1.02, y: -1 } : {}}
+                    whileTap={selectedHypothesis !== null ? { scale: 0.98 } : {}}
+                    disabled={selectedHypothesis === null}
                     onClick={handleProtocolReport}
                     className={`w-full py-3.5 px-4 rounded-full font-bold text-xs flex items-center justify-center space-x-2 transition ${
-                      selectedVerdict === false || selectedHypothesis !== null
+                      selectedHypothesis !== null
                         ? 'bg-gradient-to-r from-[#0071e3] to-[#2997ff] text-white cursor-pointer shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40'
                         : 'bg-white/[0.06] border border-white/[0.08] text-[#71717a] cursor-not-allowed'
                     }`}
                   >
                     <Gavel className="w-4 h-4" />
                     <span>
-                      {selectedVerdict === true
-                        ? (selectedHypothesis !== null ? '🔨 Bater o Martelo: É Golpe!' : 'Selecione a pista acima para confirmar')
+                      {selectedHypothesis === null
+                        ? 'Selecione a fundamentação pericial acima'
+                        : selectedVerdict === true
+                        ? '🔨 Bater o Martelo: É Golpe!'
                         : '🔨 Bater o Martelo: É Seguro!'}
                     </span>
                   </motion.button>
@@ -1148,25 +1104,83 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
                 {/* A Pista Principal */}
                 <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] space-y-1 text-xs">
-                  <div className="flex items-center gap-1.5 text-[#2997ff] font-semibold">
+                  <div className="flex items-center gap-1.5 text-[#2997ff] font-semibold text-xs">
                     <Search className="w-3.5 h-3.5" />
-                    <span>A Pista Decisiva:</span>
+                    <span>A Prova Pericial Decisiva:</span>
                   </div>
-                  <p className="text-white font-medium leading-relaxed">
+                  <p className="text-white font-medium leading-relaxed text-xs">
                     {currentCase.keyEvidenceReason}
                   </p>
                 </div>
 
-                {/* Explicação Rápida e Dica Prática */}
-                <div className="space-y-2 text-xs text-[#d2d2d7]">
-                  <p className="leading-relaxed">{currentCase.explanation}</p>
-                  <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-[11px] flex items-start gap-2.5">
-                    <ShieldCheck className="w-4 h-4 text-[#30d158] flex-shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="text-[#30d158]">Regra de Ouro: </strong>
-                      <span>{currentCase.realWorldTip}</span>
+                {/* Síntese Pedagógica de Proteção Familiar (Pílula Educativa) */}
+                <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 shadow-md">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                    <div className="flex items-center space-x-2">
+                      <Brain className="w-4 h-4 text-[#ff9f0a]" />
+                      <span className="text-xs font-semibold text-white">Análise Pedagógica do Caso</span>
+                    </div>
+
+                    <div className="flex p-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px]">
+                      <button
+                        onClick={() => setPedagogicalMode('kids')}
+                        className={`px-2.5 py-0.5 rounded-full font-medium transition cursor-pointer flex items-center space-x-1 ${
+                          pedagogicalMode === 'kids'
+                            ? 'bg-white/20 text-white'
+                            : 'text-[#86868b] hover:text-white'
+                        }`}
+                      >
+                        <Smile className="w-3 h-3" />
+                        <span>Jovens</span>
+                      </button>
+                      <button
+                        onClick={() => setPedagogicalMode('adult')}
+                        className={`px-2.5 py-0.5 rounded-full font-medium transition cursor-pointer flex items-center space-x-1 ${
+                          pedagogicalMode === 'adult'
+                            ? 'bg-white/20 text-white'
+                            : 'text-[#86868b] hover:text-white'
+                        }`}
+                      >
+                        <Scale className="w-3 h-3" />
+                        <span>Adultos</span>
+                      </button>
                     </div>
                   </div>
+
+                  {/* Gatilho Mental */}
+                  <div className="text-xs text-[#d2d2d7] leading-relaxed flex items-start gap-2">
+                    <span className="text-[#ff9f0a] font-semibold flex-shrink-0">Gatilho mental:</span>
+                    <span>{currentCase.pedagogy.emotionalTrigger}</span>
+                  </div>
+
+                  {/* Analogia ou Protocolo */}
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.04] text-xs text-[#d2d2d7] leading-relaxed">
+                    {pedagogicalMode === 'kids' ? (
+                      <p>
+                        <strong className="text-white">Analogia para Jovens: </strong>
+                        {currentCase.pedagogy.kidsAnalogy}
+                      </p>
+                    ) : (
+                      <p>
+                        <strong className="text-white">Protocolo para Adultos: </strong>
+                        {currentCase.pedagogy.adultRemedy}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Regra de Ouro Familiar */}
+                  <div className="p-3 rounded-xl bg-[#30d158]/10 border border-[#30d158]/20 text-[11px] flex items-start gap-2 text-white">
+                    <ShieldCheck className="w-4 h-4 text-[#30d158] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-[#30d158]">Regra de Ouro para a Família: </strong>
+                      <span className="text-[#f5f5f7] font-medium">"{currentCase.pedagogy.goldenRule}"</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Explicação Geral da Investigação */}
+                <div className="text-xs text-[#a1a1a6] leading-relaxed px-1">
+                  <p>{currentCase.explanation}</p>
                 </div>
 
                 {/* Botão de Avanço com Spring Hover */}
