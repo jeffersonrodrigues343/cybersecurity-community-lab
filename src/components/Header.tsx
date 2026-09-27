@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Shield, Award, Volume2, VolumeX, Info, HelpCircle } from 'lucide-react';
 import { sound } from '../utils/audio';
 import { calculatePlayerRank } from '../data/scamsData';
+import { AnimatedCounter } from './AnimatedCounter';
 
 interface HeaderProps {
   score: number;
@@ -81,15 +82,16 @@ export const Header = ({ score, totalScore, completedCount, onOpenReportModal, o
             <span>/ 9 casos</span>
           </div>
 
-          {/* XP Pill with Motion */}
+          {/* XP Pill with Motion & Animated Counter */}
           <motion.div 
             key={score}
-            initial={{ scale: 1.05 }}
+            initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
-            className="flex items-center space-x-1 px-3 py-1 rounded-full bg-white/[0.08] border border-white/[0.1] text-xs font-medium text-white"
+            transition={{ type: "spring", stiffness: 400, damping: 22 }}
+            className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/[0.08] border border-white/[0.12] text-xs font-medium text-white shadow-sm"
           >
             <span className="text-xs">{playerRank.icon}</span>
-            <span className="text-[#2997ff] font-semibold">{score}</span>
+            <AnimatedCounter value={score} className="text-[#2997ff] font-semibold" />
             <span className="text-[#86868b] text-[11px]">/ {totalScore} XP</span>
           </motion.div>
 

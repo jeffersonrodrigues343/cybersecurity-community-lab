@@ -175,3 +175,69 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3a3a3c;
 }
+
+/* Apple Fluid Micro-Interactions & Physics */
+.apple-interactive-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
+}
+
+.apple-interactive-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.7);
+}
+
+/* Apple Sheen Reflection */
+.apple-sheen-box {
+  position: relative;
+  overflow: hidden;
+}
+
+.apple-sheen-box::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -150%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 55%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  transition: transform 0.75s ease-in-out;
+  pointer-events: none;
+}
+
+.apple-sheen-box:hover::after {
+  transform: translate(120%, 0) rotate(25deg);
+}
+
+/* Apple Haptic Shake Animation */
+@keyframes apple-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.apple-shake {
+  animation: apple-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Apple Ambient Glow Pulse */
+@keyframes apple-pulse-glow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.apple-glow-pulse {
+  animation: apple-pulse-glow 3s infinite ease-in-out;
+}
