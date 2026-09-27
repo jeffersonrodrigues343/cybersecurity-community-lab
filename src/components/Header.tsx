@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Shield, Award, Volume2, VolumeX, Info, HelpCircle } from 'lucide-react';
+import { Shield, Award, Volume2, VolumeX, Info, HelpCircle, Target } from 'lucide-react';
 import { sound } from '../utils/audio';
 import { calculatePlayerRank } from '../data/scamsData';
 import { AnimatedCounter } from './AnimatedCounter';
@@ -78,6 +78,7 @@ export const Header = ({ score, totalScore, completedCount, onOpenReportModal, o
 
           {/* Progress Capsule */}
           <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/[0.06] text-xs text-[#86868b]">
+            <Target className="w-3 h-3 text-[#2997ff]" />
             <span className="text-white font-medium">{completedCount}</span>
             <span>/ 9 casos</span>
           </div>

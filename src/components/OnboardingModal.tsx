@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Search, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
+import { Search, ChevronRight, Sparkles, FileText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { sound } from '../utils/audio';
 
 interface OnboardingModalProps {
@@ -79,7 +79,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                 {/* Bloco 1: A Mensagem */}
                 <div className="p-4 rounded-2xl bg-[#1c1c1e] border border-white/[0.08] flex items-start space-x-3.5 hover:border-white/[0.15] transition">
                   <div className="w-9 h-9 rounded-xl bg-[#0071e3]/15 border border-[#0071e3]/30 flex items-center justify-center flex-shrink-0 text-[#2997ff]">
-                    <Shield className="w-4 h-4" />
+                    <FileText className="w-4 h-4" />
                   </div>
                   <div className="space-y-0.5">
                     <h4 className="text-xs sm:text-sm font-semibold text-white">
@@ -109,14 +109,22 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                 {/* Bloco 3: O Veredito */}
                 <div className="p-4 rounded-2xl bg-[#1c1c1e] border border-white/[0.08] flex items-start space-x-3.5 hover:border-white/[0.15] transition">
                   <div className="w-9 h-9 rounded-xl bg-[#30d158]/15 border border-[#30d158]/30 flex items-center justify-center flex-shrink-0 text-[#30d158]">
-                    <CheckCircle2 className="w-4 h-4" />
+                    <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div className="space-y-0.5">
                     <h4 className="text-xs sm:text-sm font-semibold text-white">
                       3. Emita seu Veredito
                     </h4>
-                    <p className="text-xs text-[#86868b] leading-relaxed">
-                      Decida se é <strong className="text-[#ff3b30]">🚨 GOLPE</strong> ou <strong className="text-[#30d158]">✅ SEGURO</strong>. Suba de patente e libere seu certificado!
+                    <p className="text-xs text-[#86868b] leading-relaxed flex flex-wrap items-center gap-1.5 pt-0.5">
+                      Decida entre
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#ff3b30]/15 text-[#ff3b30] font-semibold text-[11px] border border-[#ff3b30]/30">
+                        <ShieldAlert className="w-3 h-3" /> GOLPE
+                      </span>
+                      ou
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#30d158]/15 text-[#30d158] font-semibold text-[11px] border border-[#30d158]/30">
+                        <ShieldCheck className="w-3 h-3" /> SEGURO
+                      </span>.
+                      Suba de patente e libere seu certificado!
                     </p>
                   </div>
                 </div>

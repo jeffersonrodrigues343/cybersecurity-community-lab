@@ -14,10 +14,23 @@ import {
   Trophy,
   MessageSquare,
   Phone,
+  PhoneCall,
   Mail,
   FileText,
   HelpCircle,
   TrendingUp,
+  Globe,
+  CreditCard,
+  Brain,
+  Server,
+  Clock,
+  Smile,
+  Scale,
+  Lightbulb,
+  Zap,
+  ShoppingBag,
+  Briefcase,
+  Lock,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -271,6 +284,75 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     }
   };
 
+  const getLevelIcon = (level: ScamLevel) => {
+    switch (level) {
+      case 'basico':
+        return <ShieldCheck className="w-3.5 h-3.5 text-[#30d158]" />;
+      case 'medio':
+        return <AlertTriangle className="w-3.5 h-3.5 text-[#ff9f0a]" />;
+      case 'avancado':
+        return <Zap className="w-3.5 h-3.5 text-[#ff3b30]" />;
+    }
+  };
+
+  const getClueCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'whois':
+        return <Globe className="w-4 h-4 text-[#2997ff]" />;
+      case 'pix':
+        return <CreditCard className="w-4 h-4 text-[#30d158]" />;
+      case 'phone':
+        return <PhoneCall className="w-4 h-4 text-[#bf5af2]" />;
+      case 'behavior':
+        return <Brain className="w-4 h-4 text-[#ff9f0a]" />;
+      case 'system':
+      default:
+        return <Server className="w-4 h-4 text-[#64d2ff]" />;
+    }
+  };
+
+  const getClueCategoryBadgeStyle = (category: string) => {
+    switch (category) {
+      case 'whois':
+        return 'bg-[#2997ff]/10 border-[#2997ff]/25 text-[#2997ff]';
+      case 'pix':
+        return 'bg-[#30d158]/10 border-[#30d158]/25 text-[#30d158]';
+      case 'phone':
+        return 'bg-[#bf5af2]/10 border-[#bf5af2]/25 text-[#bf5af2]';
+      case 'behavior':
+        return 'bg-[#ff9f0a]/10 border-[#ff9f0a]/25 text-[#ff9f0a]';
+      case 'system':
+      default:
+        return 'bg-[#64d2ff]/10 border-[#64d2ff]/25 text-[#64d2ff]';
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const cat = category.toLowerCase();
+    if (cat.includes('família') || cat.includes('whatsapp')) {
+      return <MessageSquare className="w-4 h-4 text-[#30d158]" />;
+    }
+    if (cat.includes('sms') || cat.includes('encomenda')) {
+      return <Mail className="w-4 h-4 text-[#ff9f0a]" />;
+    }
+    if (cat.includes('segurança')) {
+      return <ShieldCheck className="w-4 h-4 text-[#30d158]" />;
+    }
+    if (cat.includes('0800') || cat.includes('central') || cat.includes('ligação')) {
+      return <PhoneCall className="w-4 h-4 text-[#ff3b30]" />;
+    }
+    if (cat.includes('comércio') || cat.includes('social') || cat.includes('loja')) {
+      return <ShoppingBag className="w-4 h-4 text-[#ff9f0a]" />;
+    }
+    if (cat.includes('vagas') || cat.includes('emprego') || cat.includes('tarefas')) {
+      return <Briefcase className="w-4 h-4 text-[#2997ff]" />;
+    }
+    if (cat.includes('fantasma') || cat.includes('malware') || cat.includes('aplicativo')) {
+      return <Lock className="w-4 h-4 text-[#ff3b30]" />;
+    }
+    return <ShieldAlert className="w-4 h-4 text-[#2997ff]" />;
+  };
+
   return (
     <div className="space-y-6 w-full">
       {/* Toast Apple de Conquista */}
@@ -324,12 +406,13 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 <button
                   key={level}
                   onClick={() => handleSelectLevel(level)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-2 cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-1.5 cursor-pointer ${
                     isCurrent
                       ? 'bg-white/20 text-white shadow-sm'
                       : 'text-[#86868b] hover:text-white'
                   }`}
                 >
+                  {getLevelIcon(level)}
                   <span className="capitalize">{level}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full ${
@@ -431,8 +514,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           {/* Header do Cartão Bento */}
           <div className="px-6 py-4 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-[#2997ff]">
-                <ShieldAlert className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
+                {getCategoryIcon(currentCase.category)}
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-white tracking-tight">{currentCase.title}</h3>
@@ -468,31 +551,38 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             {/* Linha de Metadados do Remetente */}
             <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-white/10 to-white/20 border border-white/10 flex items-center justify-center font-semibold text-white text-sm">
-                  {currentCase.sender.charAt(0)}
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-white/10 to-white/20 border border-white/10 flex items-center justify-center font-semibold text-white text-sm">
+                    {currentCase.sender.charAt(0)}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#161617] border border-white/15 flex items-center justify-center shadow-sm">
+                    {getChannelIcon(currentCase.channel)}
+                  </div>
                 </div>
                 <div>
                   <h3 className="font-semibold text-white text-sm">{currentCase.sender}</h3>
                   <div className="flex items-center space-x-2 text-xs text-[#86868b]">
-                    <span className="flex items-center space-x-1">
-                      {getChannelIcon(currentCase.channel)}
-                      <span className="capitalize">{currentCase.channel}</span>
-                    </span>
+                    <span className="capitalize">{currentCase.channel}</span>
                     <span>•</span>
-                    <span>Hoje às {currentCase.time}</span>
+                    <span className="flex items-center space-x-1">
+                      <Clock className="w-3 h-3 text-[#86868b]" />
+                      <span>Hoje às {currentCase.time}</span>
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <span className="text-xs font-semibold text-[#30d158] bg-[#30d158]/10 px-3 py-1 rounded-full border border-[#30d158]/20">
+              <span className="text-xs font-semibold text-[#30d158] bg-[#30d158]/10 px-3 py-1 rounded-full border border-[#30d158]/20 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-[#30d158]" />
                 +{currentCase.xpReward} XP Base
               </span>
             </div>
 
             {/* Caixa de Texto do Incidente (Autêntica, Ampla e Sem Poluição) */}
             <div className="bg-[#0c0c0d] border border-white/[0.08] rounded-2xl p-6 shadow-inner space-y-2">
-              <div className="text-[10px] text-[#86868b] uppercase tracking-wider font-mono">
-                Texto Original Recebido:
+              <div className="text-[10px] text-[#86868b] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#2997ff]" />
+                <span>Texto Original Recebido:</span>
               </div>
               <p className="text-white text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap select-text font-normal font-sans">
                 {currentCase.messageContent}
@@ -510,23 +600,25 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 <div className="flex p-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs">
                   <button
                     onClick={() => setPedagogicalMode('kids')}
-                    className={`px-3 py-1 rounded-full font-medium transition cursor-pointer ${
+                    className={`px-3 py-1 rounded-full font-medium transition cursor-pointer flex items-center space-x-1.5 ${
                       pedagogicalMode === 'kids'
                         ? 'bg-white/20 text-white'
                         : 'text-[#86868b] hover:text-white'
                     }`}
                   >
-                    Jovens & Família
+                    <Smile className="w-3.5 h-3.5" />
+                    <span>Jovens & Família</span>
                   </button>
                   <button
                     onClick={() => setPedagogicalMode('adult')}
-                    className={`px-3 py-1 rounded-full font-medium transition cursor-pointer ${
+                    className={`px-3 py-1 rounded-full font-medium transition cursor-pointer flex items-center space-x-1.5 ${
                       pedagogicalMode === 'adult'
                         ? 'bg-white/20 text-white'
                         : 'text-[#86868b] hover:text-white'
                     }`}
                   >
-                    Adultos & Jurídico
+                    <Scale className="w-3.5 h-3.5" />
+                    <span>Adultos & Jurídico</span>
                   </button>
                 </div>
               </div>
@@ -534,23 +626,24 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               <div className="text-xs text-[#d2d2d7] leading-relaxed">
                 {pedagogicalMode === 'kids' ? (
                   <p>
-                    <strong className="text-white">🧒 Analogia para Jovens: </strong>
+                    <strong className="text-white">Analogia para Jovens: </strong>
                     {currentCase.pedagogy.kidsAnalogy}
                   </p>
                 ) : (
                   <p>
-                    <strong className="text-white">⚖️ Protocolo para Adultos: </strong>
+                    <strong className="text-white">Protocolo para Adultos: </strong>
                     {currentCase.pedagogy.adultRemedy}
                   </p>
                 )}
               </div>
 
               <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
-                <span className="text-[#86868b]">
-                  <strong className="text-[#ff9f0a]">Gatilho mental: </strong>
-                  {currentCase.pedagogy.emotionalTrigger}
+                <span className="text-[#86868b] flex items-center gap-1.5">
+                  <Brain className="w-3.5 h-3.5 text-[#ff9f0a]" />
+                  <span><strong className="text-[#ff9f0a]">Gatilho mental: </strong>{currentCase.pedagogy.emotionalTrigger}</span>
                 </span>
-                <span className="text-[#30d158] font-medium">
+                <span className="text-[#30d158] font-medium flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#30d158]" />
                   "{currentCase.pedagogy.goldenRule}"
                 </span>
               </div>
@@ -602,23 +695,32 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   >
                     <button
                       onClick={() => handleInspectClue(clue)}
-                      className="w-full p-4 text-left flex items-center justify-between cursor-pointer"
+                      className="w-full p-3.5 sm:p-4 text-left flex items-center justify-between cursor-pointer"
                     >
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-semibold text-white flex items-center gap-2">
-                          <span>{clue.buttonLabel}</span>
-                          {isDiscovered && (
-                            <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.2 rounded-full border border-[#30d158]/20">
-                              ✓ Auditado (+10 XP)
-                            </span>
-                          )}
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 transition-transform ${
+                            isExpanded ? 'scale-105' : ''
+                          } ${getClueCategoryBadgeStyle(clue.category)}`}
+                        >
+                          {getClueCategoryIcon(clue.category)}
                         </div>
-                        <p className="text-[11px] text-[#86868b]">
-                          {isDiscovered ? 'Evidência desvendada abaixo' : 'Toque para auditar no banco de dados'}
-                        </p>
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-semibold text-white flex items-center gap-2">
+                            <span>{clue.buttonLabel}</span>
+                            {isDiscovered && (
+                              <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.2 rounded-full border border-[#30d158]/20 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Auditado (+10 XP)
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-[#86868b]">
+                            {isDiscovered ? 'Evidência pericial desvendada abaixo' : 'Toque para auditar no banco de dados'}
+                          </p>
+                        </div>
                       </div>
                       <ChevronRight
-                        className={`w-4 h-4 text-[#86868b] transition-transform flex-shrink-0 ${
+                        className={`w-4 h-4 text-[#86868b] transition-transform flex-shrink-0 ml-2 ${
                           isExpanded ? 'rotate-90 text-[#2997ff]' : ''
                         }`}
                       />
@@ -653,9 +755,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             </p>
                           </div>
 
-                          <div className="text-[11px] text-[#86868b] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04]">
-                            <strong className="text-[#ff9f0a]">💡 Fato Forense: </strong>
-                            <span>{clue.evidenceResult.forensicFact}</span>
+                          <div className="text-[11px] text-[#86868b] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2">
+                            <Lightbulb className="w-3.5 h-3.5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="text-[#ff9f0a]">Fato Forense: </strong>
+                              <span className="text-[#d2d2d7]">{clue.evidenceResult.forensicFact}</span>
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -681,25 +786,35 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <motion.button
-                    whileHover={{ scale: 1.03, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.96 }}
                     transition={{ type: "spring", stiffness: 450, damping: 20 }}
                     onClick={() => handleVerdict(true)}
-                    className="apple-btn-red flex items-center justify-center space-x-2 cursor-pointer text-sm font-semibold shadow-lg shadow-red-500/20"
+                    className="apple-btn-red flex flex-col items-center justify-center py-3.5 px-4 cursor-pointer shadow-lg shadow-red-500/20 group"
                   >
-                    <ShieldAlert className="w-4 h-4 text-white" />
-                    <span>É GOLPE</span>
+                    <div className="flex items-center space-x-2 font-bold text-sm tracking-wide">
+                      <ShieldAlert className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                      <span>É GOLPE</span>
+                    </div>
+                    <span className="text-[10px] text-white/80 font-normal mt-0.5">
+                      Armadilha / Fraude
+                    </span>
                   </motion.button>
 
                   <motion.button
-                    whileHover={{ scale: 1.03, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.96 }}
                     transition={{ type: "spring", stiffness: 450, damping: 20 }}
                     onClick={() => handleVerdict(false)}
-                    className="apple-btn-blue flex items-center justify-center space-x-2 cursor-pointer text-sm font-semibold shadow-lg shadow-blue-500/20"
+                    className="apple-btn-blue flex flex-col items-center justify-center py-3.5 px-4 cursor-pointer shadow-lg shadow-blue-500/20 group"
                   >
-                    <ShieldCheck className="w-4 h-4 text-white" />
-                    <span>É SEGURO</span>
+                    <div className="flex items-center space-x-2 font-bold text-sm tracking-wide">
+                      <ShieldCheck className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                      <span>É SEGURO</span>
+                    </div>
+                    <span className="text-[10px] text-white/80 font-normal mt-0.5">
+                      Mensagem Autêntica
+                    </span>
                   </motion.button>
                 </div>
               </div>
@@ -772,9 +887,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 {/* Explicação Real do Golpe */}
                 <div className="space-y-2 text-xs text-[#d2d2d7]">
                   <p className="leading-relaxed">{currentCase.explanation}</p>
-                  <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-[11px]">
-                    <strong className="text-[#30d158]">🛡️ Dica Prática de Defesa: </strong>
-                    <span>{currentCase.realWorldTip}</span>
+                  <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-[11px] flex items-start gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-[#30d158] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-[#30d158]">Dica Prática de Defesa: </strong>
+                      <span>{currentCase.realWorldTip}</span>
+                    </div>
                   </div>
                 </div>
 
