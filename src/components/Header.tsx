@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Shield, Award, Volume2, VolumeX, Info } from 'lucide-react';
+import { Shield, Award, Volume2, VolumeX, Info, HelpCircle } from 'lucide-react';
 import { sound } from '../utils/audio';
 import { calculatePlayerRank } from '../data/scamsData';
 
@@ -9,9 +9,10 @@ interface HeaderProps {
   totalScore: number;
   completedCount: number;
   onOpenReportModal?: () => void;
+  onOpenInstructions?: () => void;
 }
 
-export const Header = ({ score, totalScore, completedCount, onOpenReportModal }: HeaderProps) => {
+export const Header = ({ score, totalScore, completedCount, onOpenReportModal, onOpenInstructions }: HeaderProps) => {
   const [soundEnabled, setSoundEnabled] = useState(sound.enabled);
   const playerRank = calculatePlayerRank(score);
 
@@ -44,17 +45,29 @@ export const Header = ({ score, totalScore, completedCount, onOpenReportModal }:
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[#86868b] hover:text-white hover:bg-white/[0.08] transition"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[#86868b] hover:text-white hover:bg-white/[0.08] transition cursor-pointer"
             title={soundEnabled ? 'Silenciar Áudio' : 'Ativar Áudio'}
           >
             {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
           </button>
 
+          {/* Botão Como Jogar / Instruções */}
+          {onOpenInstructions && (
+            <button
+              onClick={onOpenInstructions}
+              className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-white transition text-xs font-medium cursor-pointer"
+              title="Instruções de Uso do Simulador"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-[#2997ff]" />
+              <span className="hidden sm:inline">Como Jogar</span>
+            </button>
+          )}
+
           {/* Botão Sobre o Projeto */}
           {onOpenReportModal && (
             <button
               onClick={onOpenReportModal}
-              className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#86868b] hover:text-white transition text-xs font-normal"
+              className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#86868b] hover:text-white transition text-xs font-normal cursor-pointer"
               title="Sobre o Projeto de Extensão"
             >
               <Info className="w-3 h-3 text-[#2997ff]" />

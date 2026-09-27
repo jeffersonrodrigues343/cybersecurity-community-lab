@@ -29,6 +29,7 @@ export interface ScamCase {
   xpReward: number;
   category: string;
   title: string;
+  dilemma: string;
   sender: string;
   channel: 'whatsapp' | 'sms' | 'call' | 'social' | 'document';
   time: string;
@@ -91,6 +92,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 50,
     category: 'WhatsApp & Família',
     title: 'Parente Pedindo Pix com Número Novo',
+    dilemma: 'O contato diz ser seu filho com celular quebrado precisando de R$ 480 urgente para a faculdade. Emergência familiar real ou perfil falso com foto clonada?',
     sender: 'Filha (Número Desconhecido)',
     channel: 'whatsapp',
     time: '14:22',
@@ -165,6 +167,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 50,
     category: 'SMS & Encomendas',
     title: 'Taxa Alfandegária de Encomenda Retida',
+    dilemma: 'Mensagem de taxa alfandegária para liberar encomenda internacional. Você costuma comprar online e o link parece com os Correios. Taxa real ou link de phishing?',
     sender: 'CORREIOS_AVISO',
     channel: 'sms',
     time: '09:15',
@@ -238,6 +241,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 50,
     category: 'Segurança Real',
     title: 'Notificação Oficial de Código de Verificação (2FA)',
+    dilemma: 'SMS com código de 6 dígitos para autenticação bancária. A mensagem tem aviso para não compartilhar e vem de número curto. É tentativa de golpe ou verificação legítima?',
     sender: 'Banco Digital (Canal Oficial)',
     channel: 'sms',
     time: '11:03',
@@ -310,6 +314,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 100,
     category: 'Falsa Central 0800',
     title: 'Falsa Central Telefônica ("Compra Aprovada de R$ 3.850")',
+    dilemma: 'O suposto atendente diz que seu cartão sofreu uma compra de R$ 3.850 nas Lojas Americanas e pede para ligar no 0800. Fraude bancária real em andamento ou falsa central telefônica?',
     sender: 'ALERTA_BANCO',
     channel: 'call',
     time: '16:45',
@@ -383,6 +388,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 100,
     category: 'Redes Sociais & Comércio',
     title: 'Anúncio Patrocinado com iPhone 85% Abaixo do Preço',
+    dilemma: 'Anúncio patrocinado nas redes sociais oferecendo iPhone lacrado por R$ 1.299 no Pix por queima de estoque. Oportunidade imperdível ou loja fantasma?',
     sender: 'Outlet Tech Brasil (Instagram Patrocinado)',
     channel: 'social',
     time: '19:10',
@@ -457,6 +463,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 100,
     category: 'Vagas & Tarefas VIP',
     title: 'Falsa Vaga de Emprego ("Ganhe R$ 300/dia curtindo vídeos")',
+    dilemma: 'Oferta de trabalho simples para curtir vídeos no YouTube e ganhar R$ 300 por dia no Telegram. Renda extra legítima de marketing ou golpe da tarefa com depósitos falsos?',
     sender: 'RH Global Marketing (Telegram)',
     channel: 'social',
     time: '10:30',
@@ -533,6 +540,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 150,
     category: 'Mão Fantasma & Malware',
     title: 'Falso Suporte de TI Solicitando Instalação de AnyDesk',
+    dilemma: 'Notificação urgente do banco informando infecção de vírus na conta e exigindo instalação de módulo de proteção. Medida preventiva de segurança ou golpe da mão fantasma?',
     sender: 'Engenharia de Segurança Bancária',
     channel: 'call',
     time: '11:15',
@@ -606,6 +614,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 150,
     category: 'Boletos & Engenharia Financeira',
     title: 'Fatura Falsa Adulterada de Serviços de Internet e Telefone',
+    dilemma: 'Boleto do plano de fibra óptica com 15% de desconto para pagamento imediato recebido por e-mail. Desconto de pontualidade legítimo ou boleto adulterado?',
     sender: 'Cobranca Telecom (E-mail)',
     channel: 'document',
     time: '08:40',
@@ -679,6 +688,7 @@ export const SCAM_CASES: ScamCase[] = [
     xpReward: 150,
     category: 'Fraudes com Pix & Algoritmos',
     title: 'Falso Bug / Robô de Multiplicação de Saldo no Pix',
+    dilemma: 'Publicidade afirmando existir uma brecha no algoritmo do Banco Central que devolve dez vezes o Pix transferido. Falha real do sistema financeiro ou armadilha para roubar seu saldo?',
     sender: 'Canal Segredos do Lucro (Redes Sociais)',
     channel: 'social',
     time: '20:00',

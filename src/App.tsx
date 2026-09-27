@@ -6,6 +6,7 @@ import { Hero } from './components/Hero';
 import { ScamSimulatorGame } from './components/ScamSimulatorGame';
 import { CertificateModal } from './components/CertificateModal';
 import { ReportModal } from './components/ReportModal';
+import { OnboardingModal } from './components/OnboardingModal';
 import { Footer } from './components/Footer';
 import { Award } from 'lucide-react';
 
@@ -16,6 +17,13 @@ export function App() {
   const [completedCount, setCompletedCount] = useState(0);
   const [allCompleted, setAllCompleted] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
+    try {
+      return localStorage.getItem('hacklearn_onboarding_seen') !== 'true';
+    } catch {
+      return true;
+    }
+  });
 
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
@@ -66,6 +74,7 @@ export function App() {
         totalScore={totalScore}
         completedCount={completedCount}
         onOpenReportModal={() => setIsReportOpen(true)}
+        onOpenInstructions={() => setIsOnboardingOpen(true)}
       />
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -108,6 +117,12 @@ export function App() {
       <ReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
+      />
+
+      {/* Bloco de Carregamento & Instruções Rápidas (Apple Style) */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
       />
 
       {/* Rodapé */}

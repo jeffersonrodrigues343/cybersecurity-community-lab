@@ -16,12 +16,15 @@ import {
   Phone,
   Mail,
   FileText,
+  HelpCircle,
+  TrendingUp,
 } from 'lucide-react';
 import {
   SCAM_CASES,
   BADGES,
   FAMILY_GOLDEN_RULES,
   GLOSSARY_ITEMS,
+  calculatePlayerRank,
   type ScamCase,
   type ScamLevel,
   type InvestigativeClue,
@@ -101,8 +104,23 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   // Pistas coletadas no caso atual
   const currentCaseDiscovered = discoveredClues[currentCase.id] || [];
 
-  // Métricas gerais
+  // Métricas gerais de pontuação e progresso
   const totalCases = SCAM_CASES.length;
+  const currentAnswerData = answers[currentCase.id];
+
+  const totalScore = Object.entries(answers).reduce((acc, [caseId, data]) => {
+    if (!data.isCorrect) return acc;
+    const found = SCAM_CASES.find((c) => c.id === caseId);
+    return acc + (found?.xpReward || 0) + (data.bonusXp || 0) + (data.comboBonus || 0);
+  }, 0);
+
+  const playerRank = calculatePlayerRank(totalScore);
+
+  const levelFinishedCount = levelCases.filter((c) => answers[c.id]?.answered).length;
+  const levelProgressPercentage = Math.round((levelFinishedCount / levelCases.length) * 100);
+
+  const totalFinishedCount = Object.keys(answers).length;
+  const totalProgressPercentage = Math.round((totalFinishedCount / totalCases) * 100);
 
   // Jogador clica para investigar uma pista específica
   const handleInspectClue = (clue: InvestigativeClue) => {
@@ -221,8 +239,6 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     setExpandedClueId(null);
   };
 
-  const currentAnswerData = answers[currentCase.id];
-
   const getChannelIcon = (channel: string) => {
     switch (channel) {
       case 'whatsapp':
@@ -273,75 +289,111 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         )}
       </AnimatePresence>
 
-      {/* Barra de Controles Desktop (Segmented Control Apple + Ferramentas) */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#161617] border border-white/[0.08] rounded-2xl p-2.5 sm:px-4">
-        {/* Apple Segmented Pill */}
-        <div className="flex items-center space-x-1 p-1 rounded-full bg-black/40 border border-white/[0.06]">
-          {(['basico', 'medio', 'avancado'] as ScamLevel[]).map((level) => {
-            const levelCasesList = SCAM_CASES.filter((c) => c.level === level);
-            const levelFinishedCount = levelCasesList.filter((c) => answers[c.id]?.answered).length;
-            const isCurrent = currentLevel === level;
+      {/* ======================================================== */}
+      {/* BLOCO 1: CENTRAL DE PROGRESSÃO & SELEÇÃO DE NÍVEIS (BENTO) */}
+      {/* ======================================================== */}
+      <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 shadow-lg">
+        {/* Linha Superior: Seletor de Níveis e Metadados */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          
+          {/* Apple Segmented Pill */}
+          <div className="flex items-center space-x-1 p-1 rounded-full bg-black/50 border border-white/[0.06] w-full sm:w-auto justify-center">
+            {(['basico', 'medio', 'avancado'] as ScamLevel[]).map((level) => {
+              const lCases = SCAM_CASES.filter((c) => c.level === level);
+              const lFinished = lCases.filter((c) => answers[c.id]?.answered).length;
+              const isCurrent = currentLevel === level;
 
-            return (
-              <button
-                key={level}
-                onClick={() => handleSelectLevel(level)}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-2 cursor-pointer ${
-                  isCurrent
-                    ? 'bg-white/15 text-white shadow-sm'
-                    : 'text-[#86868b] hover:text-white'
-                }`}
-              >
-                <span className="capitalize">{level}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isCurrent ? 'bg-white/20 text-white' : 'bg-white/5 text-[#86868b]'
+              return (
+                <button
+                  key={level}
+                  onClick={() => handleSelectLevel(level)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-2 cursor-pointer ${
+                    isCurrent
+                      ? 'bg-white/20 text-white shadow-sm'
+                      : 'text-[#86868b] hover:text-white'
                   }`}
                 >
-                  {levelFinishedCount}/{levelCasesList.length}
-                </span>
-              </button>
-            );
-          })}
+                  <span className="capitalize">{level}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      isCurrent ? 'bg-white/20 text-white' : 'bg-white/5 text-[#86868b]'
+                    }`}
+                  >
+                    {lFinished}/{lCases.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Patente Atual do Jogador & Combo Streak */}
+          <div className="flex items-center space-x-2">
+            {streak > 1 && (
+              <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-[#ff9f0a]/15 text-[#ff9f0a] text-xs font-semibold">
+                <Flame className="w-3.5 h-3.5 fill-[#ff9f0a]" />
+                <span>{streak}x Combo</span>
+              </div>
+            )}
+
+            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/[0.06] text-xs text-white">
+              <span>{playerRank.icon}</span>
+              <span className="font-medium text-[#f5f5f7]">{playerRank.name}</span>
+            </div>
+
+            <button
+              onClick={() => {
+                sound.playBlip();
+                setIsBadgesModalOpen(true);
+              }}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-medium transition cursor-pointer"
+            >
+              <Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" />
+              <span className="hidden sm:inline">Conquistas</span>
+              <span className="text-[10px] text-[#86868b]">
+                ({unlockedBadgeIds.length}/{BADGES.length})
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playBlip();
+                setIsFamilyGuideOpen(true);
+              }}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#2997ff] text-xs font-medium transition cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cartilha</span>
+            </button>
+          </div>
         </div>
 
-        {/* Indicador de Caso e Atalhos de Apoio */}
-        <div className="flex items-center space-x-2">
-          {streak > 1 && (
-            <div className="flex items-center space-x-1 px-3 py-1 rounded-full bg-[#ff9f0a]/15 text-[#ff9f0a] text-xs font-semibold">
-              <Flame className="w-3.5 h-3.5 fill-[#ff9f0a]" />
-              <span>{streak}x Combo</span>
-            </div>
-          )}
-
-          <button
-            onClick={() => {
-              sound.playBlip();
-              setIsBadgesModalOpen(true);
-            }}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-medium transition cursor-pointer"
-          >
-            <Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" />
-            <span className="hidden sm:inline">Conquistas</span>
-            <span className="text-[10px] text-[#86868b]">
-              ({unlockedBadgeIds.length}/{BADGES.length})
+        {/* Linha Inferior: Barra Visual de Progresso do Nível */}
+        <div className="space-y-1.5 pt-1">
+          <div className="flex items-center justify-between text-[11px] text-[#86868b]">
+            <span className="flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-[#2997ff]" />
+              <span className="capitalize font-medium text-white">
+                Nível {currentLevel}: Caso {currentCaseIndex + 1} de {levelCases.length}
+              </span>
             </span>
-          </button>
-
-          <button
-            onClick={() => {
-              sound.playBlip();
-              setIsFamilyGuideOpen(true);
-            }}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#2997ff] text-xs font-medium transition cursor-pointer"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Cartilha da Família</span>
-          </button>
+            <span>
+              {levelFinishedCount}/{levelCases.length} no nível ({levelProgressPercentage}%) • Trilha Geral: {totalFinishedCount}/{totalCases} ({totalProgressPercentage}%)
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/[0.06]">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${levelProgressPercentage}%` }}
+              transition={{ duration: 0.4 }}
+              className="h-full bg-gradient-to-r from-[#0071e3] to-[#2997ff] rounded-full"
+            />
+          </div>
         </div>
       </div>
 
-      {/* CONSOLE PRINCIPAL DESKTOP (Split View: Janela macOS de Inspeção + Deck de Auditoria) */}
+      {/* ======================================================== */}
+      {/* CONSOLE PRINCIPAL DESKTOP (Split View: Inspeção + Auditoria) */}
+      {/* ======================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* COLUNA ESQUERDA: Janela macOS de Exibição do Incidente (7 colunas) */}
@@ -350,7 +402,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="lg:col-span-7 apple-macos-window"
+          className="lg:col-span-7 apple-macos-window space-y-0"
         >
           {/* macOS Window Header */}
           <div className="apple-window-header">
@@ -361,20 +413,38 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             </div>
 
             <div className="text-xs font-medium text-[#86868b] flex items-center space-x-2">
-              <span>{currentCase.title}</span>
+              <span className="text-white font-semibold">{currentCase.title}</span>
               <span>•</span>
-              <span className="text-white/80">{currentCase.category}</span>
+              <span className="text-[#86868b]">{currentCase.category}</span>
             </div>
 
             <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-white/[0.08] text-[#d2d2d7]">
-              Caso {currentCaseIndex + 1} de {levelCases.length}
+              Caso {currentCaseIndex + 1}/{levelCases.length}
             </span>
           </div>
 
           {/* Janela de Conteúdo do Incidente */}
           <div className="p-6 space-y-5">
-            {/* Linha de Metadados da Mensagem (Remetente, Canal e Horário) */}
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+            
+            {/* ======================================================== */}
+            {/* BLOCO DE DÚVIDA / DILEMA INVESTIGATIVO (Gera Dúvida Real) */}
+            {/* ======================================================== */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#ff9f0a]/10 to-[#ff9f0a]/5 border border-[#ff9f0a]/25 flex items-start gap-3">
+              <div className="w-7 h-7 rounded-xl bg-[#ff9f0a]/15 border border-[#ff9f0a]/30 flex items-center justify-center flex-shrink-0 text-[#ff9f0a] mt-0.5">
+                <HelpCircle className="w-4 h-4" />
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold text-[#ff9f0a] uppercase tracking-wider block">
+                  Dilema do Investigador:
+                </span>
+                <p className="text-xs text-[#f5f5f7] leading-relaxed font-medium">
+                  {currentCase.dilemma}
+                </p>
+              </div>
+            </div>
+
+            {/* Linha de Metadados do Remetente */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-white/10 to-white/20 border border-white/10 flex items-center justify-center font-semibold text-white text-sm">
                   {currentCase.sender.charAt(0)}
@@ -392,22 +462,22 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 </div>
               </div>
 
-              <span className="text-xs font-medium text-[#30d158] bg-[#30d158]/10 px-3 py-1 rounded-full border border-[#30d158]/20">
+              <span className="text-xs font-semibold text-[#30d158] bg-[#30d158]/10 px-3 py-1 rounded-full border border-[#30d158]/20">
                 +{currentCase.xpReward} XP Base
               </span>
             </div>
 
-            {/* Caixa de Texto do Incidente (Autêntica e Confortável para Leitura Desktop) */}
-            <div className="bg-[#0c0c0d] border border-white/[0.08] rounded-2xl p-6 shadow-inner">
-              <div className="text-[11px] text-[#86868b] uppercase tracking-wider mb-2 font-mono">
-                Conteúdo Original Recebido:
+            {/* Caixa de Texto do Incidente (Autêntica, Ampla e Sem Poluição) */}
+            <div className="bg-[#0c0c0d] border border-white/[0.08] rounded-2xl p-6 shadow-inner space-y-2">
+              <div className="text-[10px] text-[#86868b] uppercase tracking-wider font-mono">
+                Texto Original Recebido:
               </div>
               <p className="text-white text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap select-text font-normal font-sans">
                 {currentCase.messageContent}
               </p>
             </div>
 
-            {/* Painel Pedagógico Integrado (Alternador Jovens / Adultos) */}
+            {/* Bloco Pedagógico Integrado (Lentes Jovens vs Adultos) */}
             <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-2xl p-4 sm:p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -466,28 +536,30 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
         </motion.div>
 
-        {/* COLUNA DIREITA: Deck Pericial & Ação de Veredito (5 colunas) */}
+        {/* COLUNA DIREITA: Deck Pericial & Decisão em 1 Segundo (5 colunas) */}
         <div className="lg:col-span-5 space-y-6">
           
-          {/* Deck de Ferramentas Forenses */}
-          <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4">
+          {/* ======================================================== */}
+          {/* BLOCO 2: KIT DE AUDITORIA PERICIAL (3 CARTÕES BENTO)     */}
+          {/* ======================================================== */}
+          <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
                   <Search className="w-4 h-4 text-[#2997ff]" />
-                  <span>Auditoria Pericial</span>
+                  <span>Kit de Auditoria Pericial</span>
                 </h4>
                 <p className="text-xs text-[#86868b]">
-                  Inspecione as pistas antes de decidir (+10 XP cada)
+                  Inspecione as 3 pistas antes de decidir (+10 XP cada)
                 </p>
               </div>
 
-              <span className="text-xs font-semibold text-[#2997ff] bg-[#2997ff]/10 px-2.5 py-1 rounded-full">
+              <span className="text-xs font-semibold text-[#2997ff] bg-[#2997ff]/10 px-2.5 py-1 rounded-full border border-[#2997ff]/20">
                 {currentCaseDiscovered.length}/{currentCase.clues.length}
               </span>
             </div>
 
-            {/* Lista das 3 Pistas Periciais */}
+            {/* 3 Cartões Bento de Pistas */}
             <div className="space-y-2.5">
               {currentCase.clues.map((clue) => {
                 const isDiscovered = currentCaseDiscovered.includes(clue.id);
@@ -496,28 +568,33 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 return (
                   <div
                     key={clue.id}
-                    className={`rounded-xl border transition overflow-hidden ${
+                    className={`rounded-2xl border transition overflow-hidden ${
                       isExpanded
                         ? 'border-[#2997ff]/50 bg-[#1c1c1e]'
                         : isDiscovered
                         ? 'border-white/[0.12] bg-[#1a1a1c]'
-                        : 'border-white/[0.06] bg-[#141415] hover:border-white/[0.12]'
+                        : 'border-white/[0.06] bg-[#141415] hover:border-white/[0.14]'
                     }`}
                   >
                     <button
                       onClick={() => handleInspectClue(clue)}
-                      className="w-full p-3.5 text-left flex items-center justify-between cursor-pointer"
+                      className="w-full p-4 text-left flex items-center justify-between cursor-pointer"
                     >
-                      <div className="flex items-center space-x-2.5">
-                        <span className="text-xs font-medium text-white">{clue.buttonLabel}</span>
-                        {isDiscovered && (
-                          <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.5 rounded-full">
-                            ✓ Auditado (+10 XP)
-                          </span>
-                        )}
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-semibold text-white flex items-center gap-2">
+                          <span>{clue.buttonLabel}</span>
+                          {isDiscovered && (
+                            <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.2 rounded-full border border-[#30d158]/20">
+                              ✓ Auditado (+10 XP)
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[#86868b]">
+                          {isDiscovered ? 'Evidência desvendada abaixo' : 'Toque para auditar no banco de dados'}
+                        </p>
                       </div>
                       <ChevronRight
-                        className={`w-4 h-4 text-[#86868b] transition-transform ${
+                        className={`w-4 h-4 text-[#86868b] transition-transform flex-shrink-0 ${
                           isExpanded ? 'rotate-90 text-[#2997ff]' : ''
                         }`}
                       />
@@ -530,10 +607,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="px-3.5 pb-3.5 pt-1 space-y-2.5 text-xs border-t border-white/[0.06]"
+                          className="px-4 pb-4 pt-1 space-y-2.5 text-xs border-t border-white/[0.06]"
                         >
                           <div
-                            className={`p-3 rounded-xl border ${
+                            className={`p-3.5 rounded-xl border ${
                               clue.evidenceResult.status === 'suspicious'
                                 ? 'bg-[#ff3b30]/10 border-[#ff3b30]/30 text-white'
                                 : 'bg-[#30d158]/10 border-[#30d158]/30 text-white'
@@ -552,7 +629,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             </p>
                           </div>
 
-                          <div className="text-[11px] text-[#86868b] bg-white/[0.02] p-2 rounded-lg border border-white/[0.04]">
+                          <div className="text-[11px] text-[#86868b] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04]">
                             <strong className="text-[#ff9f0a]">💡 Fato Forense: </strong>
                             <span>{clue.evidenceResult.forensicFact}</span>
                           </div>
@@ -565,21 +642,23 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             </div>
           </div>
 
-          {/* Painel de Veredito / Ação */}
-          <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4">
+          {/* ======================================================== */}
+          {/* BLOCO 3: O GRANDE VEREDITO (DECISÃO ENTENDIDA EM 1 SEGUNDO)*/}
+          {/* ======================================================== */}
+          <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg">
             {!currentAnswerData?.answered ? (
               <div className="space-y-3.5">
                 <div>
                   <h4 className="font-semibold text-sm text-white">Veredito do Caso</h4>
                   <p className="text-xs text-[#86868b]">
-                    Com base no conteúdo e nas pistas periciais, qual é a sua conclusão?
+                    Após analisar as evidências e o dilema, tome sua decisão:
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <button
                     onClick={() => handleVerdict(true)}
-                    className="apple-btn-red flex items-center justify-center space-x-2 cursor-pointer text-sm"
+                    className="apple-btn-red flex items-center justify-center space-x-2 cursor-pointer text-sm font-semibold"
                   >
                     <ShieldAlert className="w-4 h-4 text-white" />
                     <span>É GOLPE</span>
@@ -587,7 +666,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
                   <button
                     onClick={() => handleVerdict(false)}
-                    className="apple-btn-blue flex items-center justify-center space-x-2 cursor-pointer text-sm"
+                    className="apple-btn-blue flex items-center justify-center space-x-2 cursor-pointer text-sm font-semibold"
                   >
                     <ShieldCheck className="w-4 h-4 text-white" />
                     <span>É SEGURO</span>
@@ -664,7 +743,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
       </div>
 
-      {/* MODAL 1: Sala de Conquistas (Desktop Modal) */}
+      {/* ======================================================== */}
+      {/* MODAL 1: Sala de Conquistas (Desktop Modal)              */}
+      {/* ======================================================== */}
       <AnimatePresence>
         {isBadgesModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl">
@@ -717,7 +798,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         )}
       </AnimatePresence>
 
-      {/* MODAL 2: Cartilha da Família (Desktop Modal) */}
+      {/* ======================================================== */}
+      {/* MODAL 2: Cartilha da Família (Desktop Modal)             */}
+      {/* ======================================================== */}
       <AnimatePresence>
         {isFamilyGuideOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl">
