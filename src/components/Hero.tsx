@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { CyberCanvas3D } from './CyberCanvas3D';
-import { ShieldCheck, Code, Globe } from 'lucide-react';
+import { ShieldCheck, Code, Globe, Sparkles } from 'lucide-react';
 
 interface HeroProps {
   progressPercentage: number;
@@ -45,22 +45,22 @@ export const Hero: React.FC<HeroProps> = ({ progressPercentage, completedCount }
   }, []);
 
   return (
-    <section ref={heroRef} className="relative pt-6 pb-12 overflow-hidden">
+    <section ref={heroRef} className="relative pt-6 pb-10 overflow-hidden">
       <div className="max-w-6xl mx-auto px-4">
         
         {/* Badges superiores */}
         <div ref={badgesRef} className="flex flex-wrap items-center gap-2 mb-4">
           <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-semibold">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Laboratório Aberto</span>
+            <span>Simulador Ativo</span>
           </span>
           <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-xs font-medium">
             <Globe className="w-3.5 h-3.5" />
-            <span>Segurança Web Prática</span>
+            <span>Top 10 Golpes da Febraban</span>
           </span>
           <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-mono text-xs font-medium">
             <Code className="w-3.5 h-3.5" />
-            <span>Projeto Comunitário</span>
+            <span>Extensão Universitária ADS</span>
           </span>
         </div>
 
@@ -70,23 +70,25 @@ export const Hero: React.FC<HeroProps> = ({ progressPercentage, completedCount }
           {/* Apresentacao */}
           <div className="lg:col-span-7 space-y-4">
             <h1 ref={titleRef} className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              Aprenda Segurança Web <br className="hidden sm:inline" />
-              com Desafios <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400">Interativos</span>
+              Aprenda a Identificar os <br className="hidden sm:inline" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400">
+                Golpes Virtuais no Brasil
+              </span>
             </h1>
 
             <p ref={descRef} className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
-              Plataforma interativa para aprender como funcionam os principais ataques na internet e como se defender. Identifique páginas falsas de phishing, teste a força das suas senhas e explore o código no navegador.
+              Simulador prático e gamificado desenvolvido para adolescentes, adultos e famílias. Analise casos reais baseados no cotidiano brasileiro: golpes do WhatsApp, falsas centrais de banco, lojas fantasmas e boletos adulterados.
             </p>
 
-            <div className="flex items-center space-x-4 pt-2 text-xs font-mono text-slate-400">
+            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-mono text-slate-400">
               <div className="flex items-center space-x-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>3 Desafios Práticos</span>
+                <span>3 Níveis (Básico, Médio, Avançado)</span>
               </div>
               <span>•</span>
-              <div>Acesso Gratuito</div>
+              <div>9 Casos Reais</div>
               <span>•</span>
-              <div>Direto no Navegador</div>
+              <div>Total de 900 XP</div>
             </div>
           </div>
 
@@ -100,8 +102,9 @@ export const Hero: React.FC<HeroProps> = ({ progressPercentage, completedCount }
                 <span className="ml-2 text-slate-500">canvas3d</span>
               </div>
               <CyberCanvas3D completedCount={completedCount} />
-              <div className="text-center font-mono text-[11px] text-emerald-400/80 pb-2">
-                Visualizador 3D Interativo
+              <div className="text-center font-mono text-[11px] text-emerald-400/80 pb-2 flex items-center justify-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Visualizador 3D Interativo</span>
               </div>
             </div>
           </div>
@@ -112,8 +115,10 @@ export const Hero: React.FC<HeroProps> = ({ progressPercentage, completedCount }
         <div ref={progressBoxRef} className="mt-8 bg-slate-900/80 border border-slate-800 rounded-xl p-5 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2 font-mono text-xs">
             <span className="text-slate-300 font-semibold flex items-center space-x-2">
-              <span>Status da Sala:</span>
-              <span className="text-emerald-400">{completedCount === 3 ? '✓ TODAS AS MISSÕES COMPLETADAS' : `${completedCount} de 3 tarefas finalizadas`}</span>
+              <span>Progresso dos Casos:</span>
+              <span className="text-emerald-400">
+                {completedCount >= 9 ? '✓ TODOS OS 9 CASOS CONCLUÍDOS' : `${completedCount} de 9 situações analisadas`}
+              </span>
             </span>
             <span className="text-emerald-400 font-bold">{progressPercentage}% CONCLUÍDO</span>
           </div>
@@ -126,9 +131,9 @@ export const Hero: React.FC<HeroProps> = ({ progressPercentage, completedCount }
           </div>
 
           <div className="mt-3 flex items-center justify-between text-[11px] font-mono text-slate-500">
-            <span>Missão 1: Phishing</span>
-            <span>Missão 2: Força Bruta & Entropia</span>
-            <span>Missão 3: Web Inspector (CTF)</span>
+            <span>Nível 1: Básico (Cotidiano)</span>
+            <span>Nível 2: Médio (Eng. Social)</span>
+            <span>Nível 3: Avançado (Golpes Financeiros)</span>
           </div>
         </div>
 
