@@ -31,6 +31,9 @@ import {
   ShoppingBag,
   Briefcase,
   Lock,
+  Terminal,
+  FileSignature,
+  Fingerprint,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -55,7 +58,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const [currentLevel, setCurrentLevel] = useState<ScamLevel>('basico');
   const [currentCaseIndex, setCurrentCaseIndex] = useState(0);
 
-  // Registro de respostas
+  // Registro de respostas e laudos periciais
   const [answers, setAnswers] = useState<{
     [caseId: string]: {
       answered: boolean;
@@ -65,6 +68,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       bonusXp: number;
       comboBonus: number;
       penaltyXp?: number;
+      selectedHypothesis?: number;
+      hypothesisCorrect?: boolean;
     };
   }>({});
 
@@ -72,6 +77,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const [discoveredClues, setDiscoveredClues] = useState<{ [caseId: string]: string[] }>({});
   const [expandedClueId, setExpandedClueId] = useState<string | null>(null);
   const [floatingXp, setFloatingXp] = useState<number | null>(null);
+
+  // Seleções ativas da Bancada Pericial
+  const [selectedVerdict, setSelectedVerdict] = useState<boolean | null>(null);
+  const [selectedHypothesis, setSelectedHypothesis] = useState<number | null>(null);
 
   // Gamificação pedagógica
   const [streak, setStreak] = useState(0);
@@ -125,11 +134,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const totalCases = SCAM_CASES.length;
   const currentAnswerData = answers[currentCase.id];
 
-  const totalScore = Object.entries(answers).reduce((acc, [caseId, data]) => {
-    if (!data.isCorrect) return acc;
+  const totalScore = Math.max(0, Object.entries(answers).reduce((acc, [caseId, data]) => {
+    if (!data.isCorrect) {
+      return acc - (data.penaltyXp || 0);
+    }
     const found = SCAM_CASES.find((c) => c.id === caseId);
-    return acc + (found?.xpReward || 0) + (data.bonusXp || 0) + (data.comboBonus || 0);
-  }, 0);
+    const baseReward = data.hypothesisCorrect !== false ? (found?.xpReward || 0) : Math.round((found?.xpReward || 0) * 0.5);
+    return acc + baseReward + (data.bonusXp || 0) + (data.comboBonus || 0);
+  }, 0));
 
   const playerRank = calculatePlayerRank(totalScore);
 
@@ -160,21 +172,24 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     }
   };
 
-  // Veredito final do jogador (É Golpe ou É Seguro)
-  const handleVerdict = (choiceIsScam: boolean) => {
+  // Veredito e Protocolo do Laudo Pericial do Detetive
+  const handleProtocolReport = () => {
+    if (selectedVerdict === null || selectedHypothesis === null) return;
     if (answers[currentCase.id]?.answered) return;
 
-    const isCorrect = choiceIsScam === currentCase.isScam;
+    const isCorrect = selectedVerdict === currentCase.isScam;
+    const hypothesisCorrect = selectedHypothesis === currentCase.correctEvidenceIndex;
     const cluesFoundCount = (discoveredClues[currentCase.id] || []).length;
 
-    // Bônus de 10 XP por cada pista investigada antes do veredito
+    // Bônus de 10 XP por cada pista investigada antes do laudo
     const bonusXp = isCorrect ? cluesFoundCount * 10 : 0;
 
-    // Bônus de combo consecutivo
     let newStreak = streak;
     let comboBonus = 0;
+    let earnedTotal = 0;
+    let penaltyXp = 0;
 
-    if (isCorrect) {
+    if (isCorrect && hypothesisCorrect) {
       sound.playSuccess();
       newStreak = streak + 1;
       setStreak(newStreak);
@@ -186,7 +201,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         comboBonus = 10;
       }
 
-      const earnedTotal = (currentCase.xpReward || 0) + bonusXp + comboBonus;
+      earnedTotal = (currentCase.xpReward || 0) + bonusXp + comboBonus;
       setFloatingXp(earnedTotal);
 
       // Efeito festivo de confetes Apple
@@ -208,28 +223,34 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           unlockBadge('badge-central-bank-expert');
         }
       }
+    } else if (isCorrect && !hypothesisCorrect) {
+      // Veredito correto, mas prova incorreta (acerto parcial)
+      sound.playSuccess();
+      earnedTotal = Math.round((currentCase.xpReward || 0) * 0.5) + bonusXp;
+      setFloatingXp(earnedTotal);
     } else {
       sound.playError();
       setStreak(0);
       if (currentLevel === 'avancado') {
+        penaltyXp = 25;
         setFloatingXp(-25);
       } else {
         setFloatingXp(null);
       }
     }
 
-    const penaltyXp = !isCorrect && currentLevel === 'avancado' ? 25 : 0;
-
     const newAnswers = {
       ...answers,
       [currentCase.id]: {
         answered: true,
         isCorrect,
-        userChoice: choiceIsScam,
+        userChoice: selectedVerdict,
         cluesDiscovered: discoveredClues[currentCase.id] || [],
         bonusXp,
         comboBonus,
         penaltyXp,
+        selectedHypothesis,
+        hypothesisCorrect,
       },
     };
 
@@ -238,7 +259,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     const newTotalXp = Math.max(0, Object.entries(newAnswers).reduce((acc, [caseId, data]) => {
       const found = SCAM_CASES.find((c) => c.id === caseId);
       if (data.isCorrect) {
-        return acc + (found?.xpReward || 0) + (data.bonusXp || 0) + (data.comboBonus || 0);
+        const baseReward = data.hypothesisCorrect !== false ? (found?.xpReward || 0) : Math.round((found?.xpReward || 0) * 0.5);
+        return acc + baseReward + (data.bonusXp || 0) + (data.comboBonus || 0);
       } else {
         return acc - (data.penaltyXp || 0);
       }
@@ -258,6 +280,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     sound.playBlip();
     setExpandedClueId(null);
     setFloatingXp(null);
+    setSelectedVerdict(null);
+    setSelectedHypothesis(null);
 
     if (currentCaseIndex < levelCases.length - 1) {
       setCurrentCaseIndex((prev) => prev + 1);
@@ -278,6 +302,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     setCurrentCaseIndex(0);
     setExpandedClueId(null);
     setFloatingXp(null);
+    setSelectedVerdict(null);
+    setSelectedHypothesis(null);
   };
 
   const getChannelIcon = (channel: string) => {
@@ -580,9 +606,35 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </div>
             </div>
 
-            <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-[#d2d2d7]">
-              Caso {currentCaseIndex + 1} de {levelCases.length}
-            </span>
+            <div className="flex items-center space-x-1.5">
+              {levelCases.map((c, idx) => {
+                const isAns = answers[c.id]?.answered;
+                const isAct = currentCaseIndex === idx;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      sound.playBlip();
+                      setCurrentCaseIndex(idx);
+                      setExpandedClueId(null);
+                      setFloatingXp(null);
+                      setSelectedVerdict(null);
+                      setSelectedHypothesis(null);
+                    }}
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer flex items-center space-x-1 ${
+                      isAct
+                        ? 'bg-[#0071e3] text-white shadow-sm'
+                        : isAns
+                        ? 'bg-white/[0.08] text-[#30d158] hover:bg-white/[0.12]'
+                        : 'bg-white/[0.04] text-[#86868b] hover:text-white'
+                    }`}
+                  >
+                    <span>Caso {idx + 1}</span>
+                    {isAns && <CheckCircle2 className="w-3 h-3 text-[#30d158]" />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Conteúdo do Incidente */}
@@ -708,21 +760,21 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
         </motion.div>
 
-        {/* COLUNA DIREITA: Deck Pericial & Decisão em 1 Segundo (5 colunas) */}
+        {/* COLUNA DIREITA: Deck Pericial & Bancada de Emissão de Laudo (5 colunas) */}
         <div className="lg:col-span-5 space-y-6">
           
           {/* ======================================================== */}
-          {/* BLOCO 2: KIT DE AUDITORIA PERICIAL (3 CARTÕES BENTO)     */}
+          {/* BLOCO 2: KIT DE AUDITORIA PERICIAL (TERMINAL FORENSE)    */}
           {/* ======================================================== */}
           <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
-                  <Search className="w-4 h-4 text-[#2997ff]" />
-                  <span>Kit de Auditoria Pericial</span>
+                  <Terminal className="w-4 h-4 text-[#2997ff]" />
+                  <span>Estação de Telemetria Forense</span>
                 </h4>
                 <p className="text-xs text-[#86868b]">
-                  Inspecione as 3 pistas antes de decidir (+10 XP cada)
+                  Execute comandos periciais e analise logs brutos (+10 XP cada)
                 </p>
               </div>
 
@@ -731,23 +783,24 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </span>
             </div>
 
-            {/* 3 Cartões Bento de Pistas */}
-            <div className="space-y-2.5">
+            {/* 3 Cartões de Pistas com Terminal */}
+            <div className="space-y-3">
               {currentCase.clues.map((clue) => {
                 const isDiscovered = currentCaseDiscovered.includes(clue.id);
                 const isExpanded = expandedClueId === clue.id;
+                const isCaseAnswered = currentAnswerData?.answered;
 
                 return (
                   <motion.div
                     key={clue.id}
-                    whileHover={{ scale: 1.012, y: -1 }}
+                    whileHover={{ scale: 1.01, y: -1 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    className={`rounded-2xl border transition overflow-hidden apple-sheen-box apple-interactive-card ${
+                    className={`rounded-2xl border transition overflow-hidden ${
                       isExpanded
-                        ? 'border-[#2997ff]/50 bg-[#1c1c1e] shadow-lg shadow-blue-500/5'
+                        ? 'border-[#2997ff]/50 bg-[#1a1a1c] shadow-xl shadow-blue-500/5'
                         : isDiscovered
-                        ? 'border-white/[0.12] bg-[#1a1a1c]'
-                        : 'border-white/[0.06] bg-[#141415] hover:border-white/[0.16]'
+                        ? 'border-white/[0.12] bg-[#161617]'
+                        : 'border-white/[0.06] bg-[#121213] hover:border-white/[0.16]'
                     }`}
                   >
                     <button
@@ -767,12 +820,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             <span>{clue.buttonLabel}</span>
                             {isDiscovered && (
                               <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.2 rounded-full border border-[#30d158]/20 flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> Auditado (+10 XP)
+                                <CheckCircle2 className="w-3 h-3" /> Telemetria Coletada (+10 XP)
                               </span>
                             )}
                           </div>
                           <p className="text-[11px] text-[#86868b]">
-                            {isDiscovered ? 'Evidência pericial desvendada abaixo' : 'Toque para auditar no banco de dados'}
+                            {isDiscovered ? 'Terminal de telemetria pericial disponível' : 'Clique para executar consulta no terminal forense'}
                           </p>
                         </div>
                       </div>
@@ -783,42 +836,85 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       />
                     </button>
 
-                    {/* Laudo Pericial Aberto */}
+                    {/* Console de Telemetria Aberto */}
                     <AnimatePresence>
                       {isExpanded && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="px-4 pb-4 pt-1 space-y-2.5 text-xs border-t border-white/[0.06]"
+                          className="px-4 pb-4 pt-1 space-y-3 text-xs border-t border-white/[0.06]"
                         >
-                          <div
-                            className={`p-3.5 rounded-xl border ${
-                              clue.evidenceResult.status === 'suspicious'
-                                ? 'bg-[#ff3b30]/10 border-[#ff3b30]/30 text-white'
-                                : 'bg-[#30d158]/10 border-[#30d158]/30 text-white'
-                            }`}
-                          >
-                            <div className="font-semibold flex items-center gap-1.5 mb-1 text-xs">
-                              {clue.evidenceResult.status === 'suspicious' ? (
-                                <AlertTriangle className="w-3.5 h-3.5 text-[#ff3b30] flex-shrink-0" />
-                              ) : (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-[#30d158] flex-shrink-0" />
-                              )}
-                              <span>{clue.evidenceResult.headline}</span>
+                          {/* Terminal Forense Real */}
+                          <div className="bg-[#09090b] border border-white/[0.1] rounded-xl overflow-hidden font-mono shadow-inner">
+                            {/* Header da Janela de Terminal */}
+                            <div className="bg-[#141416] px-3 py-1.5 border-b border-white/[0.08] flex items-center justify-between text-[11px] text-[#86868b]">
+                              <div className="flex items-center space-x-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
+                                <span className="ml-2 text-[10px] text-[#a1a1a6] font-mono">perito@forense:~</span>
+                              </div>
+                              <span className="text-[10px] text-[#71717a] font-mono uppercase tracking-wider">{clue.category}</span>
                             </div>
-                            <p className="text-[#d2d2d7] leading-relaxed text-[11px]">
-                              {clue.evidenceResult.details}
-                            </p>
+
+                            {/* Conteúdo Monospace do Terminal */}
+                            <div className="p-3.5 space-y-2 bg-[#09090b] overflow-x-auto text-[11px] leading-relaxed">
+                              <div className="text-[#30d158] font-bold flex items-center space-x-2">
+                                <span className="text-[#86868b] select-none">$</span>
+                                <span>{clue.terminalCommand}</span>
+                              </div>
+                              <pre className="text-[#e4e4e7] whitespace-pre-wrap font-mono text-[11px] leading-relaxed select-text font-normal">
+                                {clue.terminalOutput}
+                              </pre>
+                            </div>
                           </div>
 
-                          <div className="text-[11px] text-[#86868b] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2">
-                            <Lightbulb className="w-3.5 h-3.5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
-                            <div>
-                              <strong className="text-[#ff9f0a]">Fato Forense: </strong>
-                              <span className="text-[#d2d2d7]">{clue.evidenceResult.forensicFact}</span>
+                          {/* Foco Investigativo */}
+                          <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-start gap-2 text-[11px]">
+                            <Fingerprint className="w-4 h-4 text-[#2997ff] flex-shrink-0 mt-0.5" />
+                            <div className="space-y-0.5">
+                              <span className="text-[#2997ff] font-semibold block">Pergunta Investigativa do Perito:</span>
+                              <p className="text-[#d2d2d7] leading-relaxed">{clue.question}</p>
                             </div>
                           </div>
+
+                          {/* Laudo e Fato Forense Liberados Apenas Após Veredito Protocolado */}
+                          {isCaseAnswered && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="space-y-2 pt-1 border-t border-white/[0.06]"
+                            >
+                              <div
+                                className={`p-3 rounded-xl border ${
+                                  clue.evidenceResult.status === 'suspicious'
+                                    ? 'bg-[#ff3b30]/10 border-[#ff3b30]/30 text-white'
+                                    : 'bg-[#30d158]/10 border-[#30d158]/30 text-white'
+                                }`}
+                              >
+                                <div className="font-semibold flex items-center gap-1.5 mb-1 text-xs">
+                                  {clue.evidenceResult.status === 'suspicious' ? (
+                                    <AlertTriangle className="w-3.5 h-3.5 text-[#ff3b30] flex-shrink-0" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#30d158] flex-shrink-0" />
+                                  )}
+                                  <span>{clue.evidenceResult.headline}</span>
+                                </div>
+                                <p className="text-[#d2d2d7] leading-relaxed text-[11px]">
+                                  {clue.evidenceResult.details}
+                                </p>
+                              </div>
+
+                              <div className="text-[11px] text-[#86868b] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2">
+                                <Lightbulb className="w-3.5 h-3.5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <strong className="text-[#ff9f0a]">Fato Forense: </strong>
+                                  <span className="text-[#d2d2d7]">{clue.evidenceResult.forensicFact}</span>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -829,54 +925,138 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
 
           {/* ======================================================== */}
-          {/* BLOCO 3: O GRANDE VEREDITO (DECISÃO ENTENDIDA EM 1 SEGUNDO)*/}
+          {/* BLOCO 3: MESA DE EMISSÃO DO LAUDO PERICIAL              */}
           {/* ======================================================== */}
           <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg">
-            {!currentAnswerData?.answered ? (
-              <div className="space-y-3.5">
+            <div className="border-b border-white/[0.08] pb-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#0071e3]/15 border border-[#0071e3]/30 flex items-center justify-center text-[#2997ff]">
+                  <FileSignature className="w-4 h-4" />
+                </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-white">Veredito do Caso</h4>
+                  <h4 className="font-semibold text-sm text-white">Mesa de Emissão do Laudo Pericial</h4>
                   <p className="text-xs text-[#86868b]">
-                    Após analisar as evidências e o dilema, tome sua decisão:
+                    Embase tecnicamente a conclusão antes de assinar o relatório
                   </p>
                 </div>
+              </div>
+              <span className="text-[10px] font-mono text-[#86868b] px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06]">
+                PERÍCIA #{currentCase.id.slice(0, 10).toUpperCase()}
+              </span>
+            </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <motion.button
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.96 }}
-                    transition={{ type: "spring", stiffness: 450, damping: 20 }}
-                    onClick={() => handleVerdict(true)}
-                    className="apple-btn-red flex flex-col items-center justify-center py-3.5 px-4 cursor-pointer shadow-lg shadow-red-500/20 group"
-                  >
-                    <div className="flex items-center space-x-2 font-bold text-sm tracking-wide">
-                      <ShieldAlert className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
-                      <span>É GOLPE</span>
-                    </div>
-                    <span className="text-[10px] text-white/80 font-normal mt-0.5">
-                      Armadilha / Fraude
-                    </span>
-                  </motion.button>
+            {!currentAnswerData?.answered ? (
+              <div className="space-y-4">
+                {/* Etapa 1: Veredito Preliminar */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[#86868b] uppercase tracking-wider block">
+                    1. Conclusão Pericial:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playBlip();
+                        setSelectedVerdict(true);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition flex items-center space-x-2.5 cursor-pointer ${
+                        selectedVerdict === true
+                          ? 'bg-[#ff3b30]/15 border-[#ff3b30] text-white shadow-md shadow-red-500/10'
+                          : 'bg-white/[0.02] border-white/[0.08] text-[#a1a1a6] hover:border-white/[0.2] hover:text-white'
+                      }`}
+                    >
+                      <ShieldAlert className={`w-4 h-4 flex-shrink-0 ${selectedVerdict === true ? 'text-[#ff3b30]' : 'text-[#86868b]'}`} />
+                      <div>
+                        <div className="text-xs font-bold leading-tight">🚨 Fraude / Crime</div>
+                        <div className="text-[10px] text-[#86868b]">Indiciar como Golpe</div>
+                      </div>
+                    </button>
 
-                  <motion.button
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.96 }}
-                    transition={{ type: "spring", stiffness: 450, damping: 20 }}
-                    onClick={() => handleVerdict(false)}
-                    className="apple-btn-blue flex flex-col items-center justify-center py-3.5 px-4 cursor-pointer shadow-lg shadow-blue-500/20 group"
-                  >
-                    <div className="flex items-center space-x-2 font-bold text-sm tracking-wide">
-                      <ShieldCheck className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
-                      <span>É SEGURO</span>
-                    </div>
-                    <span className="text-[10px] text-white/80 font-normal mt-0.5">
-                      Mensagem Autêntica
-                    </span>
-                  </motion.button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playBlip();
+                        setSelectedVerdict(false);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition flex items-center space-x-2.5 cursor-pointer ${
+                        selectedVerdict === false
+                          ? 'bg-[#30d158]/15 border-[#30d158] text-white shadow-md shadow-green-500/10'
+                          : 'bg-white/[0.02] border-white/[0.08] text-[#a1a1a6] hover:border-white/[0.2] hover:text-white'
+                      }`}
+                    >
+                      <ShieldCheck className={`w-4 h-4 flex-shrink-0 ${selectedVerdict === false ? 'text-[#30d158]' : 'text-[#86868b]'}`} />
+                      <div>
+                        <div className="text-xs font-bold leading-tight">🛡️ Autêntico / Real</div>
+                        <div className="text-[10px] text-[#86868b]">Arquivar como Legítimo</div>
+                      </div>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Etapa 2: A Prova Pericial (Fundamentação Técnica) */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[#86868b] uppercase tracking-wider block">
+                    2. Fundamentação Técnica (A Prova Pericial):
+                  </label>
+                  <p className="text-[11px] text-[#86868b]">
+                    Qual evidência dos terminais comprova factual e tecnicamente o seu veredito?
+                  </p>
+                  <div className="space-y-2">
+                    {currentCase.evidenceHypotheses.map((hypo, idx) => {
+                      const isSelected = selectedHypothesis === idx;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            sound.playBlip();
+                            setSelectedHypothesis(idx);
+                          }}
+                          className={`w-full p-3 rounded-xl border text-left transition flex items-start space-x-2.5 cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0071e3]/15 border-[#2997ff] text-white shadow-md shadow-blue-500/10'
+                              : 'bg-white/[0.02] border-white/[0.08] text-[#a1a1a6] hover:border-white/[0.2] hover:text-white'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold ${
+                            isSelected ? 'border-[#2997ff] bg-[#0071e3] text-white' : 'border-white/[0.2] text-[#86868b]'
+                          }`}>
+                            {String.fromCharCode(65 + idx)}
+                          </div>
+                          <span className="text-xs leading-relaxed text-[#d2d2d7]">
+                            {hypo}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Etapa 3: Assinatura do Laudo */}
+                <motion.button
+                  whileHover={selectedVerdict !== null && selectedHypothesis !== null ? { scale: 1.02, y: -1 } : {}}
+                  whileTap={selectedVerdict !== null && selectedHypothesis !== null ? { scale: 0.98 } : {}}
+                  disabled={selectedVerdict === null || selectedHypothesis === null}
+                  onClick={handleProtocolReport}
+                  className={`w-full py-3.5 px-4 rounded-full font-bold text-xs flex items-center justify-center space-x-2 transition ${
+                    selectedVerdict !== null && selectedHypothesis !== null
+                      ? 'bg-gradient-to-r from-[#0071e3] to-[#2997ff] text-white cursor-pointer shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40'
+                      : 'bg-white/[0.06] border border-white/[0.08] text-[#71717a] cursor-not-allowed'
+                  }`}
+                >
+                  <FileSignature className="w-4 h-4" />
+                  <span>Assinar e Protocolar Laudo Pericial</span>
+                </motion.button>
+
+                {currentCaseDiscovered.length < currentCase.clues.length && (
+                  <p className="text-[10px] text-[#ff9f0a] text-center flex items-center justify-center gap-1">
+                    <AlertTriangle className="w-3 h-3 text-[#ff9f0a]" />
+                    Aviso: Você consultou {currentCaseDiscovered.length}/{currentCase.clues.length} terminais de telemetria. Inspecione todas as pistas para evitar erros no laudo!
+                  </p>
+                )}
               </div>
             ) : (
-              /* Resposta Emitida: Card de Resultado e Aprendizado */
+              /* Card de Resultado do Laudo */
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -897,57 +1077,87 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       }`}
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>{floatingXp > 0 ? `+${floatingXp} XP Conquistado!` : `${floatingXp} XP (Penalidade do Nível Avançado)`}</span>
+                      <span>
+                        {floatingXp > 0 ? `+${floatingXp} XP Conquistado!` : `${floatingXp} XP (Penalidade do Nível Avançado)`}
+                      </span>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
-                {/* Banner de Resultado com Animação e Haptic Shake */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={
-                    currentAnswerData.isCorrect
-                      ? { opacity: 1, scale: 1 }
-                      : { opacity: 1, scale: 1, x: [-8, 8, -6, 6, -3, 3, 0] }
-                  }
-                  transition={
-                    currentAnswerData.isCorrect
-                      ? { type: "spring", stiffness: 350, damping: 25 }
-                      : { duration: 0.45, ease: "easeInOut" }
-                  }
-                  className={`p-4 rounded-2xl border flex items-start space-x-3.5 shadow-lg ${
-                    currentAnswerData.isCorrect
-                      ? 'bg-[#30d158]/10 border-[#30d158]/35 text-white'
-                      : 'bg-[#ff3b30]/10 border-[#ff3b30]/35 text-white'
-                  }`}
-                >
-                  {currentAnswerData.isCorrect ? (
-                    <CheckCircle2 className="w-5 h-5 text-[#30d158] flex-shrink-0 mt-0.5" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-[#ff3b30] flex-shrink-0 mt-0.5" />
-                  )}
-                  <div className="space-y-1">
-                    <h4 className="font-semibold text-sm">
-                      {currentAnswerData.isCorrect
-                        ? `Veredito Correto! +${currentCase.xpReward} XP Base`
-                        : currentAnswerData.penaltyXp
-                        ? `Veredito Incorreto! O ataque avançado induziu ao erro (-${currentAnswerData.penaltyXp} XP e combo zerado).`
-                        : 'Veredito Incorreto! Você caiu na armadilha.'}
-                    </h4>
-                    {currentAnswerData.bonusXp > 0 && (
-                      <p className="text-xs text-[#30d158]">
-                        +{currentAnswerData.bonusXp} XP bônus por pistas periciais investigadas!
-                      </p>
-                    )}
-                    {currentAnswerData.comboBonus > 0 && (
-                      <p className="text-xs text-[#ff9f0a]">
-                        +{currentAnswerData.comboBonus} XP bônus de combo consecutivo!
-                      </p>
-                    )}
-                  </div>
-                </motion.div>
+                {/* Banner de Julgamento Pericial com Feedback Preciso */}
+                {(() => {
+                  const isHonor = currentAnswerData.isCorrect && currentAnswerData.hypothesisCorrect !== false;
+                  const isPartial = currentAnswerData.isCorrect && currentAnswerData.hypothesisCorrect === false;
+                  const isFail = !currentAnswerData.isCorrect;
 
-                {/* Explicação Real do Golpe */}
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={
+                        isHonor
+                          ? { opacity: 1, scale: 1 }
+                          : isPartial
+                          ? { opacity: 1, scale: 1 }
+                          : { opacity: 1, scale: 1, x: [-8, 8, -6, 6, -3, 3, 0] }
+                      }
+                      transition={
+                        isFail
+                          ? { duration: 0.45, ease: "easeInOut" }
+                          : { type: "spring", stiffness: 350, damping: 25 }
+                      }
+                      className={`p-4 rounded-2xl border flex items-start space-x-3.5 shadow-lg ${
+                        isHonor
+                          ? 'bg-[#30d158]/10 border-[#30d158]/35 text-white'
+                          : isPartial
+                          ? 'bg-[#ff9f0a]/10 border-[#ff9f0a]/35 text-white'
+                          : 'bg-[#ff3b30]/10 border-[#ff3b30]/35 text-white'
+                      }`}
+                    >
+                      {isHonor ? (
+                        <CheckCircle2 className="w-5 h-5 text-[#30d158] flex-shrink-0 mt-0.5" />
+                      ) : isPartial ? (
+                        <AlertTriangle className="w-5 h-5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-[#ff3b30] flex-shrink-0 mt-0.5" />
+                      )}
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-sm">
+                          {isHonor && `🏆 Laudo Pericial Aprovado com Louvor Máximo!`}
+                          {isPartial && `⚠️ Veredito Correto, mas Prova Técnica Incorreta!`}
+                          {isFail && (currentAnswerData.penaltyXp ? `❌ Laudo Rejeitado! (-${currentAnswerData.penaltyXp} XP no Nível Avançado)` : `❌ Laudo Rejeitado pela Perícia!`)}
+                        </h4>
+                        <p className="text-xs text-[#d2d2d7] leading-relaxed">
+                          {isHonor && `Você acertou o veredito e comprovou a alegação com a evidência técnica exata.`}
+                          {isPartial && `Você acertou que era ${currentCase.isScam ? 'golpe' : 'comunicação legítima'}, mas escolheu a fundamentação errada. Na perícia forense, a prova tem que ser incontestável (+50% XP).`}
+                          {isFail && `O veredito foi refutado pela telemetria do caso.`}
+                        </p>
+                        {currentAnswerData.bonusXp > 0 && (
+                          <p className="text-xs text-[#30d158]">
+                            +{currentAnswerData.bonusXp} XP bônus por pistas de telemetria investigadas!
+                          </p>
+                        )}
+                        {currentAnswerData.comboBonus > 0 && (
+                          <p className="text-xs text-[#ff9f0a]">
+                            +{currentAnswerData.comboBonus} XP bônus de combo consecutivo!
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })()}
+
+                {/* Prova Técnica Real & Fundamentação da Corregedoria */}
+                <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] space-y-1.5 text-xs">
+                  <div className="flex items-center gap-1.5 text-[#2997ff] font-semibold">
+                    <Search className="w-3.5 h-3.5" />
+                    <span>Prova Técnica Pericial (Smoking Gun):</span>
+                  </div>
+                  <p className="text-white font-medium leading-relaxed">
+                    {currentCase.keyEvidenceReason}
+                  </p>
+                </div>
+
+                {/* Explicação Real do Incidente */}
                 <div className="space-y-2 text-xs text-[#d2d2d7]">
                   <p className="leading-relaxed">{currentCase.explanation}</p>
                   <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-[11px] flex items-start gap-2.5">
@@ -969,10 +1179,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 >
                   <span>
                     {currentCaseIndex < levelCases.length - 1
-                      ? 'Próximo Caso'
+                      ? 'Próximo Caso da Investigação'
                       : currentLevel !== 'avancado'
                       ? 'Avançar para o Próximo Nível'
-                      : 'Ver Resultado Final'}
+                      : 'Ver Conclusão da Investigação Geral'}
                   </span>
                   <ChevronRight className="w-4 h-4" />
                 </motion.button>
