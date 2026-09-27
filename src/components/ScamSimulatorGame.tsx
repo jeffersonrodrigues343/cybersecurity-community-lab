@@ -773,6 +773,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
             {/* Diorama 3D Pericial com Bonecos em Cenário Hipotético (Three.js) */}
             <DetectiveDiorama3D
+              caseId={currentCase.id}
               scenarioType={getScenarioType(currentCase)}
               isScam={currentCase.isScam}
               verdictResult={
@@ -784,17 +785,20 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               }
               onPropClick={(propName) => {
                 sound.playBlip();
-                if (propName.includes('celular') || propName.includes('whatsapp')) {
+                if (propName.includes('celular') || propName.includes('whatsapp') || propName.includes('2fa')) {
                   const target = currentCase.clues.find((c) => c.category === 'phone' || c.category === 'behavior');
                   if (target) handleInspectClue(target);
                 } else if (propName.includes('pacote') || propName.includes('correios')) {
                   const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'system');
                   if (target) handleInspectClue(target);
-                } else if (propName.includes('banco') || propName.includes('terminal')) {
+                } else if (propName.includes('banco') || propName.includes('terminal') || propName.includes('cofre') || propName.includes('padaria')) {
                   const target = currentCase.clues.find((c) => c.category === 'pix' || c.category === 'official');
                   if (target) handleInspectClue(target);
-                } else if (propName.includes('computador') || propName.includes('remoto')) {
+                } else if (propName.includes('computador') || propName.includes('remoto') || propName.includes('anydesk')) {
                   const target = currentCase.clues.find((c) => c.category === 'system' || c.category === 'behavior');
+                  if (target) handleInspectClue(target);
+                } else if (propName.includes('promocao') || propName.includes('fryer')) {
+                  const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'pix');
                   if (target) handleInspectClue(target);
                 } else if (currentCase.clues[0]) {
                   handleInspectClue(currentCase.clues[0]);
