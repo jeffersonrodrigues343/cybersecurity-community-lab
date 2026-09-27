@@ -731,7 +731,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   <span>Ferramentas de Investigação</span>
                 </h4>
                 <p className="text-xs text-[#86868b]">
-                  Abra as pistas visuais para encontrar o erro do golpista (+10 XP)
+                  Inspecione a telemetria técnica para avaliar a autenticidade do caso (+10 XP)
                 </p>
               </div>
 
@@ -782,7 +782,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             )}
                           </div>
                           <p className="text-[11px] text-[#86868b]">
-                            {isDiscovered ? 'Pista desvendada! Toque para rever' : 'Toque para usar esta ferramenta de investigação'}
+                            {isDiscovered ? 'Telemetria pericial coletada • Toque para rever' : 'Toque para executar esta análise pericial'}
                           </p>
                         </div>
                       </div>
@@ -835,32 +835,40 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                               )}
                             </div>
 
-                            {/* O que o Detetive Descobriu */}
-                            <div className="p-2.5 rounded-xl bg-[#0071e3]/10 border border-[#0071e3]/20 flex items-start gap-2 text-[11px]">
-                              <Sparkles className="w-3.5 h-3.5 text-[#2997ff] flex-shrink-0 mt-0.5" />
-                              <div className="leading-relaxed">
-                                <strong className="text-[#2997ff]">O que você descobriu: </strong>
-                                <span className="text-[#d2d2d7]">
-                                  {clue.inspection?.observation || clue.evidenceResult.details}
-                                </span>
+                            {/* Prompt Pericial Zero-Spoiler antes de responder */}
+                            {!isCaseAnswered ? (
+                              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-2 text-[11px] text-[#86868b]">
+                                <Search className="w-3.5 h-3.5 text-[#2997ff] flex-shrink-0" />
+                                <span>Telemetria pericial extraída. Compare estes registros com o teor da mensagem para tirar suas conclusões.</span>
                               </div>
-                            </div>
+                            ) : (
+                              /* Laudo e Fato de Defesa Revelados Somente Após o Veredito */
+                              <motion.div
+                                initial={{ opacity: 0, y: 4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="space-y-2 pt-1"
+                              >
+                                <div className="p-2.5 rounded-xl bg-[#0071e3]/10 border border-[#0071e3]/20 flex items-start gap-2 text-[11px]">
+                                  <Sparkles className="w-3.5 h-3.5 text-[#2997ff] flex-shrink-0 mt-0.5" />
+                                  <div className="leading-relaxed">
+                                    <strong className="text-[#2997ff]">Conclusão Pericial: </strong>
+                                    <span className="text-[#d2d2d7]">
+                                      {clue.inspection?.observation || clue.evidenceResult.details}
+                                    </span>
+                                  </div>
+                                </div>
+                                {clue.evidenceResult.forensicFact && (
+                                  <div className="text-[11px] text-[#86868b] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2">
+                                    <Lightbulb className="w-3.5 h-3.5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
+                                    <div>
+                                      <strong className="text-[#ff9f0a]">Fato de Defesa: </strong>
+                                      <span className="text-[#d2d2d7]">{clue.evidenceResult.forensicFact}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </motion.div>
+                            )}
                           </div>
-
-                          {/* Dica da Perícia Liberada Após Responder */}
-                          {isCaseAnswered && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="text-[11px] text-[#86868b] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2"
-                            >
-                              <Lightbulb className="w-3.5 h-3.5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
-                              <div>
-                                <strong className="text-[#ff9f0a]">Fato de Defesa: </strong>
-                                <span className="text-[#d2d2d7]">{clue.evidenceResult.forensicFact}</span>
-                              </div>
-                            </motion.div>
-                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
