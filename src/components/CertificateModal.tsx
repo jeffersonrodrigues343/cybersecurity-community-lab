@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { Award, CheckCircle, MessageSquare, Send, UserCheck, ShieldCheck } from 'lucide-react';
 import { apiService } from '../services/api';
+import { calculatePlayerRank } from '../data/scamsData';
 
 interface CertificateModalProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, scor
       setIsSaved(true);
     }
   };
+
+  const playerRank = calculatePlayerRank(score);
 
   if (!isOpen) return null;
 
@@ -84,9 +87,24 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, scor
               <strong className="text-emerald-400 text-sm">{score} XP Conquistados</strong>
             </div>
             <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
-              <span className="text-slate-500 block text-[10px] uppercase">Competências Validadas:</span>
-              <strong className="text-blue-400 text-sm">WhatsApp, Falsa Central, Pix & Boletos</strong>
+              <span className="text-slate-500 block text-[10px] uppercase">Patente Pedagógica Alcançada:</span>
+              <strong className="text-amber-400 text-xs flex items-center gap-1 mt-0.5">
+                <span>{playerRank.icon}</span>
+                <span>{playerRank.name}</span>
+              </strong>
             </div>
+          </div>
+
+          <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-800 space-y-1">
+            <span className="text-slate-400 block text-[10px] uppercase font-bold text-blue-300">
+              Competências Pedagógicas Formativas Validadas:
+            </span>
+            <ul className="text-[11px] text-slate-300 space-y-0.5 font-sans">
+              <li>✓ Identificação de Engenharia Social, Phishing e Gatilhos de Urgência</li>
+              <li>✓ Auditoria Forense Digital (Whois, Chaves Pix e Linhas Digitáveis)</li>
+              <li>✓ Conhecimento dos Mecanismos Oficiais de Defesa (Banco Central MED / B.O.)</li>
+              <li>✓ Educação e Blindagem Digital Intergeracional (Crianças, Jovens e Idosos)</li>
+            </ul>
           </div>
         </div>
 

@@ -52,11 +52,15 @@ export const Hero: React.FC<HeroProps> = ({ progressPercentage, completedCount }
         <div ref={badgesRef} className="flex flex-wrap items-center gap-2 mb-4">
           <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-semibold">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Simulador Ativo</span>
+            <span>Simulador Pedagógico Ativo</span>
           </span>
           <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-xs font-medium">
             <Globe className="w-3.5 h-3.5" />
-            <span>Top 10 Golpes da Febraban</span>
+            <span>Top 10 Golpes no Brasil (FEBRABAN)</span>
+          </span>
+          <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-xs font-medium">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Para Crianças, Jovens & Adultos</span>
           </span>
           <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-mono text-xs font-medium">
             <Code className="w-3.5 h-3.5" />
@@ -77,7 +81,7 @@ export const Hero: React.FC<HeroProps> = ({ progressPercentage, completedCount }
             </h1>
 
             <p ref={descRef} className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
-              Simulador prático e gamificado desenvolvido para adolescentes, adultos e famílias. Analise casos reais baseados no cotidiano brasileiro: golpes do WhatsApp, falsas centrais de banco, lojas fantasmas e boletos adulterados.
+              Ambiente pedagógico e gamificado desenvolvido para crianças, jovens, adultos e famílias. Aprenda com analogias lúdicas ou diretrizes bancárias reais (Mecanismo Especial de Devolução do Banco Central), investigue pistas forenses no Kit do Investigador e conquiste medalhas protegendo sua família.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-mono text-slate-400">
@@ -88,7 +92,9 @@ export const Hero: React.FC<HeroProps> = ({ progressPercentage, completedCount }
               <span>•</span>
               <div>9 Casos Reais</div>
               <span>•</span>
-              <div>Total de 900 XP</div>
+              <div>8 Conquistas Colecionáveis</div>
+              <span>•</span>
+              <div>Cartilha & Glossário</div>
             </div>
           </div>
 

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Shield, Terminal, Award, Sparkles, Volume2, VolumeX, FileText } from 'lucide-react';
+import { Shield, Terminal, Award, Volume2, VolumeX, FileText } from 'lucide-react';
 import { sound } from '../utils/audio';
+import { calculatePlayerRank } from '../data/scamsData';
 
 interface HeaderProps {
   score: number;
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export const Header = ({ score, totalScore, completedCount, onOpenReportModal }: HeaderProps) => {
   const [soundEnabled, setSoundEnabled] = useState(sound.enabled);
+  const playerRank = calculatePlayerRank(score);
 
   const toggleSound = () => {
     sound.enabled = !sound.enabled;
@@ -70,11 +72,11 @@ export const Header = ({ score, totalScore, completedCount, onOpenReportModal }:
           {/* Progress Pill */}
           <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
             <Shield className="w-3.5 h-3.5 text-blue-400" />
-            <span>Desafios:</span>
-            <span className="text-emerald-400 font-semibold">{completedCount}/3</span>
+            <span>Casos:</span>
+            <span className="text-emerald-400 font-semibold">{completedCount}/9</span>
           </div>
 
-          {/* XP Counter with Motion animation */}
+          {/* XP Counter with Motion animation and Rank */}
           <motion.div 
             key={score}
             initial={{ scale: 1.15, borderColor: '#10b981' }}
@@ -82,14 +84,14 @@ export const Header = ({ score, totalScore, completedCount, onOpenReportModal }:
             transition={{ duration: 0.3 }}
             className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 font-mono text-xs sm:text-sm"
           >
-            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span>{playerRank.icon}</span>
             <span className="text-slate-400 text-xs">XP:</span>
             <span className="font-bold text-emerald-400">{score}</span>
             <span className="text-slate-600 text-xs">/ {totalScore}</span>
           </motion.div>
 
           {/* Completion Badge */}
-          {completedCount === 3 && (
+          {completedCount >= 9 && (
             <motion.div
               initial={{ scale: 0, rotate: -20 }}
               animate={{ scale: 1, rotate: 0 }}

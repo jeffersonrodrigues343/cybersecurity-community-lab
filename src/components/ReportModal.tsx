@@ -25,17 +25,17 @@ export const ReportModal = ({ isOpen, onClose }: ReportModalProps) => {
     {
       key: 'durante',
       title: '3. Durante a Ação Extensionista',
-      content: `Foi desenvolvida e disponibilizada publicamente a plataforma web educacional e interativa "HackLearn", inspirada no modelo gamificado do TryHackMe. O objetivo da ação foi fornecer noções práticas de cibersegurança e segurança web para membros da comunidade e estudantes iniciantes. Durante a ação, usuários tiveram acesso a desafios práticos de identificação de golpes de phishing, cálculo de resistência de senhas contra ataques de força bruta e exploração básica de código front-end (inspeção de elementos HTML/DOM) para captura de flags educativas.`,
+      content: `Foi desenvolvida e disponibilizada publicamente a plataforma web educacional e interativa "HackLearn: Simulador Pedagógico de Defesa contra Golpes Virtuais". O objetivo da ação foi fornecer noções práticas de cibersegurança e letramento digital para membros da comunidade, famílias, adolescentes e idosos. Durante a ação, usuários tiveram acesso a 9 simulações realistas baseadas nos 10 golpes mais comuns do Brasil (dados da FEBRABAN e CERT.br), incluindo clonagem de WhatsApp de parentes, falsas centrais telefônicas 0800, falsas lojas virtuais, o Golpe da Mão Fantasma e boletos adulterados. Para cada caso, o participante atua ativamente como perito investigativo, auditando registros Whois, chaves Pix e códigos bancários antes de emitir seu veredito.`,
     },
     {
       key: 'estrategia',
       title: '4. Mudança de Estratégia',
-      content: `Inicialmente, cogitou-se a elaboração de uma cartilha puramente teórica em formato PDF. No entanto, visando maximizar o engajamento dos participantes e colocar em prática os conhecimentos de programação web e algoritmos do curso de ADS, a estratégia foi alterada para a criação de um ambiente gamificado web interativo (estilo CTF/TryHackMe), o que aumentou a retenção do aprendizado prático por parte dos participantes.`,
+      content: `Inicialmente, cogitou-se a elaboração de uma cartilha puramente teórica em formato PDF ou desafios puramente técnicos de CTF voltados a programadores. No entanto, para alcançar a comunidade real (crianças, adolescentes, pais e idosos vulneráveis a golpes financeiros), a estratégia evoluiu para um simulador pedagógico gamificado. Foram incorporadas lentes pedagógicas duplas (visão lúdica com metáforas para crianças e visão jurídica/financeira com diretrizes do Banco Central para adultos), sistema de medalhas colecionáveis, combos de acerto e a Cartilha da Família Segura, ampliando o impacto social e a retenção do aprendizado.`,
     },
     {
       key: 'resultado',
       title: '5. Resultado da Ação & Conclusão',
-      content: `A plataforma web foi concluída com 100% de funcionalidade, disponibilizando 3 módulos práticos de segurança digital. Membros da comunidade testaram a ferramenta, concluíram as trilhas de desafios e relataram maior clareza sobre como operam os ataques virtuais modernos e como se proteger no dia a dia. A gamificação mostrou-se uma metodologia pedagógica altamente eficiente para desmistificar a computação.`,
+      content: `A plataforma web foi concluída com 100% de funcionalidade, disponibilizando os 3 níveis de dificuldade (Básico, Médio e Avançado), 8 conquistas pedagógicas desbloqueáveis, o Kit do Investigador Forense e certificação de conclusão sincronizada com backend em C# .NET 8, banco SQLite local e persistência em nuvem no Supabase. Membros da comunidade testaram a ferramenta, concluíram as trilhas e relataram maior segurança no uso do Pix, WhatsApp e internet banking. A gamificação pedagógica mostrou-se uma metodologia transformadora para a cidadania digital.`,
     },
     {
       key: 'percepcao',

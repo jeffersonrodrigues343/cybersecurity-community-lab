@@ -127,6 +127,67 @@ class SoundEngine {
       // ignore
     }
   }
+
+  // Celebratory fanfare when unlocking a badge
+  public playBadgeUnlock() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5, E5, G5, C6, E6
+      notes.forEach((freq, index) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+
+        const startTime = this.ctx.currentTime + index * 0.07;
+        gain.gain.setValueAtTime(0.12, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + 0.35);
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  // Level up sound
+  public playLevelUp() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const chords = [440, 554.37, 659.25, 880]; // A major
+      chords.forEach((freq) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.5);
+      });
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export const sound = new SoundEngine();
