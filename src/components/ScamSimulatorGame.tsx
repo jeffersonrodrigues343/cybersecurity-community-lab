@@ -48,12 +48,16 @@ import {
 import { sound } from '../utils/audio';
 import confetti from 'canvas-confetti';
 import { AnimatedCounter } from './AnimatedCounter';
+import { DetectiveDiorama3D } from './DetectiveDiorama3D';
+import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 
 interface ScamSimulatorGameProps {
   onScoreUpdate: (totalXp: number, completedCount: number, allCompleted: boolean) => void;
 }
 
 export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpdate }) => {
+  const [gameMode, setGameMode] = useState<'campaign' | 'dynamic'>('campaign');
+  const [dynamicCase, setDynamicCase] = useState<ScamCase>(() => generateDynamicScamCase());
   const [currentLevel, setCurrentLevel] = useState<ScamLevel>('basico');
   const [currentCaseIndex, setCurrentCaseIndex] = useState(0);
 
@@ -126,9 +130,25 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     sound.playBadgeUnlock();
   };
 
-  // Casos do nível atual
+  // Casos do nível atual ou Caso Dinâmico
   const levelCases = SCAM_CASES.filter((c) => c.level === currentLevel);
-  const currentCase: ScamCase = levelCases[currentCaseIndex] || levelCases[0];
+  const currentCase: ScamCase =
+    gameMode === 'dynamic' ? dynamicCase : (levelCases[currentCaseIndex] || levelCases[0]);
+
+  const getScenarioType = (c: ScamCase): 'whatsapp' | 'correios' | 'banco' | 'loja' | 'tarefas' | 'remoto' | 'oficial' | 'geral' => {
+    const cat = (c.category || '').toLowerCase();
+    const id = (c.id || '').toLowerCase();
+    const title = (c.title || '').toLowerCase();
+
+    if (id.includes('whatsapp') || cat.includes('whatsapp') || cat.includes('família')) return 'whatsapp';
+    if (id.includes('correios') || cat.includes('encomenda') || cat.includes('sms')) return 'correios';
+    if (id.includes('central') || id.includes('0800') || c.channel === 'call' || cat.includes('central')) return 'banco';
+    if (id.includes('loja') || cat.includes('comércio') || cat.includes('loja') || title.includes('desconto')) return 'loja';
+    if (id.includes('tarefa') || cat.includes('vagas') || cat.includes('trabalho')) return 'tarefas';
+    if (id.includes('fantasma') || cat.includes('remoto') || title.includes('anydesk')) return 'remoto';
+    if (id.includes('ecac') || id.includes('receita') || cat.includes('cidadania')) return 'oficial';
+    return 'banco';
+  };
 
   // Pistas coletadas no caso atual
   const currentCaseDiscovered = discoveredClues[currentCase.id] || [];
@@ -333,6 +353,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     setDrillSuccess(false);
     setDrillBonusAwarded(false);
 
+    if (gameMode === 'dynamic') {
+      setDynamicCase(generateDynamicScamCase());
+      return;
+    }
+
     if (currentCaseIndex < levelCases.length - 1) {
       setCurrentCaseIndex((prev) => prev + 1);
     } else {
@@ -348,6 +373,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
   const handleSelectLevel = (level: ScamLevel) => {
     sound.playBlip();
+    setGameMode('campaign');
     setCurrentLevel(level);
     setCurrentCaseIndex(0);
     setExpandedClueId(null);
@@ -482,38 +508,99 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       {/* BLOCO 1: CENTRAL DE PROGRESSÃO & SELEÇÃO DE NÍVEIS (BENTO) */}
       {/* ======================================================== */}
       <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 shadow-lg">
-        {/* Linha Superior: Seletor de Níveis e Metadados */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Linha Superior: Seletor de Modo e Níveis */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
           
-          {/* Apple Segmented Pill */}
-          <div className="flex items-center space-x-1 p-1 rounded-full bg-black/50 border border-white/[0.06] w-full sm:w-auto justify-center">
-            {(['basico', 'medio', 'avancado'] as ScamLevel[]).map((level) => {
-              const lCases = SCAM_CASES.filter((c) => c.level === level);
-              const lFinished = lCases.filter((c) => answers[c.id]?.answered).length;
-              const isCurrent = currentLevel === level;
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-center lg:justify-start">
+            {/* Alternador de Modo: Campanha vs Cenários Dinâmicos 3D */}
+            <div className="flex items-center space-x-1 p-1 rounded-full bg-black/60 border border-white/[0.08]">
+              <button
+                onClick={() => {
+                  sound.playBlip();
+                  setGameMode('campaign');
+                  setExpandedClueId(null);
+                  setSelectedVerdict(null);
+                  setSelectedHypothesis(null);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition flex items-center space-x-1.5 cursor-pointer ${
+                  gameMode === 'campaign'
+                    ? 'bg-[#0071e3] text-white shadow-sm'
+                    : 'text-[#86868b] hover:text-white'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Casos Oficiais (9 Níveis)</span>
+              </button>
 
-              return (
-                <button
-                  key={level}
-                  onClick={() => handleSelectLevel(level)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-1.5 cursor-pointer ${
-                    isCurrent
-                      ? 'bg-white/20 text-white shadow-sm'
-                      : 'text-[#86868b] hover:text-white'
-                  }`}
-                >
-                  {getLevelIcon(level)}
-                  <span className="capitalize">{level}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                      isCurrent ? 'bg-white/20 text-white' : 'bg-white/5 text-[#86868b]'
-                    }`}
-                  >
-                    {lFinished}/{lCases.length}
-                  </span>
-                </button>
-              );
-            })}
+              <button
+                onClick={() => {
+                  sound.playBlip();
+                  setGameMode('dynamic');
+                  setExpandedClueId(null);
+                  setSelectedVerdict(null);
+                  setSelectedHypothesis(null);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition flex items-center space-x-1.5 cursor-pointer ${
+                  gameMode === 'dynamic'
+                    ? 'bg-gradient-to-r from-[#bf5af2] to-[#2997ff] text-white shadow-md shadow-purple-500/20'
+                    : 'text-[#86868b] hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#ff9f0a]" />
+                <span>⚡ Cenários Dinâmicos 3D</span>
+              </button>
+            </div>
+
+            {/* Seletor de Níveis (em modo campanha) */}
+            {gameMode === 'campaign' ? (
+              <div className="flex items-center space-x-1 p-1 rounded-full bg-black/50 border border-white/[0.06]">
+                {(['basico', 'medio', 'avancado'] as ScamLevel[]).map((level) => {
+                  const lCases = SCAM_CASES.filter((c) => c.level === level);
+                  const lFinished = lCases.filter((c) => answers[c.id]?.answered).length;
+                  const isCurrent = currentLevel === level;
+
+                  return (
+                    <button
+                      key={level}
+                      onClick={() => handleSelectLevel(level)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-1.5 cursor-pointer ${
+                        isCurrent
+                          ? 'bg-white/20 text-white shadow-sm'
+                          : 'text-[#86868b] hover:text-white'
+                      }`}
+                    >
+                      {getLevelIcon(level)}
+                      <span className="capitalize">{level}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                          isCurrent ? 'bg-white/20 text-white' : 'bg-white/5 text-[#86868b]'
+                        }`}
+                      >
+                        {lFinished}/{lCases.length}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  sound.playBlip();
+                  setDynamicCase(generateDynamicScamCase());
+                  setExpandedClueId(null);
+                  setFloatingXp(null);
+                  setSelectedVerdict(null);
+                  setSelectedHypothesis(null);
+                  setDrillSelectedOptionId(null);
+                  setDrillSuccess(false);
+                  setDrillBonusAwarded(false);
+                }}
+                className="px-3.5 py-1.5 rounded-full bg-[#bf5af2]/15 hover:bg-[#bf5af2]/25 text-[#bf5af2] border border-[#bf5af2]/35 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>🎲 Sortear Outro Cenário 3D</span>
+              </button>
+            )}
           </div>
 
           {/* Patente Atual do Jogador & Combo Streak */}
@@ -602,7 +689,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           className="lg:col-span-7 bg-[#161617] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl space-y-0"
         >
           {/* Header do Cartão Bento */}
-          <div className="px-6 py-4 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between">
+          <div className="px-6 py-4 bg-white/[0.02] border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
                 {getCategoryIcon(currentCase.category)}
@@ -613,35 +700,55 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </div>
             </div>
 
-            <div className="flex items-center space-x-1.5">
-              {levelCases.map((c, idx) => {
-                const isAns = answers[c.id]?.answered;
-                const isAct = currentCaseIndex === idx;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => {
-                      sound.playBlip();
-                      setCurrentCaseIndex(idx);
-                      setExpandedClueId(null);
-                      setFloatingXp(null);
-                      setSelectedVerdict(null);
-                      setSelectedHypothesis(null);
-                    }}
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer flex items-center space-x-1 ${
-                      isAct
-                        ? 'bg-[#0071e3] text-white shadow-sm'
-                        : isAns
-                        ? 'bg-white/[0.08] text-[#30d158] hover:bg-white/[0.12]'
-                        : 'bg-white/[0.04] text-[#86868b] hover:text-white'
-                    }`}
-                  >
-                    <span>Caso {idx + 1}</span>
-                    {isAns && <CheckCircle2 className="w-3 h-3 text-[#30d158]" />}
-                  </button>
-                );
-              })}
-            </div>
+            {gameMode === 'campaign' ? (
+              <div className="flex items-center space-x-1.5">
+                {levelCases.map((c, idx) => {
+                  const isAns = answers[c.id]?.answered;
+                  const isAct = currentCaseIndex === idx;
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        sound.playBlip();
+                        setCurrentCaseIndex(idx);
+                        setExpandedClueId(null);
+                        setFloatingXp(null);
+                        setSelectedVerdict(null);
+                        setSelectedHypothesis(null);
+                      }}
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer flex items-center space-x-1 ${
+                        isAct
+                          ? 'bg-[#0071e3] text-white shadow-sm'
+                          : isAns
+                          ? 'bg-white/[0.08] text-[#30d158] hover:bg-white/[0.12]'
+                          : 'bg-white/[0.04] text-[#86868b] hover:text-white'
+                      }`}
+                    >
+                      <span>Caso {idx + 1}</span>
+                      {isAns && <CheckCircle2 className="w-3 h-3 text-[#30d158]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  sound.playBlip();
+                  setDynamicCase(generateDynamicScamCase());
+                  setExpandedClueId(null);
+                  setFloatingXp(null);
+                  setSelectedVerdict(null);
+                  setSelectedHypothesis(null);
+                  setDrillSelectedOptionId(null);
+                  setDrillSuccess(false);
+                  setDrillBonusAwarded(false);
+                }}
+                className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#bf5af2] to-[#2997ff] text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-purple-500/20 hover:opacity-95"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>🎲 Sortear Novo Cenário 3D</span>
+              </button>
+            )}
           </div>
 
           {/* Conteúdo do Incidente */}
@@ -663,6 +770,37 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 </p>
               </div>
             </div>
+
+            {/* Diorama 3D Pericial com Bonecos em Cenário Hipotético (Three.js) */}
+            <DetectiveDiorama3D
+              scenarioType={getScenarioType(currentCase)}
+              isScam={currentCase.isScam}
+              verdictResult={
+                currentAnswerData?.answered
+                  ? currentAnswerData.isCorrect
+                    ? 'correct'
+                    : 'incorrect'
+                  : null
+              }
+              onPropClick={(propName) => {
+                sound.playBlip();
+                if (propName.includes('celular') || propName.includes('whatsapp')) {
+                  const target = currentCase.clues.find((c) => c.category === 'phone' || c.category === 'behavior');
+                  if (target) handleInspectClue(target);
+                } else if (propName.includes('pacote') || propName.includes('correios')) {
+                  const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'system');
+                  if (target) handleInspectClue(target);
+                } else if (propName.includes('banco') || propName.includes('terminal')) {
+                  const target = currentCase.clues.find((c) => c.category === 'pix' || c.category === 'official');
+                  if (target) handleInspectClue(target);
+                } else if (propName.includes('computador') || propName.includes('remoto')) {
+                  const target = currentCase.clues.find((c) => c.category === 'system' || c.category === 'behavior');
+                  if (target) handleInspectClue(target);
+                } else if (currentCase.clues[0]) {
+                  handleInspectClue(currentCase.clues[0]);
+                }
+              }}
+            />
 
             {/* Linha de Metadados do Remetente */}
             <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
