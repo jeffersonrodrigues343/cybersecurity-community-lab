@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { Award, CheckCircle, MessageSquare, Send, UserCheck } from 'lucide-react';
+import { apiService } from '../services/api';
 
 interface CertificateModalProps {
   isOpen: boolean;
@@ -25,9 +26,10 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, scor
     }
   }, [isOpen]);
 
-  const handleSaveTestimonial = (e: React.FormEvent) => {
+  const handleSaveTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (testimonial.trim().length > 3) {
+      await apiService.submitFeedback(participantName, testimonial);
       setIsSaved(true);
     }
   };
