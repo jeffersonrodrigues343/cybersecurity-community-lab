@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Shield, Terminal, Award, Volume2, VolumeX, FileText } from 'lucide-react';
+import { Shield, Award, Volume2, VolumeX, Info } from 'lucide-react';
 import { sound } from '../utils/audio';
 import { calculatePlayerRank } from '../data/scamsData';
 
@@ -24,81 +24,71 @@ export const Header = ({ score, totalScore, completedCount, onOpenReportModal }:
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#080c14]/85 backdrop-blur-md">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 h-12 bg-black/80 backdrop-blur-xl border-b border-white/[0.08] transition-all">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
         
-        {/* Brand */}
-        <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <Terminal className="w-5 h-5" />
+        {/* Apple-style Brand / Logo */}
+        <div className="flex items-center space-x-2.5">
+          <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-white">
+            <Shield className="w-3.5 h-3.5 text-[#2997ff]" />
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg tracking-wider text-white">HACK<span className="text-emerald-400">LEARN</span></span>
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/50">
-                v1.0 Community
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 font-mono hidden sm:block">
-              Extensão Universitária • CST Análise e Desenv. de Sistemas
-            </p>
-          </div>
+          <span className="font-semibold text-sm tracking-tight text-white flex items-center gap-1.5">
+            <span>HackLearn</span>
+            <span className="text-[10px] text-[#86868b] font-normal hidden sm:inline">• Defesa Digital</span>
+          </span>
         </div>
 
-        {/* Right Stats & Badge */}
-        <div className="flex items-center space-x-2.5 sm:space-x-4">
+        {/* Right Stats & Apple Capsule Controls */}
+        <div className="flex items-center space-x-2 sm:space-x-3">
           
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-600 transition"
-            title={soundEnabled ? 'Desativar Sons' : 'Ativar Efeitos Sonoros'}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[#86868b] hover:text-white hover:bg-white/[0.08] transition"
+            title={soundEnabled ? 'Silenciar Áudio' : 'Ativar Áudio'}
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
           </button>
 
-          {/* Botao Sobre o Projeto */}
+          {/* Botão Sobre o Projeto */}
           {onOpenReportModal && (
             <button
               onClick={onOpenReportModal}
-              className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-emerald-500 transition text-xs font-mono"
+              className="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#86868b] hover:text-white transition text-xs font-normal"
               title="Sobre o Projeto de Extensão"
             >
-              <FileText className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Sobre o Projeto</span>
+              <Info className="w-3 h-3 text-[#2997ff]" />
+              <span>Sobre</span>
             </button>
           )}
 
-          {/* Progress Pill */}
-          <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
-            <Shield className="w-3.5 h-3.5 text-blue-400" />
-            <span>Casos:</span>
-            <span className="text-emerald-400 font-semibold">{completedCount}/9</span>
+          {/* Progress Capsule */}
+          <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/[0.06] text-xs text-[#86868b]">
+            <span className="text-white font-medium">{completedCount}</span>
+            <span>/ 9 casos</span>
           </div>
 
-          {/* XP Counter with Motion animation and Rank */}
+          {/* XP Pill with Motion */}
           <motion.div 
             key={score}
-            initial={{ scale: 1.15, borderColor: '#10b981' }}
-            animate={{ scale: 1, borderColor: '#334155' }}
-            transition={{ duration: 0.3 }}
-            className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 font-mono text-xs sm:text-sm"
+            initial={{ scale: 1.05 }}
+            animate={{ scale: 1 }}
+            className="flex items-center space-x-1 px-3 py-1 rounded-full bg-white/[0.08] border border-white/[0.1] text-xs font-medium text-white"
           >
-            <span>{playerRank.icon}</span>
-            <span className="text-slate-400 text-xs">XP:</span>
-            <span className="font-bold text-emerald-400">{score}</span>
-            <span className="text-slate-600 text-xs">/ {totalScore}</span>
+            <span className="text-xs">{playerRank.icon}</span>
+            <span className="text-[#2997ff] font-semibold">{score}</span>
+            <span className="text-[#86868b] text-[11px]">/ {totalScore} XP</span>
           </motion.div>
 
           {/* Completion Badge */}
           {completedCount >= 9 && (
             <motion.div
-              initial={{ scale: 0, rotate: -20 }}
-              animate={{ scale: 1, rotate: 0 }}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold font-mono shadow-lg shadow-emerald-900/40"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-[#30d158]/20 border border-[#30d158]/40 text-[#30d158] text-xs font-medium"
             >
-              <Award className="w-4 h-4" />
-              <span className="hidden lg:inline">CERTIFICADO LIBERADO</span>
+              <Award className="w-3 h-3" />
+              <span className="hidden md:inline">Certificado Pronto</span>
             </motion.div>
           )}
         </div>

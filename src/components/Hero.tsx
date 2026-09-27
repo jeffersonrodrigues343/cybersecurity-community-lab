@@ -8,39 +8,39 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = () => {
   return (
-    <section className="pt-6 pb-6 text-center max-w-3xl mx-auto space-y-4">
-      {/* Tag de identificação simples */}
-      <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
-        <Users className="w-3.5 h-3.5" />
-        <span>Simulador para Famílias, Jovens e Adultos</span>
+    <section className="pt-10 pb-8 text-center max-w-2xl mx-auto space-y-4">
+      {/* Apple Pill Tag */}
+      <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-[#86868b] hover:text-[#d2d2d7] text-xs font-normal transition">
+        <Users className="w-3.5 h-3.5 text-[#2997ff]" />
+        <span>Para Famílias, Jovens e Adultos</span>
       </div>
 
-      {/* Título direto e acolhedor */}
-      <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-        Descubra se a Mensagem é{' '}
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-300 to-emerald-400">
-          Golpe ou Segura
+      {/* Apple Headline with Elegant Gradient */}
+      <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+        Descubra se a mensagem é{' '}
+        <span className="apple-headline block sm:inline">
+          golpe ou segura.
         </span>
       </h1>
 
-      {/* Subtítulo claro sem jargões */}
-      <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-        Coloque seus sentidos à prova com mensagens reais de WhatsApp, SMS e ligações do dia a dia. Inspecione as pistas com o Kit do Investigador e aprenda a se proteger sem complicação.
+      {/* Subtitle in Apple Typography */}
+      <p className="text-[#86868b] text-base sm:text-lg leading-relaxed max-w-xl mx-auto font-normal">
+        Casos reais de WhatsApp, SMS e ligações cotidianas. Investigue as pistas com laudos forenses e aprenda a blindar quem você ama.
       </p>
 
-      {/* 3 destaques objetivos */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 pt-1 text-xs text-slate-400 font-medium">
-        <div className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>9 Casos do Dia a Dia</span>
+      {/* Apple Capsule Highlights */}
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-2 text-xs text-[#86868b] font-normal">
+        <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08]">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#30d158]" />
+          <span>9 Casos Cotidianos</span>
         </div>
-        <div className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800">
-          <Search className="w-3.5 h-3.5 text-blue-400" />
+        <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08]">
+          <Search className="w-3.5 h-3.5 text-[#2997ff]" />
           <span>Kit de Investigação</span>
         </div>
-        <div className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800">
-          <Award className="w-3.5 h-3.5 text-amber-400" />
-          <span>Certificado & Conquistas</span>
+        <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08]">
+          <Award className="w-3.5 h-3.5 text-[#ff9f0a]" />
+          <span>Conquistas & Certificado</span>
         </div>
       </div>
     </section>
