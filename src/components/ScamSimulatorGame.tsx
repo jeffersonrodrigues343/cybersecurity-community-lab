@@ -64,6 +64,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       cluesDiscovered: string[];
       bonusXp: number;
       comboBonus: number;
+      penaltyXp?: number;
     };
   }>({});
 
@@ -197,12 +198,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       });
 
       if (currentCase.id === 'case-1-whatsapp') unlockBadge('badge-family-shield');
-      if (currentCase.id === 'case-7-mao-fantasma') unlockBadge('badge-anti-ghost');
-      if (['case-1-whatsapp', 'case-8-boleto-falso', 'case-9-robo-pix'].includes(currentCase.id)) {
+      if (currentCase.id === 'case-7-punycode-homografo' || currentCase.id === 'case-7-mao-fantasma') unlockBadge('badge-anti-ghost');
+      if (['case-1-whatsapp', 'case-4-falsa-central'].includes(currentCase.id)) {
         unlockBadge('badge-pix-guard');
       }
-      if (currentCase.id === 'case-4-falsa-central' || currentCase.id === 'case-9-robo-pix') {
-        const otherCaseAnswer = answers[currentCase.id === 'case-4-falsa-central' ? 'case-9-robo-pix' : 'case-4-falsa-central'];
+      if (currentCase.id === 'case-4-falsa-central' || currentCase.id === 'case-8-receita-ecac') {
+        const otherCaseAnswer = answers[currentCase.id === 'case-4-falsa-central' ? 'case-8-receita-ecac' : 'case-4-falsa-central'];
         if (otherCaseAnswer?.isCorrect) {
           unlockBadge('badge-central-bank-expert');
         }
@@ -210,8 +211,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     } else {
       sound.playError();
       setStreak(0);
-      setFloatingXp(null);
+      if (currentLevel === 'avancado') {
+        setFloatingXp(-25);
+      } else {
+        setFloatingXp(null);
+      }
     }
+
+    const penaltyXp = !isCorrect && currentLevel === 'avancado' ? 25 : 0;
 
     const newAnswers = {
       ...answers,
@@ -222,16 +229,20 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         cluesDiscovered: discoveredClues[currentCase.id] || [],
         bonusXp,
         comboBonus,
+        penaltyXp,
       },
     };
 
     setAnswers(newAnswers);
 
-    const newTotalXp = Object.entries(newAnswers).reduce((acc, [caseId, data]) => {
-      if (!data.isCorrect) return acc;
+    const newTotalXp = Math.max(0, Object.entries(newAnswers).reduce((acc, [caseId, data]) => {
       const found = SCAM_CASES.find((c) => c.id === caseId);
-      return acc + (found?.xpReward || 0) + (data.bonusXp || 0) + (data.comboBonus || 0);
-    }, 0);
+      if (data.isCorrect) {
+        return acc + (found?.xpReward || 0) + (data.bonusXp || 0) + (data.comboBonus || 0);
+      } else {
+        return acc - (data.penaltyXp || 0);
+      }
+    }, 0));
 
     const newCompletedCount = Object.keys(newAnswers).length;
     const allCompleted = newCompletedCount === totalCases;
@@ -494,6 +505,52 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               transition={{ duration: 0.4 }}
               className="h-full bg-gradient-to-r from-[#0071e3] to-[#2997ff] rounded-full"
             />
+          </div>
+        </div>
+
+        {/* Banner Informativo de Metodologia e Dificuldade */}
+        <div className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all ${
+          currentLevel === 'basico'
+            ? 'bg-[#30d158]/5 border-[#30d158]/20'
+            : currentLevel === 'medio'
+            ? 'bg-[#ff9f0a]/5 border-[#ff9f0a]/20'
+            : 'bg-[#ff3b30]/10 border-[#ff3b30]/25'
+        }`}>
+          <div className="flex items-center space-x-3">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center border flex-shrink-0 ${
+              currentLevel === 'basico'
+                ? 'bg-[#30d158]/15 border-[#30d158]/30 text-[#30d158]'
+                : currentLevel === 'medio'
+                ? 'bg-[#ff9f0a]/15 border-[#ff9f0a]/30 text-[#ff9f0a]'
+                : 'bg-[#ff3b30]/20 border-[#ff3b30]/35 text-[#ff3b30]'
+            }`}>
+              {getLevelIcon(currentLevel)}
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-white flex flex-wrap items-center gap-2">
+                <span>
+                  {currentLevel === 'basico' && 'Nível 1: Básico • Pistas Guiadas & Sinais Evidentes'}
+                  {currentLevel === 'medio' && 'Nível 2: Médio • Engenharia Social & Evidências Mistas'}
+                  {currentLevel === 'avancado' && 'Nível 3: Avançado • Perícia Forense Real & Risco Ativo'}
+                </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                  currentLevel === 'basico'
+                    ? 'bg-[#30d158]/15 text-[#30d158]'
+                    : currentLevel === 'medio'
+                    ? 'bg-[#ff9f0a]/15 text-[#ff9f0a]'
+                    : 'bg-[#ff3b30]/20 text-[#ff3b30]'
+                }`}>
+                  {currentLevel === 'basico' && '+50 XP Base'}
+                  {currentLevel === 'medio' && '+100 XP Base'}
+                  {currentLevel === 'avancado' && '+150 XP • -25 XP se errar'}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#86868b] leading-relaxed mt-0.5">
+                {currentLevel === 'basico' && 'Casos do dia a dia com erros claros de remetente ou domínio. Ideal para aprender a metodologia.'}
+                {currentLevel === 'medio' && 'Criminosos mascaram a fraude com dados reais e spoofing. Cuidado: há comunicações legítimas desafiadoras!'}
+                {currentLevel === 'avancado' && 'Ataques técnicos sofisticados (Punycode cirílico, Proxy Reverso AiTM) e notificações autênticas da Receita Federal. Erro desconta XP!'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -833,10 +890,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -20, scale: 0.9 }}
                       transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#30d158]/20 border border-[#30d158]/40 text-[#30d158] font-bold text-xs shadow-lg mb-1"
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border font-bold text-xs shadow-lg mb-1 ${
+                        floatingXp > 0
+                          ? 'bg-[#30d158]/20 border-[#30d158]/40 text-[#30d158]'
+                          : 'bg-[#ff3b30]/20 border-[#ff3b30]/40 text-[#ff3b30]'
+                      }`}
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>+{floatingXp} XP Conquistado!</span>
+                      <span>{floatingXp > 0 ? `+${floatingXp} XP Conquistado!` : `${floatingXp} XP (Penalidade do Nível Avançado)`}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -869,6 +930,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     <h4 className="font-semibold text-sm">
                       {currentAnswerData.isCorrect
                         ? `Veredito Correto! +${currentCase.xpReward} XP Base`
+                        : currentAnswerData.penaltyXp
+                        ? `Veredito Incorreto! O ataque avançado induziu ao erro (-${currentAnswerData.penaltyXp} XP e combo zerado).`
                         : 'Veredito Incorreto! Você caiu na armadilha.'}
                     </h4>
                     {currentAnswerData.bonusXp > 0 && (
