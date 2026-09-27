@@ -1,5 +1,19 @@
 export type ScamLevel = 'basico' | 'medio' | 'avancado';
 
+export interface InvestigativeClue {
+  id: string;
+  name: string;
+  buttonLabel: string;
+  category: 'whois' | 'pix' | 'phone' | 'behavior' | 'system';
+  question: string;
+  evidenceResult: {
+    status: 'suspicious' | 'clean';
+    headline: string;
+    details: string;
+    forensicFact: string;
+  };
+}
+
 export interface ScamCase {
   id: string;
   level: ScamLevel;
@@ -12,10 +26,7 @@ export interface ScamCase {
   time: string;
   preview: string;
   messageContent: string;
-  extraDetails?: {
-    label: string;
-    value: string;
-  }[];
+  clues: InvestigativeClue[];
   isScam: boolean;
   redFlags: string[];
   explanation: string;
@@ -38,24 +49,61 @@ export const SCAM_CASES: ScamCase[] = [
     time: '14:22',
     preview: 'Oi mãe, anota meu número novo! Meu celular antigo quebrou...',
     messageContent:
-      'Oi mãe! Salva meu número novo aí, por favor. O meu celular antigo caiu no chão e parou de funcionar. Tô usando esse provisório.\n\nPreciso muito de um favor urgente: tenho que pagar uma conta da faculdade até às 15h e meu app do banco ainda não autorizou nesse aparelho. Consegue me transferir um Pix de R$ 480 agora? Te devolvo assim que chegar em casa!',
-    extraDetails: [
-      { label: 'Foto de Perfil', value: 'Foto real do parente retirada de rede social pública' },
-      { label: 'DDD do Número', value: 'DDD de outro estado diferente da família' },
-      { label: 'Chave Pix informada', value: 'CPF de uma pessoa desconhecida' },
+      'Oi mãe! Salva meu número novo aí, por favor. O meu celular antigo caiu no chão e parou de funcionar. Tô usando esse provisório.\n\nPreciso muito de um favor urgente: tenho que pagar uma conta da faculdade até às 15h e meu app do banco ainda não autorizou nesse aparelho. Consegue me transferir um Pix de R$ 480 agora? Te devolvo assim que chegar em casa!\n\nChave Pix: 489.120.392-80',
+    clues: [
+      {
+        id: 'clue-1-ddd',
+        name: 'Checagem do DDD e Linha Telefônica',
+        buttonLabel: '🔍 Checar DDD do Número',
+        category: 'phone',
+        question: 'De onde é esse número e quando a linha foi ativada?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'DDD incompatível e chip pré-pago recém-ativado!',
+          details: 'A linha é do DDD (85) - Ceará, enquanto toda a família reside em São Paulo (11). O chip foi cadastrado há menos de 48 horas em nome de terceiro.',
+          forensicFact: 'Criminosos adquirem chips pré-pagos descartáveis aos montes para aplicar golpes do novo número antes que a linha seja bloqueada.',
+        },
+      },
+      {
+        id: 'clue-1-pix',
+        name: 'Consulta da Chave Pix (Banco Central)',
+        buttonLabel: '💳 Consultar Titular do Pix',
+        category: 'pix',
+        question: 'Quem é o verdadeiro dono da conta que vai receber o dinheiro?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Chave Pix pertence a uma pessoa totalmente desconhecida!',
+          details: 'A chave CPF pertence a "Marcos Vinicius de Souza" no Banco Digital PagBank. Não tem nenhuma ligação com sua filha ou com a faculdade.',
+          forensicFact: 'Contas de laranjas ("money mules") são alugadas ou criadas com documentos falsos para receber o dinheiro do golpe e pulverizar o saldo em segundos.',
+        },
+      },
+      {
+        id: 'clue-1-voice',
+        name: 'Tentativa de Chamada de Voz / Vídeo',
+        buttonLabel: '📞 Ligar para Confirmar a Voz',
+        category: 'behavior',
+        question: 'O que acontece ao tentar ligar para este número?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Chamada recusada imediatamente com desculpa!',
+          details: 'A pessoa rejeitou a chamada e mandou texto: "Mãe, não consigo atender agora, o microfone tá chiando muito, manda o comprovante por aqui!"',
+          forensicFact: 'Golpistas sempre evitam chamadas em tempo real porque não conseguem imitar a voz e o rosto do parente verdadeiro.',
+        },
+      },
     ],
     isScam: true,
     redFlags: [
-      'Uso de número desconhecido alegando que "trocou de aparelho".',
-      'Urgência excessiva para que a vítima não tenha tempo de pensar.',
-      'Chave Pix em nome de um terceiro desconhecido.',
-      'Desculpas para não atender ligações normais ou chamadas de vídeo.',
+      'DDD diferente da residência da família.',
+      'Chave Pix em nome de pessoa física desconhecida.',
+      'Recusa em atender chamadas de voz ou vídeo.',
+      'Pressão emocional com prazo curto ("até às 15h").',
     ],
     explanation:
-      'Este é o golpe financeiro número 1 no Brasil (mais de 150 mil casos anuais). Os golpistas pegam fotos de perfil em redes sociais abertas e criam contas falsas se passando por filhos ou parentes para extorquir dinheiro com histórias de emergência.',
+      'Este é o golpe financeiro número 1 no Brasil. Criminosos obtêm fotos públicas em redes sociais e criam perfis falsos no WhatsApp se passando por parentes. A história de emergência visa impedir que a vítima pense com clareza.',
     realWorldTip:
-      'Regra de Ouro da Febraban: Nunca faça transferências para alguém que alega ser seu parente em um número novo sem antes LIGAR para o número antigo ou fazer uma chamada de vídeo para confirmar o rosto e a voz.',
+      'Regra de Ouro da Febraban: Nunca transfira dinheiro para um parente que alega ter trocado de número sem antes ligar no NÚMERO ANTIGO dele ou fazer uma chamada de vídeo para ver o rosto da pessoa.',
   },
+
   {
     id: 'case-2-correios',
     level: 'basico',
@@ -69,21 +117,59 @@ export const SCAM_CASES: ScamCase[] = [
     preview: 'CORREIOS: Objeto internacional retido por pendência...',
     messageContent:
       'CORREIOS: Sua encomenda internacional LK8492019BR foi retida na fiscalização aduaneira por pendência tributária de R$ 28,40. Efetue o pagamento hoje para evitar devolução ao remetente: https://correios-rastreio-taxa.net/pagamento',
-    extraDetails: [
-      { label: 'Remetente', value: 'SMS de número curto desconhecido' },
-      { label: 'Link fornecido', value: 'correios-rastreio-taxa.net (não oficial)' },
+    clues: [
+      {
+        id: 'clue-2-whois',
+        name: 'Análise de Registro do Site (Whois)',
+        buttonLabel: '🌐 Inspecionar Endereço do Link',
+        category: 'whois',
+        question: 'Quem é o dono desse site e quando ele foi criado?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Domínio falso criado há apenas 3 dias no exterior!',
+          details: 'O site "correios-rastreio-taxa.net" foi registrado anonimamente em servidor na Islândia. O site oficial dos Correios brasileiros é estritamente "correios.com.br".',
+          forensicFact: 'Órgãos governamentais e estatais no Brasil utilizam obrigatoriamente a terminação ".com.br" ou ".gov.br". Qualquer ".net", ".online" ou ".site" é fraude.',
+        },
+      },
+      {
+        id: 'clue-2-tracking',
+        name: 'Consulta do Código no App Oficial dos Correios',
+        buttonLabel: '📦 Conferir Código no App dos Correios',
+        category: 'system',
+        question: 'Esse código de rastreio LK8492019BR realmente existe?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Código de rastreio inexistente na base dos Correios!',
+          details: 'Ao buscar o código "LK8492019BR" no sistema oficial dos Correios, o retorno é: "Objeto não encontrado na base de dados".',
+          forensicFact: 'Os golpistas geram códigos aleatórios que imitam o padrão de letras e números internacionais (2 letras + 9 números + BR) para enganar quem comprou na Shopee ou Shein.',
+        },
+      },
+      {
+        id: 'clue-2-sms-policy',
+        name: 'Política Oficial de Cobrança dos Correios',
+        buttonLabel: '📋 Verificar Como os Correios Cobram',
+        category: 'behavior',
+        question: 'Os Correios mandam link por SMS para pagar taxa via Pix?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Os Correios NUNCA mandam link de pagamento por SMS!',
+          details: 'A cobrança de taxas de importação (despacho postal) só pode ser paga dentro do portal logado "Minhas Importações" no site oficial correios.com.br.',
+          forensicFact: 'O CERT.br já emitiu alerta nacional sobre campanhas massivas de SMS maliciosos usando o nome dos Correios.',
+        },
+      },
     ],
     isScam: true,
     redFlags: [
-      'O link termina em ".net" em vez do domínio governamental/oficial "correios.com.br".',
-      'Os Correios não mandam SMS com cobrança de Pix direto para links encurtados.',
-      'Ameaça de "devolução imediata" para forçar a vítima a pagar por impulso.',
+      'Link com final ".net" em vez do site oficial correios.com.br.',
+      'Código de rastreio não existe no sistema oficial.',
+      'Cobrança por link direto em SMS contraria a política dos Correios.',
     ],
     explanation:
-      'Golpe de Phishing por SMS extremamente comum entre pessoas que compram na internet (Shopee, Shein, AliExpress). A página falsa imita o site dos Correios e gera um Pix que vai direto para a conta dos estelionatários.',
+      'Golpe de pescaria digital (Phishing). Os criminosos aproveitam o hábito dos brasileiros de comprar em e-commerces internacionais para disparar milhões de SMS com falsas taxas alfandegárias.',
     realWorldTip:
-      'Para conferir qualquer taxa de encomenda, acesse EXCLUSIVAMENTE o site oficial dos Correios (correios.com.br) ou o aplicativo oficial na área "Minhas Importações". Nunca clique em links recebidos por SMS.',
+      'Para conferir qualquer taxa de encomenda, acesse EXCLUSIVAMENTE o site oficial dos Correios (correios.com.br) ou o app oficial. Jamais clique em links de cobrança recebidos por mensagem.',
   },
+
   {
     id: 'case-3-legit-2fa',
     level: 'basico',
@@ -97,20 +183,57 @@ export const SCAM_CASES: ScamCase[] = [
     preview: 'Seu código de acesso é 839-102. Não compartilhe...',
     messageContent:
       'BANCO: Seu código de segurança para acesso à conta é 839-102. ATENÇÃO: Nossos atendentes NUNCA pedem este código por telefone ou mensagem. Se você não solicitou este acesso, abra o app do banco e altere sua senha.',
-    extraDetails: [
-      { label: 'Link externo', value: 'Nenhum link enviado' },
-      { label: 'Pedido de resposta', value: 'Não solicita resposta por mensagem' },
+    clues: [
+      {
+        id: 'clue-3-links',
+        name: 'Verificação de Links e Endereços Externos',
+        buttonLabel: '🔍 Checar se Há Links Suspeitos',
+        category: 'whois',
+        question: 'A mensagem pede para clicar em algum site externo?',
+        evidenceResult: {
+          status: 'clean',
+          headline: 'Nenhum link enviado! Procedimento 100% seguro.',
+          details: 'A mensagem contém apenas o código numérico. Não há URLs, encurtadores de link ou arquivos para baixar.',
+          forensicFact: 'Mensagens verdadeiras de token 2FA nunca precisam de links externos: o código deve ser digitado na tela onde você mesmo estava fazendo o login.',
+        },
+      },
+      {
+        id: 'clue-3-safety-warning',
+        name: 'Aviso de Segurança Institucional',
+        buttonLabel: '🛡️ Analisar o Aviso da Mensagem',
+        category: 'system',
+        question: 'O que o banco orienta sobre o código?',
+        evidenceResult: {
+          status: 'clean',
+          headline: 'Alerta preventivo: "Nossos atendentes NUNCA pedem este código"',
+          details: 'O próprio banco reforça que ninguém tem autorização para pedir esse número, e orienta a mudar a senha no app oficial caso não tenha sido você.',
+          forensicFact: 'Mecanismos legítimos de 2FA protegem o usuário. Golpistas tentam fazer o oposto: ligam pedindo para a vítima ditar o código para invadir a conta.',
+        },
+      },
+      {
+        id: 'clue-3-timing',
+        name: 'Linha do Tempo da Ação do Usuário',
+        buttonLabel: '⏱️ Checar se Você Solicitou o Acesso',
+        category: 'behavior',
+        question: 'Você acabou de tentar entrar no aplicativo do banco?',
+        evidenceResult: {
+          status: 'clean',
+          headline: 'O token coincide exatamente com a tentativa de login legítima!',
+          details: 'Você estava logando no internet banking no computador e o app solicitou a confirmação em duas etapas no celular.',
+          forensicFact: 'Se você receber um token sem ter tentado logar, alguém sabe sua senha, mas não conseguiu entrar porque o 2FA bloqueou!',
+        },
+      },
     ],
     isScam: false,
     redFlags: [],
     explanation:
-      'Esta é uma notificação legítima de segurança! Observe que ela não possui nenhum link suspeito, não pede para você ligar para nenhum 0800 e avisa expressamente que funcionários do banco nunca solicitam esse código.',
+      'Esta é uma notificação legítima de segurança! Ela não possui links, não pede dados por resposta e traz aviso explícito de que funcionários nunca solicitam o código.',
     realWorldTip:
-      'Mensagens legítimas de autenticação em 2 etapas não contêm links de pagamento nem pedem para você repassar o token para ninguém. Guarde esse código sempre com você.',
+      'Mensagens verdadeiras de autenticação em duas etapas (2FA) são para seu próprio uso. Jamais repasse esse código por telefone ou mensagem para ninguém, mesmo que a pessoa diga ser do banco.',
   },
 
   // ==========================================
-  // NIVEL 2: MEDIO (Engenharia Social / Lojas / Bancos)
+  // NIVEL 2: MEDIO (Falsa Central / Lojas / Vagas)
   // ==========================================
   {
     id: 'case-4-falsa-central',
@@ -125,21 +248,59 @@ export const SCAM_CASES: ScamCase[] = [
     preview: 'Compra aprovada de R$ 3.850,00 nas Casas Bahia...',
     messageContent:
       'BANCO INFORMA: Compra aprovada de R$ 3.850,00 no Magazine Luiza em 27/09 às 16:35. Caso NÃO reconheça esta transação, ligue imediatamente para nossa Central de Fraudes no 0800-878-1920.',
-    extraDetails: [
-      { label: 'Telefone informado', value: '0800-878-1920' },
-      { label: 'Efeito psicológico', value: 'Desespero ao ver uma cobrança alta inexistente' },
+    clues: [
+      {
+        id: 'clue-4-app-statement',
+        name: 'Checagem no Extrato Oficial do Banco',
+        buttonLabel: '📱 Abrir App Oficial do Banco e Ver Extrato',
+        category: 'system',
+        question: 'Essa compra de R$ 3.850 realmente aparece no extrato da sua conta?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Nenhuma compra lançada no extrato nem limite retido!',
+          details: 'Ao abrir o app oficial do seu banco, o extrato não mostra nenhuma compra de R$ 3.850,00 e o limite do cartão continua intacto.',
+          forensicFact: 'A compra nunca aconteceu. O falso aviso de valor alto é uma armadilha psicológica de pânico para fazer a vítima ligar no 0800 sem pensar.',
+        },
+      },
+      {
+        id: 'clue-4-0800-owner',
+        name: 'Investigação do Número 0800-878-1920',
+        buttonLabel: '📞 Investigar Quem Registrou o 0800',
+        category: 'phone',
+        question: 'Esse número 0800 pertence a algum banco brasileiro?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Número 0800 contratado por estelionatários via VoIP!',
+          details: 'Qualquer pessoa pode alugar um número 0800 pela internet pagando R$ 50. Esse número direciona para uma central telefônica clandestina com música de espera gravada.',
+          forensicFact: 'A Anatel e a Febraban alertam: criminosos criaram falsas centrais telefônicas completas com menus de "Digite 1, Digite 2" para simular o banco.',
+        },
+      },
+      {
+        id: 'clue-4-scam-mechanic',
+        name: 'Procedimento Exigido pelo "Atendente"',
+        buttonLabel: '🕵️ Descobrir o Que o Atendente Pede',
+        category: 'behavior',
+        question: 'O que o suposto funcionário do banco diz quando você liga?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'O atendente pede para você fazer um Pix para "estornar o valor"!',
+          details: 'Ele afirma: "Para cancelar o golpe, o senhor precisa transferir o mesmo valor para a chave de segurança do Banco Central". Isso é 100% golpe!',
+          forensicFact: 'Bancos JAMAIS pedem para clientes realizarem transferências Pix ou digitarem senhas para cancelar operações suspeitas.',
+        },
+      },
     ],
     isScam: true,
     redFlags: [
-      'O banco não envia SMS mandando ligar para um número 0800 desconhecido.',
-      'O 0800 é contratado pelos próprios criminosos, com som de call center simulado.',
-      'Na ligação, o falso atendente diz que para "bloquear a compra", você deve fazer um Pix temporário para uma "conta de segurança".',
+      'Compra não consta no aplicativo oficial do banco.',
+      'Instrução para ligar em um 0800 desconhecido.',
+      'Falso atendente solicita transferência Pix para "estorno de segurança".',
     ],
     explanation:
-      'O golpe da Falsa Central de Atendimento é um dos mais lesivos no Brasil. Ao ligar para o 0800, falsos atendentes muito bem treinados induzem a vítima a transferir seu dinheiro para os golpistas sob o pretexto de "estorno de segurança".',
+      'O golpe da Falsa Central de Atendimento é um dos mais perigosos no Brasil (mais de 105 mil ocorrências). O objetivo é assustar a vítima com uma compra alta falsa para fazê-la ligar para os criminosos e transferir dinheiro por vontade própria.',
     realWorldTip:
-      'Bancos NUNCA pedem para você fazer um Pix para cancelar outro Pix ou compra! Se receber mensagem de compra suspeita, não ligue para o número do SMS: abra o aplicativo do seu banco ou ligue para o número impresso no verso do seu cartão físico.',
+      'Recebeu SMS de compra suspeita? Nunca ligue para o número informado na mensagem. Abra o aplicativo do seu banco ou ligue exclusivamente para o telefone impresso no verso do seu cartão físico.',
   },
+
   {
     id: 'case-5-falsa-loja',
     level: 'medio',
@@ -153,23 +314,60 @@ export const SCAM_CASES: ScamCase[] = [
     preview: 'QUEIMA DE ESTOQUE: iPhone 15 Pro Max por R$ 1.199...',
     messageContent:
       '🔥 MEGA LIQUIDAÇÃO DE ANIVERSÁRIO! Lotes de importação apreendidos com 75% de desconto. iPhone 15 Pro Max 256GB lacrado com nota fiscal: de R$ 7.999 por apenas R$ 1.199,00! Pagamento exclusivo via Pix com envio imediato. Restam apenas 4 unidades!',
-    extraDetails: [
-      { label: 'Preço anunciado', value: 'R$ 1.199 (Valor real de mercado: ~R$ 7.000)' },
-      { label: 'Forma de pagamento', value: 'Apenas Pix (sem cartão ou proteção de estorno)' },
-      { label: 'Comentários no post', value: 'Comentários desativados na publicação' },
+    clues: [
+      {
+        id: 'clue-5-price-benchmark',
+        name: 'Comparativo de Preço Real de Mercado',
+        buttonLabel: '🏷️ Comparar Preço com Lojas Oficiais',
+        category: 'behavior',
+        question: 'Quanto custa esse produto nas lojas autorizadas?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Preço 85% abaixo do custo de fabricação da Apple!',
+          details: 'Nas lojas oficiais, o aparelho custa entre R$ 7.000 e R$ 8.500. Nenhuma empresa comercializa produtos novos com 85% de desconto.',
+          forensicFact: 'Preço milagroso ("bom demais para ser verdade") é o anzol mais clássico do estelionato em redes sociais.',
+        },
+      },
+      {
+        id: 'clue-5-reclame-aqui',
+        name: 'Checagem no Reclame Aqui e CNPJ',
+        buttonLabel: '📋 Consultar CNPJ e Reclame Aqui',
+        category: 'whois',
+        question: 'A empresa "MegaEletro Brasil" existe legalmente?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'CNPJ clonado e centenas de queixas de "produto não entregue"!',
+          details: 'O CNPJ no rodapé pertence a uma padaria em Curitiba que teve seus dados roubados. No Reclame Aqui há dezenas de denúncias de golpe nos últimos 7 dias.',
+          forensicFact: 'Golpistas copiam CNPJ de pequenas empresas ativas para passar uma falsa impressão de legalidade em lojas virtuais fictícias.',
+        },
+      },
+      {
+        id: 'clue-5-comments',
+        name: 'Auditoria dos Comentários da Publicação',
+        buttonLabel: '💬 Inspecionar Comentários do Post',
+        category: 'system',
+        question: 'Por que não há comentários de clientes na postagem?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Comentários bloqueados para impedir denúncias de vítimas!',
+          details: 'A postagem tem milhares de curtidas compradas, mas o campo de comentários está bloqueado ou filtrado apenas com emojis genéricos.',
+          forensicFact: 'Lojas falsas desativam comentários para evitar que vítimas lesadas avisem aos outros usuários nos comentários.',
+        },
+      },
     ],
     isScam: true,
     redFlags: [
-      'Preço milagroso (desconto de mais de 70% em eletrônicos de ponta).',
-      'Urgência forçada ("Restam apenas 4 unidades").',
-      'Exigência de pagamento exclusivamente via Pix à vista.',
-      'Comentários da postagem desativados para esconder alertas de outras vítimas.',
+      'Preço 85% abaixo do mercado em produto de alta procura.',
+      'Pagamento exclusivo via Pix (sem intermediação de cartão com estorno).',
+      'Comentários bloqueados no anúncio.',
+      'Urgência forçada ("restam apenas 4 unidades").',
     ],
     explanation:
-      'O golpe da falsa loja de rede social lidera as queixas de consumo. Os criminosos pagam anúncios para promover páginas falsas que usam marcas copiadas. O dinheiro cai na conta do golpista e o produto nunca é enviado.',
+      'Golpe da falsa loja virtual em redes sociais (150 mil casos registrados). Os criminosos pagam anúncios para promover páginas falsas que clonam o layout de grandes varejistas. O dinheiro vai para contas de laranjas e a mercadoria nunca existe.',
     realWorldTip:
-      'Desconfie imediatamente de preços "bons demais para ser verdade". Antes de comprar em lojas desconhecidas, confira a reputação no site Reclame Aqui e cheque o CNPJ da empresa no site da Receita Federal.',
+      'Sempre desconfie de promoções inacreditáveis nas redes sociais. Antes de comprar em lojas desconhecidas, confira a reputação no Reclame Aqui e prefira métodos de pagamento com proteção contra fraudes.',
   },
+
   {
     id: 'case-6-falso-emprego',
     level: 'medio',
@@ -183,21 +381,58 @@ export const SCAM_CASES: ScamCase[] = [
     preview: 'Olá! Temos vagas de meio período home office para...',
     messageContent:
       'Olá! Sou Sofia da agência de marketing digital Global Influencer. Selecionamos o seu perfil para trabalhar de casa apenas 1 hora por dia avaliando produtos e curtindo vídeos no YouTube. Remuneração diária de R$ 200 a R$ 600 via Pix. Clique no link para falar com nosso gerente no Telegram e começar sua primeira tarefa!',
-    extraDetails: [
-      { label: 'Requisitos exigidos', value: 'Nenhum requisito profissional' },
-      { label: 'Canal de migração', value: 'Pede para migrar para grupo anônimo no Telegram' },
+    clues: [
+      {
+        id: 'clue-6-ddi',
+        name: 'Checagem do DDI do Remetente',
+        buttonLabel: '🌍 Inspecionar Código do País (DDI)',
+        category: 'phone',
+        question: 'De qual país veio essa mensagem de WhatsApp?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Número de telefone da Nigéria ou Indonésia (+234 / +62)!',
+          details: 'A recrutadora diz ser de uma agência de marketing no Brasil, mas a mensagem foi enviada por um número com DDI internacional estrangeiro.',
+          forensicFact: 'Quadrilhas internacionais utilizam automação no WhatsApp com números comprados em países sem regulação para aplicar o "Golpe das Tarefas".',
+        },
+      },
+      {
+        id: 'clue-6-telegram',
+        name: 'Investigação do Grupo no Telegram',
+        buttonLabel: '👥 Investigar o Grupo no Telegram',
+        category: 'system',
+        question: 'Como funciona o grupo para onde eles te mandam?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Grupo controlado por bots que postam comprovantes falsos!',
+          details: 'No Telegram, vários participantes falsos (bots) postam prints dizendo "Acabei de receber R$ 1.500!". O grupo exige que você faça depósitos para "subir de nível".',
+          forensicFact: 'No início, eles pagam R$ 10 ou R$ 20 para fazer a vítima acreditar. Em seguida, exigem um depósito de R$ 500 para liberar o pagamento acumulado.',
+        },
+      },
+      {
+        id: 'clue-6-hiring-logic',
+        name: 'Lógica Econômica da Contratação',
+        buttonLabel: '💼 Analisar o Modelo de Negócio',
+        category: 'behavior',
+        question: 'Faz sentido econômico uma empresa pagar R$ 600 por dia para curtir vídeos?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Modelo de negócio inexistente: Ninguém paga R$ 18.000/mês para curtir vídeos!',
+          details: 'Plataformas como YouTube e TikTok combatem ativamente curtidas falsas. Nenhuma empresa pagaria valores exorbitantes por uma ação que qualquer algoritmo faz de graça.',
+          forensicFact: 'O golpe das tarefas é uma pirâmide financeira disfarçada de trabalho remoto, visando jovens e pessoas desempregadas.',
+        },
+      },
     ],
     isScam: true,
     redFlags: [
-      'Oferta de emprego não solicitada enviada por número estrangeiro (+234, +1, etc.).',
-      'Promessa de ganhos elevados por tarefas banais (curtir vídeos).',
-      'Migração forçada para grupos de Telegram sem identificação corporativa.',
-      'Após tarefas iniciais, exigem que a vítima deposite dinheiro para "desbloquear saques".',
+      'Remetente com DDI internacional estrangeiro.',
+      'Promessa de ganhos absurdos sem entrevista ou qualificação.',
+      'Migração obrigatória para grupos no Telegram.',
+      'Exigência de depósitos em dinheiro para liberar saques.',
     ],
     explanation:
-      'O "Golpe das Tarefas" atinge principalmente adolescentes e desempregados. No começo, os golpistas chegam a transferir R$ 10 ou R$ 20 para passar credibilidade. Depois, exigem depósitos crescentes de R$ 500 a R$ 3.000 para "subir de nível VIP", sumindo com todo o dinheiro.',
+      'O Golpe das Tarefas cresceu vertiginosamente entre jovens e estudantes. A promessa de dinheiro fácil atrai a vítima, que é ludibriada com pequenas recompensas iniciais antes de ser coagida a depositar valores altos.',
     realWorldTip:
-      'Nenhuma empresa séria cobra dinheiro de candidatos para trabalhar ou liberar salários. Se uma vaga oferece ganhos altos sem processo seletivo claro, é golpe garantido.',
+      'Nenhuma empresa séria cobra dinheiro de candidatos para trabalhar nem oferece salários altos para atividades simples como curtir posts. Se pedirem depósito para liberar pagamento, fuja imediatamente.',
   },
 
   // ==========================================
@@ -216,21 +451,59 @@ export const SCAM_CASES: ScamCase[] = [
     preview: 'Ligação do Suporte: "Identificamos um vírus invadindo sua conta..."',
     messageContent:
       'Voz do atendente: "Senhor(a), nosso sistema de inteligência detectou uma tentativa de invasão na sua conta corrente. Para remover o arquivo malicioso e limpar o token de segurança, por favor abra a Google Play Store no seu celular e baixe o aplicativo de suporte AnyDesk ou QuickSupport. Vou lhe passar um código de 9 dígitos para autorizar nossa equipe a fazer a limpeza."',
-    extraDetails: [
-      { label: 'Ambiente sonoro', value: 'Ruído de call center e música de espera idêntica à do banco' },
-      { label: 'Ação solicitada', value: 'Instalar aplicativo AnyDesk / TeamViewer QuickSupport' },
+    clues: [
+      {
+        id: 'clue-7-permissions',
+        name: 'Análise das Permissões do Aplicativo AnyDesk',
+        buttonLabel: '📱 Analisar o Que o Aplicativo AnyDesk Faz',
+        category: 'system',
+        question: 'O que o AnyDesk ou QuickSupport realmente faz quando instalado?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'O aplicativo dá CONTROLE REMOTO TOTAL da tela do seu celular para outra pessoa!',
+          details: 'AnyDesk e TeamViewer são softwares legítimos de suporte empresarial para computadores. Quando instalados no celular, permitem que outra pessoa veja tudo o que você digita e clique na tela à distância.',
+          forensicFact: 'Com esse app, o golpista assiste você abrindo o banco, vê sua senha digitada e faz transferências Pix enquanto a tela fica preta.',
+        },
+      },
+      {
+        id: 'clue-7-bank-policy',
+        name: 'Procedimento Oficial dos Bancos em Caso de Invasão',
+        buttonLabel: '🛡️ Checar Como os Bancos Tratam Invasões',
+        category: 'behavior',
+        question: 'Como um banco de verdade age quando detecta fraude?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Bancos bloqueiam o aplicativo internamente, NUNCA pedem apps de terceiros!',
+          details: 'Se houver fraude, os sistemas do banco bloqueiam a conta no servidor central e pedem que o cliente compareça a uma agência ou refaça a biometria facial no próprio app do banco.',
+          forensicFact: 'Nenhum banco brasileiro tem parceria ou utiliza AnyDesk, TeamViewer ou RustDesk para atendimento a clientes.',
+        },
+      },
+      {
+        id: 'clue-7-pin-code',
+        name: 'O Código de 9 Dígitos Solicitado',
+        buttonLabel: '🔑 Analisar o Código de Conexão Solicitado',
+        category: 'phone',
+        question: 'Para que serve o código numérico que o falso atendente pediu?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'O código é a CHAVE DE ACESSO que conecta o celular do golpista ao seu!',
+          details: 'Ao ditar esse código, você autoriza o criminoso a se conectar diretamente ao seu aparelho, assumindo o controle do sistema Android/iOS.',
+          forensicFact: 'Esse golpe recebeu o nome de "Mão Fantasma" porque a vítima vê os menus do celular se mexendo sozinhos na tela sem que ela encoste no aparelho.',
+        },
+      },
     ],
     isScam: true,
     redFlags: [
-      'Solicitação para baixar aplicativos de controle remoto (AnyDesk, TeamViewer, RustDesk).',
-      'Pedido para informar o código de conexão gerado pelo app.',
-      'Alegação dramática de que a conta bancária está "sendo invadida agora".',
+      'Pedido para instalar aplicativos de acesso remoto (AnyDesk, QuickSupport, TeamViewer).',
+      'Solicitação de código de autorização de compartilhamento de tela.',
+      'Terror psicológico afirmando que a conta está "sendo invadida agora".',
     ],
     explanation:
-      'No golpe da Mão Fantasma, o aplicativo instalado dá controle visual e remoto total do smartphone para o fraudador. Enquanto o golpista conversa, ele acessa o app do banco na tela da vítima, transfere saldos e solicita empréstimos em segundos.',
+      'O Golpe da Mão Fantasma é um dos mais sofisticados do país. O fraudador não precisa hackear o banco: ele convence a própria vítima a instalar uma ferramenta que entrega o celular de bandeja aos criminosos.',
     realWorldTip:
-      'NENHUM banco solicita que clientes instalem aplicativos de suporte remoto em seus celulares. Se alguém pedir para você baixar AnyDesk ou similar dizendo ser do seu banco, desligue imediatamente.',
+      'NENHUM banco pede para instalar aplicativos de suporte para fazer varredura no celular. Se algum suposto atendente pedir para baixar AnyDesk, TeamViewer ou qualquer programa de suporte, DESLIGUE NA HORA.',
   },
+
   {
     id: 'case-8-falso-boleto',
     level: 'avancado',
@@ -244,22 +517,59 @@ export const SCAM_CASES: ScamCase[] = [
     preview: 'Segunda via da sua fatura de internet com desconto...',
     messageContent:
       'Prezado cliente, segue em anexo a 2ª via da sua fatura de internet e celular com desconto especial de pontualidade de 20%. Para garantir o desconto, pague o boleto bancário anexo até a data de hoje.\n\nLinha Digitável: 23793.38128 60002.819203 12093.810293 8 98210000012000',
-    extraDetails: [
-      { label: 'Logotipo impresso', value: 'Logo idêntico da empresa prestadora de serviços' },
-      { label: 'Beneficiário na tela de pagamento', value: 'SOLUCOES PAGAMENTOS DIGITAIS LTDA (CNPJ desconhecido)' },
-      { label: 'Empresa real', value: 'Telefônica Brasil S.A. / Claro S.A.' },
+    clues: [
+      {
+        id: 'clue-8-sender-domain',
+        name: 'Investigação do E-mail do Remetente',
+        buttonLabel: '📧 Inspecionar E-mail do Remetente',
+        category: 'whois',
+        question: 'Quem realmente enviou esse e-mail?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'E-mail enviado por servidor falso e não pela operadora!',
+          details: 'O e-mail veio de "cobranca@operadora-aviso.com". O domínio oficial da operadora é claro.com.br ou vivo.com.br. O remetente é um domínio pirata criado para disparar spam.',
+          forensicFact: 'Boletos falsos são enviados após vazamentos de dados cadastrais, onde os criminosos sabem exatamente qual operadora ou serviço você contrata.',
+        },
+      },
+      {
+        id: 'clue-8-beneficiary',
+        name: 'Checagem do Beneficiário Final na Tela do Banco',
+        buttonLabel: '🏦 Simular Leitura do Boleto no App do Banco',
+        category: 'pix',
+        question: 'Quem é o favorecido que vai receber o dinheiro do boleto?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Beneficiário final é "PAGAMENTOS DIGITAIS LTDA" e não a operadora!',
+          details: 'No boleto impresso há o logotipo da operadora, mas ao ler o código de barras no banco, o destinatário do pagamento é uma empresa de fachada com conta em banco digital.',
+          forensicFact: 'A linha digitável do boleto possui campos que definem o banco e a conta de destino. Criminosos alteram esses números para desviar o dinheiro para suas contas.',
+        },
+      },
+      {
+        id: 'clue-8-bank-code',
+        name: 'Conferência do Código do Banco Emissor',
+        buttonLabel: '🔍 Checar os Primeiros Dígitos da Linha',
+        category: 'system',
+        question: 'Os primeiros 3 dígitos da linha digitável coincidem com o banco do boleto?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Incoerência entre o banco do logotipo e o código de compensação!',
+          details: 'O logotipo do boleto exibe Banco do Brasil (código 001), mas a linha digitável começa com 237 (Bradesco) e liquida em conta de pagamento.',
+          forensicFact: 'Os 3 primeiros dígitos de qualquer boleto bancário representam o código oficial do banco na Câmara de Compensação (001: BB, 237: Bradesco, 104: Caixa, 033: Santander, 341: Itaú).',
+        },
+      },
     ],
     isScam: true,
     redFlags: [
-      'E-mail do remetente não é do domínio oficial da empresa (usa provedores paralelos).',
-      'Oferta de desconto atípico para pagamento imediato.',
-      'Na tela de confirmação do banco, o nome do beneficiário final NÃO é a empresa prestadora do serviço.',
+      'E-mail do remetente com domínio falso.',
+      'Beneficiário na tela de pagamento é diferente da empresa contratada.',
+      'Divergência entre o código do banco na linha digitável e o logotipo.',
     ],
     explanation:
-      'Criminosos interceptam rotinas de cobrança ou enviam e-mails em massa simulando contas de luz, telefone ou condomínio. O código de barras adulterado desvia o dinheiro para a conta de um terceiro ou de uma fintech golpista.',
+      'Golpe do boleto adulterado (mais de 13 mil ocorrências). Os golpistas forjam faturas com logos de grandes empresas de telecomunicações ou condomínios, alterando o código de barras para que o valor seja creditado na conta da quadrilha.',
     realWorldTip:
-      'Ao pagar qualquer boleto no aplicativo do banco, NUNCA confirme a operação sem ler a tela final de comprovante. Verifique sempre se o nome e o CNPJ do beneficiário são exatamente os da empresa contratada.',
+      'Ao pagar qualquer boleto no aplicativo do banco, NUNCA confirme a transação sem ler com atenção a tela final de comprovante. Confira se o nome e o CNPJ do beneficiário são exatamente os da empresa prestadora do serviço.',
   },
+
   {
     id: 'case-9-robo-pix',
     level: 'avancado',
@@ -273,19 +583,56 @@ export const SCAM_CASES: ScamCase[] = [
     preview: 'NOVO BUG DO PIX FUNCIONANDO: Envie R$ 50 e receba R$ 500...',
     messageContent:
       '🚨 BRECHA DESCOBERTA NO SISTEMA DO BANCO CENTRAL! O algoritmo de compensação do Pix está com falha de estorno duplo. Se você transferir qualquer valor entre R$ 50 e R$ 500 para a chave Pix de homologação: [ falha-bc-estorno@pix-central.me ], o sistema entende como erro e estorna DEZ VEZES o valor na sua conta em 3 minutos! Testado e aprovado hoje!',
-    extraDetails: [
-      { label: 'Prova apresentada', value: 'Prints forjados de extratos bancários com saldo subindo' },
-      { label: 'Chave Pix informada', value: 'Chave de e-mail ou aleatória de conta de pessoa física' },
+    clues: [
+      {
+        id: 'clue-9-central-bank-api',
+        name: 'Arquitetura e Segurança do Sistema Pix (Banco Central)',
+        buttonLabel: '🏛️ Checar Como Funciona o Sistema do Pix',
+        category: 'system',
+        question: 'É tecnicamente possível existir um "bug" que multiplica dinheiro no Pix?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Impossibilidade matemática e bancária total!',
+          details: 'O Sistema de Pagamentos Instantâneos (SPI) do Banco Central é auditado e funciona por balanço contábil estrito: cada R$ 1 que sai de uma conta é exatamente R$ 1 que entra na outra. Não há geração espontânea de saldo.',
+          forensicFact: 'Toda transação no Pix possui rastreabilidade fim a fim com IDs criptográficos únicos (E2E ID). Não existem "chaves de teste que devolvem em dobro".',
+        },
+      },
+      {
+        id: 'clue-9-pix-key-owner',
+        name: 'Investigação da Chave de Destino',
+        buttonLabel: '💳 Consultar Quem é o Dono da Chave',
+        category: 'pix',
+        question: 'Quem recebe o dinheiro enviado para falha-bc-estorno@pix-central.me?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Chave Pix registrada em nome de pessoa física comum!',
+          details: 'A chave de e-mail está vinculada a uma conta corrente de pessoa física ("Thiago Henrique...") em uma instituição financeira. O dinheiro cai direto no bolso do fraudador.',
+          forensicFact: 'Os golpistas usam e-mails que contêm palavras como "bc", "pix", "central" para enganar leigos, mas a conta é de um indivíduo comum.',
+        },
+      },
+      {
+        id: 'clue-9-social-proof',
+        name: 'Análise dos Vídeos e Provas de "Sucesso"',
+        buttonLabel: '🎬 Inspecionar Provas e Prints do Vídeo',
+        category: 'behavior',
+        question: 'Os prints mostrando o saldo aumentando são reais?',
+        evidenceResult: {
+          status: 'suspicious',
+          headline: 'Vídeos com saldo editado por ferramentas de edição gráfica!',
+          details: 'Os vídeos são montagens onde o golpista edita o HTML da página do banco ou usa contas simuladas em aplicativos falsos para fingir que o saldo multiplicou.',
+          forensicFact: 'Essa técnica de falsificação de prova social é usada há décadas, desde o "bilhete premiado" até o "robô do Pix" moderno.',
+        },
+      },
     ],
     isScam: true,
     redFlags: [
-      'Promessa absurda de retorno financeiro imediato e multiplicação de dinheiro.',
-      'Alegação falsa de "brecha ou bug no Banco Central".',
-      'Chave Pix de destino controlada diretamente pelos estelionatários.',
+      'Promessa de retorno financeiro milagroso e multiplicação de saldo.',
+      'Alegação absurda de "bug ou falha de homologação no Banco Central".',
+      'Chave Pix pertencente a um estelionatário.',
     ],
     explanation:
-      'Não existe "bug do Pix", "robô do Pix" ou falha de sistema que multiplique valores. Esse golpe explora a ingenuidade ou a ganância da vítima, que envia o dinheiro por vontade própria acreditando em um milagre financeiro.',
+      'O Golpe do Bug do Pix explora a ingenuidade e a ganância. O usuário transfere o valor acreditando em um suposto erro do sistema bancário, mas o Pix vai diretamente para a conta da quadrilha e nunca retorna.',
     realWorldTip:
-      'O Banco Central do Brasil nunca disponibiliza chaves de teste para o público. Transferências via Pix são instantâneas e irreversíveis. Dinheiro fácil na internet não existe: se pedem para enviar um valor para receber mais, é golpe.',
+      'Dinheiro fácil não existe na internet. Transferências via Pix são imediatas e definitivas. Qualquer promessa de "multiplicação de dinheiro", "robô do Pix" ou "bug de estorno" é 100% golpe.',
   },
 ];
