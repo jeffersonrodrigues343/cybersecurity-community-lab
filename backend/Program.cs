@@ -7,6 +7,13 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// desativa o header server do kestrel pra evitar fingerprinting e limita tamanho maximo do corpo da requisicao
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.AddServerHeader = false;
+    options.Limits.MaxRequestBodySize = 256 * 1024; // maximo 256kb por request
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -60,6 +67,28 @@ builder.Services.AddHttpClient("SupabaseClient", (sp, client) =>
 
 var app = builder.Build();
 
+// tratamento global de excecoes pra nunca vazar stack trace
+app.UseExceptionHandler(handlerApp =>
+{
+    handlerApp.Run(async ctx =>
+    {
+        ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync("{\"error\":\"Ocorreu um erro interno. Tente novamente mais tarde.\"}");
+    });
+});
+
+// middleware de headers de seguranca padrao owasp
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    await next();
+});
+
 app.UseCors("AllowFrontend");
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -98,7 +127,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// controle simples de rate limit em memoria pra evitar ataques de brute force
+// controle de rate limit em memoria pra evitar ataques de brute force e spam
 var rateLimits = new ConcurrentDictionary<string, (int attempts, DateTime resetTime)>();
 
 // healthcheck da api
@@ -127,10 +156,11 @@ app.MapPost("/api/flags/validate", async ([FromBody] FlagValidationRequest reque
     var now = DateTime.UtcNow;
 
     // checa tentativas do ip nos ultimos 60 segundos (max 15 tentativas)
-    var limit = rateLimits.GetOrAdd(clientIp, _ => (0, now.AddMinutes(1)));
+    var limitKey = $"flags_{clientIp}";
+    var limit = rateLimits.GetOrAdd(limitKey, _ => (0, now.AddMinutes(1)));
     if (now > limit.resetTime)
     {
-        rateLimits[clientIp] = (1, now.AddMinutes(1));
+        rateLimits[limitKey] = (1, now.AddMinutes(1));
     }
     else
     {
@@ -138,7 +168,7 @@ app.MapPost("/api/flags/validate", async ([FromBody] FlagValidationRequest reque
         {
             return Results.StatusCode(429); // Too Many Requests
         }
-        rateLimits[clientIp] = (limit.attempts + 1, limit.resetTime);
+        rateLimits[limitKey] = (limit.attempts + 1, limit.resetTime);
     }
 
     // valida tamanho do payload
@@ -189,9 +219,28 @@ app.MapGet("/api/feedback", async (CyberLabDbContext db) =>
     return Results.Ok(list);
 });
 
-// cadastra novo depoimento com sanitizacao html contra xss
-app.MapPost("/api/feedback", async ([FromBody] FeedbackSubmission submission, CyberLabDbContext db, IHttpClientFactory httpFactory, IConfiguration config) =>
+// cadastra novo depoimento com sanitizacao html e rate limit anti-spam
+app.MapPost("/api/feedback", async ([FromBody] FeedbackSubmission submission, HttpContext ctx, CyberLabDbContext db, IHttpClientFactory httpFactory, IConfiguration config) =>
 {
+    var clientIp = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    var now = DateTime.UtcNow;
+
+    // limita o envio a no maximo 5 depoimentos por minuto por ip
+    var feedbackKey = $"feedback_{clientIp}";
+    var limit = rateLimits.GetOrAdd(feedbackKey, _ => (0, now.AddMinutes(1)));
+    if (now > limit.resetTime)
+    {
+        rateLimits[feedbackKey] = (1, now.AddMinutes(1));
+    }
+    else
+    {
+        if (limit.attempts >= 5)
+        {
+            return Results.StatusCode(429); // Too Many Requests
+        }
+        rateLimits[feedbackKey] = (limit.attempts + 1, limit.resetTime);
+    }
+
     if (string.IsNullOrWhiteSpace(submission.Text) || submission.Text.Trim().Length < 3)
     {
         return Results.BadRequest(new { message = "O depoimento deve ter no mínimo 3 caracteres." });
