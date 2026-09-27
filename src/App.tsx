@@ -6,10 +6,8 @@ import { Hero } from './components/Hero';
 import { ScamSimulatorGame } from './components/ScamSimulatorGame';
 import { CertificateModal } from './components/CertificateModal';
 import { ReportModal } from './components/ReportModal';
-import { TerminalSandbox } from './components/TerminalSandbox';
 import { Footer } from './components/Footer';
-import { sound } from './utils/audio';
-import { FileText, Award } from 'lucide-react';
+import { Award } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,7 +21,6 @@ export function App() {
   const cursorRef = useRef<HTMLDivElement>(null);
 
   const totalScore = 900;
-  const progressPercentage = Math.round((completedCount / 9) * 100);
 
   const handleScoreUpdate = (newXp: number, count: number, isFinished: boolean) => {
     setScore(newXp);
@@ -63,7 +60,7 @@ export function App() {
         className="fixed top-0 left-0 w-96 h-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.035] blur-3xl pointer-events-none z-0"
       />
 
-      {/* Barra de Navegacao */}
+      {/* Barra de Navegação */}
       <Header
         score={score}
         totalScore={totalScore}
@@ -71,39 +68,17 @@ export function App() {
         onOpenReportModal={() => setIsReportOpen(true)}
       />
 
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
         
-        {/* Banner do Projeto */}
-        <div className="mt-4 p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-          <div className="flex items-center space-x-2 text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span>HackLearn: Simulador de Defesa contra Golpes Digitais</span>
-          </div>
-
-          <button
-            onClick={() => {
-              sound.playBlip();
-              setIsReportOpen(true);
-            }}
-            className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition text-xs"
-          >
-            <FileText className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Sobre o Projeto</span>
-          </button>
-        </div>
-
-        {/* Hero Section com Canvas 3D */}
-        <Hero
-          progressPercentage={progressPercentage}
-          completedCount={completedCount}
-        />
+        {/* Hero Section Direto e Limpo */}
+        <Hero />
 
         {/* Seção Principal: Simulador Gamificado de Golpes */}
-        <section className="mt-8 mb-12">
+        <section className="mb-12">
           <ScamSimulatorGame onScoreUpdate={handleScoreUpdate} />
         </section>
 
-        {/* Notificacao de Certificado Desbloqueado */}
+        {/* Notificação de Certificado Desbloqueado */}
         {allCompleted && (
           <div className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 border border-emerald-500/60 text-emerald-300 flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -126,9 +101,6 @@ export function App() {
         />
 
       </main>
-
-      {/* Terminal Simulado como recurso interativo bonus */}
-      <TerminalSandbox />
 
       {/* Modal Sobre o Projeto */}
       <ReportModal
