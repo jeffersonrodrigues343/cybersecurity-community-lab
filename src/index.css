@@ -4,12 +4,13 @@
   :root {
     --apple-bg: #000000;
     --apple-surface: #161617;
-    --apple-card: #1d1d1f;
+    --apple-card: #1c1c1e;
     --apple-text-primary: #f5f5f7;
     --apple-text-secondary: #86868b;
-    --apple-blue: #2997ff;
+    --apple-blue: #0071e3;
+    --apple-blue-bright: #2997ff;
     --apple-green: #30d158;
-    --apple-red: #ff453a;
+    --apple-red: #ff3b30;
     --apple-orange: #ff9f0a;
   }
 
@@ -18,7 +19,7 @@
     background-color: #000000;
     color: #f5f5f7;
     overflow-x: hidden;
-    letter-spacing: -0.012em;
+    letter-spacing: -0.014em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -28,26 +29,23 @@
   }
 }
 
-/* Apple Liquid Glassmorphism & Surface Design */
+/* Apple Liquid Glassmorphism & Materials */
 .apple-glass {
-  background: rgba(22, 22, 23, 0.75);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(22, 22, 23, 0.8);
+  backdrop-filter: blur(25px) saturate(190%);
+  -webkit-backdrop-filter: blur(25px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .apple-card {
   background: #161617;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.6);
+  border-radius: 28px;
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.7);
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease;
 }
 
-.apple-card:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
+/* Apple Headline Typography Gradient */
 .apple-headline {
   background: linear-gradient(180deg, #FFFFFF 0%, #A1A1A6 100%);
   -webkit-background-clip: text;
@@ -55,58 +53,108 @@
   letter-spacing: -0.03em;
 }
 
+/* Authentic iPhone 16 / 15 Pro Hardware Frame */
+.apple-iphone-frame {
+  max-width: 410px;
+  margin: 0 auto;
+  background: #000000;
+  border: 4px solid #2c2c2e;
+  border-radius: 48px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dynamic Island */
+.apple-dynamic-island {
+  width: 96px;
+  height: 24px;
+  background: #000000;
+  border-radius: 9999px;
+  margin: 8px auto 6px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Authentic iOS Message Bubble */
+.apple-ios-bubble {
+  background: #262628;
+  border-radius: 20px 20px 20px 6px;
+  color: #ffffff;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.48;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
 /* Apple Segmented Controls */
-.apple-segmented-container {
+.apple-segmented-pill {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 4px;
+  padding: 3px;
   border-radius: 9999px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-.apple-segmented-btn-active {
-  background: rgba(255, 255, 255, 0.15);
+/* Apple Buttons with Subtle Inner Glow */
+.apple-btn-red {
+  background: #ff3b30;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-radius: 9999px;
+  padding: 13px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 6px 18px rgba(255, 59, 48, 0.35);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Apple Capsule Buttons */
-.apple-btn-primary {
+.apple-btn-red:hover {
+  background: #ff453a;
+  transform: scale(1.02);
+}
+
+.apple-btn-blue {
   background: #0071e3;
   color: #ffffff;
   border-radius: 9999px;
-  padding: 10px 22px;
-  font-weight: 500;
+  padding: 13px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 6px 18px rgba(0, 113, 227, 0.35);
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.apple-btn-primary:hover {
+.apple-btn-blue:hover {
   background: #0077ed;
-  transform: scale(1.015);
+  transform: scale(1.02);
 }
 
-.apple-btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f5f5f7;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9999px;
-  padding: 10px 20px;
-  font-weight: 500;
+/* Cupertino Tool Chip */
+.apple-tool-chip {
+  background: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 12px 14px;
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.apple-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.2);
+.apple-tool-chip:hover {
+  background: #2c2c2e;
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
 }
 
-/* Apple Ambient Glow (Clean, minimal radial aura) */
+/* Subtle Apple Ambient Glow */
 .apple-radial-glow {
-  background: radial-gradient(circle at 50% 0%, rgba(41, 151, 255, 0.08) 0%, transparent 60%);
+  background: radial-gradient(circle at 50% 0%, rgba(41, 151, 255, 0.06) 0%, transparent 60%);
 }
 
-/* Minimal subtle Apple scrollbar */
+/* Minimal Apple scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
