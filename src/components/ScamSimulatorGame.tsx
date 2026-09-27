@@ -420,34 +420,32 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       {/* ======================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* COLUNA ESQUERDA: Janela macOS de Exibição do Incidente (7 colunas) */}
+        {/* COLUNA ESQUERDA: Cartão Bento do Incidente sob Investigação (7 colunas) */}
         <motion.div
           key={currentCase.id}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="lg:col-span-7 apple-macos-window space-y-0"
+          className="lg:col-span-7 bg-[#161617] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl space-y-0"
         >
-          {/* macOS Window Header */}
-          <div className="apple-window-header">
-            <div className="apple-window-dots">
-              <div className="apple-dot apple-dot-red" />
-              <div className="apple-dot apple-dot-yellow" />
-              <div className="apple-dot apple-dot-green" />
+          {/* Header do Cartão Bento */}
+          <div className="px-6 py-4 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-[#2997ff]">
+                <ShieldAlert className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white tracking-tight">{currentCase.title}</h3>
+                <span className="text-[11px] text-[#86868b] font-medium">{currentCase.category}</span>
+              </div>
             </div>
 
-            <div className="text-xs font-medium text-[#86868b] flex items-center space-x-2">
-              <span className="text-white font-semibold">{currentCase.title}</span>
-              <span>•</span>
-              <span className="text-[#86868b]">{currentCase.category}</span>
-            </div>
-
-            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-white/[0.08] text-[#d2d2d7]">
-              Caso {currentCaseIndex + 1}/{levelCases.length}
+            <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-[#d2d2d7]">
+              Caso {currentCaseIndex + 1} de {levelCases.length}
             </span>
           </div>
 
-          {/* Janela de Conteúdo do Incidente */}
+          {/* Conteúdo do Incidente */}
           <div className="p-6 space-y-5">
             
             {/* ======================================================== */}

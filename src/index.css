@@ -53,50 +53,6 @@
   letter-spacing: -0.03em;
 }
 
-/* macOS Desktop Inspection Window */
-.apple-macos-window {
-  background: #161617;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-}
-
-.apple-window-header {
-  background: rgba(32, 32, 35, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.apple-window-dots {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.apple-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 9999px;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
-}
-
-.apple-dot-red {
-  background: #ff5f56;
-}
-
-.apple-dot-yellow {
-  background: #ffbd2e;
-}
-
-.apple-dot-green {
-  background: #27c93f;
-}
 
 /* Apple Segmented Controls */
 .apple-segmented-pill {
