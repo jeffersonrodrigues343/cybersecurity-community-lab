@@ -10,10 +10,7 @@ export function generateDynamicScamCase(): ScamCase {
     'whatsapp_parente',
     'correios_sms',
     'falsa_central',
-    'loja_falsa',
-    'tarefas_telegram',
     'compra_legitima',
-    'gov_legitimo',
   ];
 
   const selectedScenario = pick(scenarioTypes);
@@ -113,11 +110,12 @@ export function generateDynamicScamCase(): ScamCase {
       const hypotheses = [
         `O titular do Pix é pessoa física desconhecida (${orangeName}) e o prefixo DDD ${strangeDDD} é inconsistente com a família.`,
         'O valor solicitado ultrapassa o limite noturno padrão estabelecido na Resolução do Banco Central.',
+        'O envio de foto de perfil sem autenticação biométrica em duas etapas bloqueia transferências automaticamente.',
         'A mensagem utiliza abreviações informais proibidas nas diretrizes de segurança de mensagens instantâneas.',
       ];
 
-      // Sorteia a posição da alternativa correta (A, B ou C)
-      const correctIdx = pick([0, 1, 2]);
+      // Sorteia a posição da alternativa correta (A, B, C ou D)
+      const correctIdx = pick([0, 1, 2, 3]);
       if (correctIdx !== 0) {
         const temp = hypotheses[0];
         hypotheses[0] = hypotheses[correctIdx];
@@ -268,11 +266,12 @@ export function generateDynamicScamCase(): ScamCase {
 
       const hypotheses = [
         `O link utiliza domínio externo descartável (${fakeDomain}) e o código ${code} não existe no rastreamento oficial.`,
+        'O site possui certificado criptográfico HTTPS com cadeado verde, o que comprova autenticidade estatal.',
         'A alíquota de importação indicada não respeita a margem de isenção de 50 dólares fixada por tratado internacional.',
         'A notificação foi entregue fora do expediente dos centros de distribuição dos Correios.',
       ];
 
-      const correctIdx = pick([0, 1, 2]);
+      const correctIdx = pick([0, 1, 2, 3]);
       if (correctIdx !== 0) {
         const temp = hypotheses[0];
         hypotheses[0] = hypotheses[correctIdx];
@@ -419,10 +418,11 @@ export function generateDynamicScamCase(): ScamCase {
       const hypotheses = [
         'A notificação é um push nativo do app bancário sobre compra real recente, sem links externos nem pedidos de dados ou Pix.',
         'A notificação é segura porque o banco enviou o código de autenticação criptográfica por SMS no mesmo minuto.',
+        'A transação é fraudulenta porque notificações legítimas de cartão não podem ser disparadas por aproximação sem senha.',
         'O aviso é autêntico pois toda transação física abaixo de R$ 100 possui carimbo de liberação compulsória.',
       ];
 
-      const correctIdx = pick([0, 1, 2]);
+      const correctIdx = pick([0, 1, 2, 3]);
       if (correctIdx !== 0) {
         const temp = hypotheses[0];
         hypotheses[0] = hypotheses[correctIdx];
@@ -568,11 +568,12 @@ export function generateDynamicScamCase(): ScamCase {
 
       const hypotheses = [
         'A central telefônica exige transferência Pix para "conta de segurança" (procedimento proibido e inexistente nas normas bancárias).',
+        'A ligação é confiável porque o visor do celular exibe exatamente o número 0800 do banco emissor.',
         'O número 0800 exibido no visor do celular não corresponde ao canal de suporte impresso no verso do cartão físico.',
         'A notificação da suposta compra fraudulenta foi recebida fora do horário de liquidação da compensação do Banco Central.',
       ];
 
-      const correctIdx = pick([0, 1, 2]);
+      const correctIdx = pick([0, 1, 2, 3]);
       if (correctIdx !== 0) {
         const temp = hypotheses[0];
         hypotheses[0] = hypotheses[correctIdx];

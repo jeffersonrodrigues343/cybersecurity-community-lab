@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldAlert,
@@ -70,6 +70,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       cluesDiscovered: string[];
       bonusXp: number;
       comboBonus: number;
+      pressureBonus?: number;
       penaltyXp?: number;
       selectedHypothesis?: number | null;
       hypothesisCorrect?: boolean;
@@ -134,6 +135,55 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const levelCases = SCAM_CASES.filter((c) => c.level === currentLevel);
   const currentCase: ScamCase =
     gameMode === 'dynamic' ? dynamicCase : (levelCases[currentCaseIndex] || levelCases[0]);
+
+  // Modo Sob Pressão (Cronômetro Tático)
+  const [isPressureMode, setIsPressureMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('hacklearn_pressure_mode');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const getMaxTimeForCase = (c: ScamCase): number => {
+    if (c.level === 'avancado') return 45;
+    if (c.level === 'medio') return 55;
+    return 65;
+  };
+
+  const [timeLeft, setTimeLeft] = useState<number>(() => getMaxTimeForCase(currentCase));
+  const [isTimedOut, setIsTimedOut] = useState<boolean>(false);
+
+  // Reinicia cronômetro quando o caso muda
+  useEffect(() => {
+    setTimeLeft(getMaxTimeForCase(currentCase));
+    setIsTimedOut(false);
+  }, [currentCase.id]);
+
+  // Contagem regressiva do Modo Sob Pressão
+  useEffect(() => {
+    if (!isPressureMode || answers[currentCase.id]?.answered || isTimedOut) return;
+
+    if (timeLeft <= 0) {
+      setIsTimedOut(true);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setIsTimedOut(true);
+          sound.playError();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isPressureMode, timeLeft, isTimedOut, currentCase.id, answers]);
 
   const getScenarioType = (c: ScamCase): 'whatsapp' | 'correios' | 'banco' | 'loja' | 'tarefas' | 'remoto' | 'oficial' | 'geral' => {
     const cat = (c.category || '').toLowerCase();
@@ -207,6 +257,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
     // Bônus de 10 XP por cada pista investigada antes do laudo
     const bonusXp = isCorrect ? cluesFoundCount * 10 : 0;
+    
+    // Bônus de Pressão Tática (+20 XP se acertou com louvor dentro do tempo)
+    const pressureBonus = (isCorrect && hypothesisCorrect && isPressureMode && timeLeft > 0) ? 20 : 0;
 
     let newStreak = streak;
     let comboBonus = 0;
@@ -225,7 +278,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         comboBonus = 10;
       }
 
-      earnedTotal = (currentCase.xpReward || 0) + bonusXp + comboBonus;
+      earnedTotal = (currentCase.xpReward || 0) + bonusXp + comboBonus + pressureBonus;
       setFloatingXp(earnedTotal);
 
       // Efeito festivo de confetes Apple
@@ -247,6 +300,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           unlockBadge('badge-central-bank-expert');
         }
       }
+
+      // Conquistas de Desafio e Dificuldade
+      if (isPressureMode && timeLeft > 0) {
+        unlockBadge('badge-ice-cold');
+      }
+      unlockBadge('badge-surgical-mind');
     } else if (isCorrect && !hypothesisCorrect) {
       // Veredito correto, mas prova incorreta (acerto parcial)
       sound.playSuccess();
@@ -272,6 +331,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         cluesDiscovered: discoveredClues[currentCase.id] || [],
         bonusXp,
         comboBonus,
+        pressureBonus,
         penaltyXp,
         selectedHypothesis,
         hypothesisCorrect,
@@ -284,7 +344,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       const found = SCAM_CASES.find((c) => c.id === caseId);
       if (data.isCorrect) {
         const baseReward = data.hypothesisCorrect !== false ? (found?.xpReward || 0) : Math.round((found?.xpReward || 0) * 0.5);
-        return acc + baseReward + (data.bonusXp || 0) + (data.comboBonus || 0);
+        return acc + baseReward + (data.bonusXp || 0) + (data.comboBonus || 0) + (data.pressureBonus || 0);
       } else {
         return acc - (data.penaltyXp || 0);
       }
@@ -547,7 +607,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-[#ff9f0a]" />
-                <span>⚡ Cenários Dinâmicos 3D</span>
+                <span>⚡ Cenários Dinâmicos 2D</span>
               </button>
             </div>
 
@@ -598,13 +658,34 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 className="px-3.5 py-1.5 rounded-full bg-[#bf5af2]/15 hover:bg-[#bf5af2]/25 text-[#bf5af2] border border-[#bf5af2]/35 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>🎲 Sortear Outro Cenário 3D</span>
+                <span>🎲 Sortear Outro Cenário 2D</span>
               </button>
             )}
           </div>
 
-          {/* Patente Atual do Jogador & Combo Streak */}
+          {/* Patente Atual do Jogador, Combo Streak & Modo Sob Pressão */}
           <div className="flex items-center space-x-2">
+            {/* Toggle Modo Sob Pressão (Cronômetro Tático) */}
+            <button
+              onClick={() => {
+                sound.playBlip();
+                const nextVal = !isPressureMode;
+                setIsPressureMode(nextVal);
+                try {
+                  localStorage.setItem('hacklearn_pressure_mode', JSON.stringify(nextVal));
+                } catch {}
+              }}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border ${
+                isPressureMode
+                  ? 'bg-[#ff3b30]/15 text-[#ff453a] border-[#ff3b30]/35 shadow-sm shadow-red-500/10'
+                  : 'bg-white/[0.04] text-[#86868b] border-white/[0.08] hover:text-white'
+              }`}
+              title="Alternar Modo Sob Pressão (Cronômetro Tático)"
+            >
+              <Clock className={`w-3.5 h-3.5 ${isPressureMode ? 'text-[#ff453a] animate-pulse' : ''}`} />
+              <span className="hidden sm:inline">{isPressureMode ? '⏱️ Sob Pressão' : '🧘 Modo Calmo'}</span>
+            </button>
+
             {streak > 1 && (
               <motion.div
                 initial={{ scale: 0.85 }}
@@ -746,7 +827,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#bf5af2] to-[#2997ff] text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-purple-500/20 hover:opacity-95"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>🎲 Sortear Novo Cenário 3D</span>
+                <span>🎲 Sortear Novo Cenário 2D</span>
               </button>
             )}
           </div>
@@ -754,6 +835,89 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           {/* Conteúdo do Incidente */}
           <div className="p-6 space-y-5">
             
+            {/* Cronômetro Tático do Modo Sob Pressão */}
+            {isPressureMode && (
+              <div className="p-3.5 rounded-2xl bg-black/40 border border-white/[0.08] space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2">
+                    <Clock
+                      className={`w-4 h-4 ${
+                        timeLeft <= 15
+                          ? 'text-[#ff3b30] animate-pulse'
+                          : timeLeft <= 30
+                          ? 'text-[#ff9f0a]'
+                          : 'text-[#2997ff]'
+                      }`}
+                    />
+                    <span className="font-bold text-white text-[11px] uppercase tracking-wider">
+                      {isTimedOut ? 'Janela Tática Expirada' : 'Janela de Resposta Rápida'}
+                    </span>
+                    {!isTimedOut && !currentAnswerData?.answered && (
+                      <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.5 rounded-full border border-[#30d158]/20">
+                        +20 XP Reflexo
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`font-mono text-xs font-bold ${
+                      timeLeft <= 15
+                        ? 'text-[#ff3b30] animate-pulse'
+                        : timeLeft <= 30
+                        ? 'text-[#ff9f0a]'
+                        : 'text-[#2997ff]'
+                    }`}
+                  >
+                    00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}s
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                  <motion.div
+                    className={`h-full rounded-full transition-all duration-1000 ${
+                      timeLeft <= 15
+                        ? 'bg-[#ff3b30]'
+                        : timeLeft <= 30
+                        ? 'bg-[#ff9f0a]'
+                        : 'bg-gradient-to-r from-[#0071e3] to-[#2997ff]'
+                    }`}
+                    style={{
+                      width: `${Math.max(0, Math.min(100, (timeLeft / getMaxTimeForCase(currentCase)) * 100))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Alerta de Tempo Esgotado sob Pressão */}
+            {isPressureMode && isTimedOut && !currentAnswerData?.answered && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-3.5 rounded-2xl bg-[#ff3b30]/15 border border-[#ff3b30]/35 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-[#ff453a] flex-shrink-0" />
+                  <div>
+                    <span className="font-bold text-[#ff453a] block">Tempo Esgotado!</span>
+                    <p className="text-[11px] text-[#d2d2d7]">
+                      Em golpes reais, a urgência induz ao pânico e atrasa o raciocínio. Você ainda pode emitir seu laudo abaixo!
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playBlip();
+                    setTimeLeft(getMaxTimeForCase(currentCase));
+                    setIsTimedOut(false);
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition flex-shrink-0 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reiniciar Janela (+{getMaxTimeForCase(currentCase)}s)</span>
+                </button>
+              </motion.div>
+            )}
+
             {/* ======================================================== */}
             {/* BLOCO DE DÚVIDA / DILEMA INVESTIGATIVO (Gera Dúvida Real) */}
             {/* ======================================================== */}
@@ -1049,6 +1213,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     onClick={() => {
                       sound.playBlip();
                       setSelectedVerdict(true);
+                      setSelectedHypothesis(null);
                     }}
                     className={`p-3.5 rounded-2xl border text-left transition flex flex-col items-center justify-center cursor-pointer shadow-md ${
                       selectedVerdict === true
@@ -1253,6 +1418,37 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             <p className="text-[#f5f5f7] leading-relaxed">
                               {currentCase.keyEvidenceReason}
                             </p>
+                          </div>
+
+                          {/* Bônus de Reflexo Sob Pressão */}
+                          {currentAnswerData.pressureBonus ? (
+                            <div className="p-2.5 rounded-xl bg-[#2997ff]/10 border border-[#2997ff]/25 flex items-center justify-between text-xs text-white">
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-3.5 h-3.5 text-[#2997ff]" />
+                                <span>Reflexo Tático Sob Pressão</span>
+                              </div>
+                              <span className="font-bold text-[#2997ff]">+{currentAnswerData.pressureBonus} XP</span>
+                            </div>
+                          ) : null}
+
+                          {/* Debriefing Pedagógico Silas & Clara */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                            <div className="p-3 rounded-xl bg-white/[0.02] border border-[#2997ff]/20 space-y-1">
+                              <span className="text-[11px] font-bold text-[#2997ff] flex items-center gap-1">
+                                🕵️‍♂️ Silas (Forense):
+                              </span>
+                              <p className="text-[11px] text-[#d2d2d7] leading-relaxed">
+                                Gatilho desarmado: <strong>{currentCase.pedagogy.emotionalTrigger}</strong>.
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/[0.02] border border-[#30d158]/20 space-y-1">
+                              <span className="text-[11px] font-bold text-[#30d158] flex items-center gap-1">
+                                👩‍🏫 Clara (Pedagoga):
+                              </span>
+                              <p className="text-[11px] text-[#d2d2d7] leading-relaxed">
+                                {currentCase.pedagogy.kidsAnalogy}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Regra de Ouro */}
