@@ -936,7 +936,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             </div>
 
             {/* Caixa de Texto do Incidente (Autêntica, Ampla e Sem Poluição) */}
-            <div className="bg-[#0c0c0d] border border-white/[0.08] rounded-2xl p-6 shadow-inner space-y-2">
+            <div className={`bg-[#0c0c0d] border border-white/[0.08] rounded-2xl p-6 shadow-inner space-y-2 transition-all duration-500 ${expandedClueId !== null || currentAnswerData?.answered ? 'opacity-50 blur-[2px]' : ''}`}>
               <div className="text-[10px] text-[#86868b] uppercase tracking-wider font-mono flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-[#2997ff]" />
                 <span>Texto Original Recebido:</span>
@@ -964,7 +964,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           {/* ======================================================== */}
           {/* BLOCO 2: FERRAMENTAS DE INVESTIGAÇÃO VISUAL (3 PISTAS)   */}
           {/* ======================================================== */}
-          <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg">
+          <div className={`bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''}`}>
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
