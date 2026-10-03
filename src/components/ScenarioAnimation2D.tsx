@@ -32,6 +32,7 @@ interface ScenarioAnimation2DProps {
 // =============================================================================
 interface BonecoPalito2DProps {
   pose?: 'pondering' | 'holding_phone' | 'holding_coffee' | 'inspecting';
+  characterType?: 'mom' | 'senior' | 'default';
   verdictResult?: 'correct' | 'incorrect' | null;
   thoughtBubble?: string;
   dilemmaLabel?: string;
@@ -39,6 +40,7 @@ interface BonecoPalito2DProps {
 
 const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
   pose = 'pondering',
+  characterType = 'default',
   verdictResult = null,
   thoughtBubble,
   dilemmaLabel = 'Dilema do Cidadão',
@@ -53,7 +55,7 @@ const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative mb-2 px-3 py-1.5 rounded-xl bg-black/60 border border-white/10 text-[11px] text-white/90 text-center font-medium shadow-md max-w-[210px] leading-tight"
+          className="relative mb-2 px-3 py-1.5 rounded-xl bg-black/60 border border-white/10 text-[11px] text-white/90 text-center font-medium shadow-md max-w-[220px] leading-tight"
         >
           <span>{thoughtBubble}</span>
           <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-black/60 border-r border-b border-white/10 rotate-45" />
@@ -94,18 +96,53 @@ const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
           </g>
           <ellipse cx="65" cy="189" rx="38" ry="5.5" fill="#000000" fillOpacity="0.25" />
 
-          {/* 2. Pés Ovais Brancos com Borda Preta */}
-          <ellipse cx="50" cy="184" rx="10" ry="3.8" fill="#ffffff" stroke="#090b10" strokeWidth="3" />
-          <ellipse cx="80" cy="184" rx="10" ry="3.8" fill="#ffffff" stroke="#090b10" strokeWidth="3" />
+          {/* 2. Pés / Sapatos */}
+          {characterType === 'mom' ? (
+            /* Sapatilhas femininas delicadas com lacinho de mãe */
+            <g>
+              <ellipse cx="50" cy="185" rx="8.5" ry="3.5" fill="#ffffff" stroke="#090b10" strokeWidth="2.8" />
+              <ellipse cx="78" cy="185" rx="8.5" ry="3.5" fill="#ffffff" stroke="#090b10" strokeWidth="2.8" />
+              <circle cx="50" cy="183.5" r="1.5" fill="#090b10" />
+              <circle cx="78" cy="183.5" r="1.5" fill="#090b10" />
+            </g>
+          ) : (
+            /* Pés Ovais Brancos Tradicionais */
+            <g>
+              <ellipse cx="50" cy="184" rx="10" ry="3.8" fill="#ffffff" stroke="#090b10" strokeWidth="3" />
+              <ellipse cx="80" cy="184" rx="10" ry="3.8" fill="#ffffff" stroke="#090b10" strokeWidth="3" />
+            </g>
+          )}
 
           {/* 3. Pernas Palito */}
-          <line x1="56" y1="126" x2="52" y2="182" stroke="#090b10" strokeWidth="3.5" strokeLinecap="round" />
-          <path d="M 68 126 L 75 155 L 80 182" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          {characterType === 'mom' ? (
+            <g>
+              <line x1="55" y1="134" x2="51" y2="183" stroke="#090b10" strokeWidth="3.5" strokeLinecap="round" />
+              <line x1="72" y1="134" x2="77" y2="183" stroke="#090b10" strokeWidth="3.5" strokeLinecap="round" />
+            </g>
+          ) : (
+            <g>
+              <line x1="56" y1="126" x2="52" y2="182" stroke="#090b10" strokeWidth="3.5" strokeLinecap="round" />
+              <path d="M 68 126 L 75 155 L 80 182" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+          )}
 
-          {/* 4. Tronco em Pílula Branca com Contorno Preto */}
-          <rect x="52" y="80" width="20" height="46" rx="9" fill="#ffffff" stroke="#090b10" strokeWidth="3.5" />
+          {/* 4. Tronco / Roupa */}
+          {characterType === 'mom' ? (
+            /* Vestido Evasê Clássico de Mãe com Gola e Colar de Pérolas */
+            <g>
+              <path d="M 52 80 L 38 134 L 86 134 L 72 80 Z" fill="#ffffff" stroke="#090b10" strokeWidth="3.5" strokeLinejoin="round" />
+              {/* Colar de pérolas delicado */}
+              <path d="M 55 82 Q 62 90, 69 82" stroke="#090b10" strokeWidth="2" fill="none" />
+              <circle cx="62" cy="88" r="2.2" fill="#ffd700" stroke="#090b10" strokeWidth="1" />
+              {/* Barra do vestido pontilhada */}
+              <line x1="40" y1="128" x2="84" y2="128" stroke="#090b10" strokeWidth="1.5" strokeDasharray="3 3" />
+            </g>
+          ) : (
+            /* Tronco em Pílula Branca Reto */
+            <rect x="52" y="80" width="20" height="46" rx="9" fill="#ffffff" stroke="#090b10" strokeWidth="3.5" />
+          )}
 
-          {/* 5. Braços Conforme a Pose */}
+          {/* 5. Braços Conforme a Pose e Personagem */}
           {isHappy ? (
             /* Comemoração: Braços erguidos em V */
             <g>
@@ -122,39 +159,42 @@ const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
               <ellipse cx="44" cy="56" rx="3" ry="3" fill="#090b10" />
               <ellipse cx="80" cy="56" rx="3" ry="3" fill="#090b10" />
             </g>
+          ) : characterType === 'mom' ? (
+            /* POSE DA MÃE: Mão segurando o celular do WhatsApp + mão no queixo angustiada */
+            <g>
+              {/* Braço segurando o smartphone da mãe */}
+              <path d="M 52 86 L 36 102 L 46 94" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              {/* Smartphone da mãe com tela verde de WhatsApp */}
+              <rect x="40" y="80" width="14" height="23" rx="3" fill="#25d366" stroke="#090b10" strokeWidth="2.2" />
+              <rect x="42" y="83" width="10" height="15" rx="1.5" fill="#ffffff" />
+              <circle cx="47" cy="99" r="1.2" fill="#090b10" />
+
+              {/* Braço com a mão no queixo (pensativa e preocupada) */}
+              <path d="M 72 86 L 88 110 L 68 68" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M 64 68 C 67 63, 71 63, 69 70" stroke="#090b10" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+            </g>
           ) : pose === 'holding_phone' ? (
             /* Segurando telefone no ouvido */
             <g>
-              {/* Braço na cintura */}
               <path d="M 52 88 L 36 108 L 48 122" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
               <ellipse cx="49" cy="123" rx="3.5" ry="3.5" fill="none" stroke="#090b10" strokeWidth="3" />
-
-              {/* Braço no telefone */}
               <path d="M 72 88 L 90 76 L 82 50" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-              {/* Fone vermelho retrô */}
               <path d="M 80 40 C 88 42, 88 56, 80 60" stroke="#ff3b30" strokeWidth="5.5" strokeLinecap="round" fill="none" />
             </g>
           ) : pose === 'holding_coffee' ? (
             /* Segurando xícara de café */
             <g>
-              {/* Braço no café */}
               <path d="M 72 88 L 90 98 L 86 82" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-              {/* Caneca */}
               <rect x="82" y="74" width="13" height="13" rx="3" fill="#ffffff" stroke="#090b10" strokeWidth="2.5" />
               <path d="M 95 78 Q 100 80 95 84" stroke="#090b10" strokeWidth="2" fill="none" />
-
-              {/* Braço no queixo */}
               <path d="M 52 88 L 38 106 L 58 68" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M 60 67 C 62 63, 66 63, 64 70" stroke="#090b10" strokeWidth="3.2" fill="none" strokeLinecap="round" />
             </g>
           ) : pose === 'inspecting' ? (
             /* Segurando lupa */
             <g>
-              {/* Braço na cintura */}
               <path d="M 52 88 L 36 108 L 48 122" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
               <ellipse cx="49" cy="123" rx="3.5" ry="3.5" fill="none" stroke="#090b10" strokeWidth="3" />
-
-              {/* Braço com lupa */}
               <path d="M 72 88 L 92 84 L 80 54" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
               <circle cx="82" cy="48" r="8" fill="none" stroke="#2997ff" strokeWidth="3" />
               <line x1="88" y1="54" x2="94" y2="60" stroke="#090b10" strokeWidth="3" />
@@ -162,13 +202,9 @@ const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
           ) : (
             /* POSE OFICIAL DE IMAGES.JPEG: O PENSADOR (Mão no queixo + Mão na cintura) */
             <g>
-              {/* Braço direito: Mão na cintura */}
               <path d="M 52 88 L 36 108 L 48 122" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
               <ellipse cx="49" cy="123" rx="3.5" ry="3.5" fill="none" stroke="#090b10" strokeWidth="3" />
-
-              {/* Braço esquerdo: Mão no queixo tocando exatamente a base do rosto */}
               <path d="M 72 88 L 86 112 L 68 68" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              {/* Dedos em concha no queixo */}
               <path d="M 64 68 C 67 63, 71 63, 69 70" stroke="#090b10" strokeWidth="3.2" fill="none" strokeLinecap="round" />
             </g>
           )}
@@ -179,10 +215,34 @@ const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
           {/* 7. Cabeça (Círculo Branco com Borda Nanquim) */}
           <circle cx="62" cy="48" r="23" fill="#ffffff" stroke="#090b10" strokeWidth="3.5" />
 
-          {/* 8. Os 3 Fios de Cabelo Icônicos (\ | /) no topo da cabeça */}
-          <path d="M 62 25 C 53 14, 46 8, 38 4" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
-          <path d="M 62 25 C 63 14, 64 8, 66 2" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
-          <path d="M 62 25 C 71 14, 79 8, 88 5" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
+          {/* 8. Penteado e Acessórios de Cabeça */}
+          {characterType === 'mom' ? (
+            /* CABELO DE MÃE: Coque clássico no topo com grampinho + mechas suaves */
+            <g>
+              {/* Coque fofo no topo da cabeça */}
+              <circle cx="62" cy="18" r="11" fill="#ffffff" stroke="#090b10" strokeWidth="3" />
+              <path d="M 55 18 Q 62 13, 69 18" stroke="#090b10" strokeWidth="2.2" fill="none" />
+              <path d="M 57 22 Q 62 17, 67 22" stroke="#090b10" strokeWidth="2" fill="none" />
+              {/* Grampo de cabelo transversal decorativo */}
+              <line x1="47" y1="23" x2="77" y2="12" stroke="#090b10" strokeWidth="2.8" strokeLinecap="round" />
+
+              {/* Mechas laterais onduladas emoldurando o rosto */}
+              <path d="M 40 46 C 38 29, 48 24, 62 25 C 76 24, 86 29, 84 46" stroke="#090b10" strokeWidth="3.2" fill="none" />
+              <path d="M 39 46 Q 37 54, 42 58" stroke="#090b10" strokeWidth="2.5" fill="none" />
+              <path d="M 85 46 Q 87 54, 82 58" stroke="#090b10" strokeWidth="2.5" fill="none" />
+
+              {/* Brincos de pérola dourada */}
+              <circle cx="38.5" cy="50" r="2.8" fill="#ffd700" stroke="#090b10" strokeWidth="1.5" />
+              <circle cx="85.5" cy="50" r="2.8" fill="#ffd700" stroke="#090b10" strokeWidth="1.5" />
+            </g>
+          ) : (
+            /* Os 3 Fios de Cabelo Originais (\ | /) de images.jpeg */
+            <g>
+              <path d="M 62 25 C 53 14, 46 8, 38 4" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M 62 25 C 63 14, 64 8, 66 2" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M 62 25 C 71 14, 79 8, 88 5" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
+            </g>
+          )}
 
           {/* 9. Rosto Expressivo */}
           {isHappy ? (
@@ -204,21 +264,27 @@ const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
               <circle cx="71" cy="46" r="4.2" fill="none" stroke="#090b10" strokeWidth="2.2" />
               <circle cx="71" cy="46" r="1.6" fill="#090b10" />
               <path d="M 53 60 L 57 63 L 61 59 L 65 63 L 69 60" stroke="#090b10" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              {/* Gota de suor azul */}
               <path d="M 78 32 C 75 36, 75 41, 78 42 C 81 41, 81 36, 78 32" fill="#2997ff" />
             </g>
           ) : (
-            /* EXPRESSÃO IDLE: O Pensador com Dúvida de images.jpeg */
+            /* EXPRESSÃO IDLE: O Pensador com Dúvida */
             <g>
-              {/* Sobrancelha Esquerda bem arqueada (questionadora) */}
               <path d="M 48 39 Q 55 31, 60 38" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-              {/* Sobrancelha Direita focada */}
               <path d="M 65 40 Q 70 38, 77 42" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-              {/* Olhos ovais pretos */}
               <ellipse cx="54" cy="46" rx="2.4" ry="4.5" fill="#090b10" />
               <ellipse cx="71" cy="46" rx="2.4" ry="4.5" fill="#090b10" />
-              {/* Boca ondulada de dúvida cômica */}
               <path d="M 55 60 Q 60 57, 65 62 T 71 58" stroke="#090b10" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            </g>
+          )}
+
+          {/* 10. Óculos de Leitura Especiais da Mãe */}
+          {characterType === 'mom' && (
+            <g>
+              <ellipse cx="53" cy="46" rx="6.5" ry="5.5" fill="rgba(255,255,255,0.4)" stroke="#090b10" strokeWidth="2.2" />
+              <ellipse cx="71" cy="46" rx="6.5" ry="5.5" fill="rgba(255,255,255,0.4)" stroke="#090b10" strokeWidth="2.2" />
+              <line x1="59.5" y1="46" x2="64.5" y2="46" stroke="#090b10" strokeWidth="2.2" />
+              <line x1="46.5" y1="46" x2="40" y2="44" stroke="#090b10" strokeWidth="1.8" />
+              <line x1="77.5" y1="46" x2="84" y2="44" stroke="#090b10" strokeWidth="1.8" />
             </g>
           )}
         </svg>
@@ -290,13 +356,14 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         {/* ----------------------------------------------------------------------- */}
         {isCase1 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* Boneco Palito: A Mãe com a mão no queixo em dúvida */}
+            {/* Boneco Palito: A Mãe com aparência inconfundível de mãe */}
             <div className="md:col-span-4 flex justify-center">
               <BonecoPalito2D
+                characterType="mom"
                 pose="pondering"
                 verdictResult={verdictResult}
-                dilemmaLabel="Mãe / Responsável"
-                thoughtBubble='"Será mesmo meu filho com número novo pedindo Pix?"'
+                dilemmaLabel="Mãe Preocupada"
+                thoughtBubble='"Ai meu Deus, é meu filho mesmo? Por que ele tá sem foto pedindo Pix urgente?"'
               />
             </div>
 
