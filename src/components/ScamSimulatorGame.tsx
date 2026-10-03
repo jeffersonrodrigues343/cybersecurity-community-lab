@@ -549,7 +549,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         >
           {/* Header do Cartão Bento */}
           <div className="px-6 py-4 bg-white/[0.02] border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3 w-full">
               <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
                 {getCategoryIcon(currentCase.category)}
               </div>
@@ -564,7 +564,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
 
           {/* Conteúdo do Incidente */}
-          <div className="p-6 space-y-5">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
             
             {/* Cronômetro Tático do Modo Sob Pressão */}
             
@@ -626,7 +626,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
             {/* Linha de Metadados do Remetente */}
             <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3 w-full">
                 <div className="relative">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-white/10 to-white/20 border border-white/10 flex items-center justify-center font-semibold text-white text-sm">
                     {currentCase.sender.charAt(0)}
@@ -721,7 +721,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       onClick={() => handleInspectClue(clue)}
                       className="w-full p-3.5 sm:p-4 text-left flex items-center justify-between cursor-pointer"
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-3 w-full">
                         <div
                           className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 transition-transform ${
                             isExpanded ? 'scale-105' : ''
@@ -730,7 +730,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                           {getClueCategoryIcon(clue.category)}
                         </div>
                         <div className="space-y-0.5">
-                          <div className="text-xs font-semibold text-white flex items-center gap-2">
+                          <div className="text-xs font-semibold text-white flex flex-wrap items-center gap-2">
                             <span>{clue.buttonLabel}</span>
                             {isDiscovered && (
                               <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.2 rounded-full border border-[#30d158]/20 flex items-center gap-1">
@@ -1119,11 +1119,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             className="w-full py-3.5 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold text-xs flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg shadow-blue-500/25"
                           >
                             <span>
-                              {currentCaseIndex < levelCases.length - 1
-                                ? 'Próximo Caso da Investigação'
-                                : currentLevel !== 'avancado'
-                                ? 'Avançar para o Próximo Nível'
-                                : 'Ver Conclusão da Investigação'}
+                              'Próximo Caso da Investigação'
                             </span>
                             <ChevronRight className="w-4 h-4" />
                           </motion.button>
@@ -1133,7 +1129,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="p-4 rounded-2xl bg-[#1c1c1e] border border-[#ff9f0a]/30 space-y-3.5 shadow-xl"
+                          className="p-4 sm:p-5 rounded-2xl bg-[#1c1c1e] border border-[#ff9f0a]/30 space-y-3.5 shadow-xl"
                         >
                           <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
                             <div className="flex items-center space-x-2 text-xs font-semibold text-[#ff9f0a]">
