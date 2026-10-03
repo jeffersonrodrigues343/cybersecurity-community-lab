@@ -18,7 +18,7 @@ import {
   Mail,
   FileText,
   HelpCircle,
-  TrendingUp,
+  
   Globe,
   CreditCard,
   Brain,
@@ -207,9 +207,6 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const totalFinishedCount = Object.keys(answers).length;
   const isBasicoFinished = totalFinishedCount >= 3;
 
-
-  const levelFinishedCount = levelCases.filter((c) => answers[c.id]?.answered).length;
-  const levelProgressPercentage = Math.round((levelFinishedCount / levelCases.length) * 100);
 
   // Jogador clica para investigar uma pista específica
   const handleInspectClue = (clue: InvestigativeClue) => {
@@ -653,25 +650,27 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           {/* Patente Atual do Jogador, Combo Streak & Modo Sob Pressão */}
           <div className="flex items-center space-x-2">
             {/* Toggle Modo Sob Pressão (Cronômetro Tático) */}
-            <button
-              onClick={() => {
-                sound.playBlip();
-                const nextVal = !isPressureMode;
-                setIsPressureMode(nextVal);
-                try {
-                  localStorage.setItem('hacklearn_pressure_mode', JSON.stringify(nextVal));
-                } catch {}
-              }}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border ${
-                isPressureMode
-                  ? 'bg-[#ff3b30]/15 text-[#ff453a] border-[#ff3b30]/35 shadow-sm shadow-red-500/10'
-                  : 'bg-white/[0.04] text-[#86868b] border-white/[0.08] hover:text-white'
-              }`}
-              title="Alternar Modo Sob Pressão (Cronômetro Tático)"
-            >
-              <Clock className={`w-3.5 h-3.5 ${isPressureMode ? 'text-[#ff453a] animate-pulse' : ''}`} />
-              <span className="hidden sm:inline">{isPressureMode ? '⏱️ Sob Pressão' : '🧘 Modo Calmo'}</span>
-            </button>
+            {isBasicoFinished && (
+              <button
+                onClick={() => {
+                  sound.playBlip();
+                  const nextVal = !isPressureMode;
+                  setIsPressureMode(nextVal);
+                  try {
+                    localStorage.setItem('hacklearn_pressure_mode', JSON.stringify(nextVal));
+                  } catch {}
+                }}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border ${
+                  isPressureMode
+                    ? 'bg-[#ff3b30]/15 text-[#ff453a] border-[#ff3b30]/35 shadow-sm shadow-red-500/10'
+                    : 'bg-white/[0.04] text-[#86868b] border-white/[0.08] hover:text-white'
+                }`}
+                title="Alternar Modo Sob Pressão (Cronômetro Tático)"
+              >
+                <Clock className={`w-3.5 h-3.5 ${isPressureMode ? 'text-[#ff453a] animate-pulse' : ''}`} />
+                <span className="hidden sm:inline">{isPressureMode ? '⏱️ Sob Pressão' : '🧘 Modo Calmo'}</span>
+              </button>
+            )}
 
             {isBasicoFinished && streak > 1 && (
               <motion.div
@@ -685,34 +684,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </motion.div>
             )}
 
-            
-
             {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsBadgesModalOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-medium transition cursor-pointer"><Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" /><span className="hidden sm:inline">Conquistas</span><span className="text-[10px] text-[#86868b]">({unlockedBadgeIds.length}/{BADGES.length})</span></button>)}
 
             {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsFamilyGuideOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#2997ff] text-xs font-medium transition cursor-pointer"><BookOpen className="w-3.5 h-3.5" /><span className="hidden sm:inline">Cartilha</span></button>)}
-          </div>
-        </div>
-
-        {/* Linha Inferior: Barra Visual de Progresso do Nível */}
-        <div className="space-y-1.5 pt-1">
-          <div className="flex items-center justify-between text-[11px] text-[#86868b]">
-            <span className="flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-[#2997ff]" />
-              <span className="capitalize font-medium text-white">
-                Nível {currentLevel}: Caso {currentCaseIndex + 1} de {levelCases.length}
-              </span>
-            </span>
-            <span>
-              
-            </span>
-          </div>
-          <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/[0.06]">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${levelProgressPercentage}%` }}
-              transition={{ duration: 0.4 }}
-              className="h-full bg-gradient-to-r from-[#0071e3] to-[#2997ff] rounded-full"
-            />
           </div>
         </div>
       </div>
