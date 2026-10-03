@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShieldAlert,
@@ -58,6 +58,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const [dynamicCase, setDynamicCase] = useState<ScamCase>(() => generateDynamicScamCase());
   const [currentLevel, setCurrentLevel] = useState<ScamLevel>('basico');
   const [currentCaseIndex, setCurrentCaseIndex] = useState(0);
+  const topRef = useRef<HTMLDivElement>(null);
+  const verdictRef = useRef<HTMLButtonElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const cluesRef = useRef<HTMLDivElement>(null);
+
 
   // Registro de respostas e laudos periciais
   const [answers, setAnswers] = useState<{
@@ -174,6 +179,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           clearInterval(interval);
           setIsTimedOut(true);
           sound.playError();
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
           return 0;
         }
         return prev - 1;
@@ -212,6 +218,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const handleInspectClue = (clue: InvestigativeClue) => {
     sound.playBlip();
     setExpandedClueId((prev) => (prev === clue.id ? null : clue.id));
+    if (expandedClueId !== clue.id) {
+      setTimeout(() => cluesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    }
 
     const alreadyDiscovered = currentCaseDiscovered.includes(clue.id);
     if (!alreadyDiscovered) {
@@ -252,6 +261,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
     if (isCorrect && hypothesisCorrect) {
       sound.playSuccess();
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
       newStreak = streak + 1;
       setStreak(newStreak);
 
@@ -293,10 +303,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     } else if (isCorrect && !hypothesisCorrect) {
       // Veredito correto, mas prova incorreta (acerto parcial)
       sound.playSuccess();
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
       earnedTotal = Math.round((currentCase.xpReward || 0) * 0.5) + bonusXp;
       setFloatingXp(earnedTotal);
     } else {
       sound.playError();
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
       setStreak(0);
       if (currentLevel === 'avancado') {
         penaltyXp = 25;
@@ -349,6 +361,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     setDrillSelectedOptionId(option.id);
     if (option.isCorrect) {
       sound.playSuccess();
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
       setDrillSuccess(true);
       if (!drillBonusAwarded) {
         setDrillBonusAwarded(true);
@@ -383,6 +396,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       }
     } else {
       sound.playError();
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
       setDrillSuccess(false);
     }
   };
@@ -408,9 +422,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       if (currentLevel === 'basico') {
         setCurrentLevel('medio');
         setCurrentCaseIndex(0);
+    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
       } else if (currentLevel === 'medio') {
         setCurrentLevel('avancado');
         setCurrentCaseIndex(0);
+    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
       }
     }
   };
@@ -420,6 +436,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     setGameMode('campaign');
     setCurrentLevel(level);
     setCurrentCaseIndex(0);
+    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
     setExpandedClueId(null);
     setFloatingXp(null);
     setSelectedVerdict(null);
@@ -964,7 +981,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           {/* ======================================================== */}
           {/* BLOCO 2: FERRAMENTAS DE INVESTIGAÇÃO VISUAL (3 PISTAS)   */}
           {/* ======================================================== */}
-          <div className={`bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''}`}>
+          <div ref={cluesRef} className={`bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''}`}>
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
@@ -1213,6 +1230,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                               onClick={() => {
                                 sound.playBlip();
                                 setSelectedHypothesis(idx);
+                                setTimeout(() => verdictRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
                               }}
                               className={`w-full p-3 rounded-xl border text-left transition flex items-start space-x-2.5 cursor-pointer ${
                                 isSelected
@@ -1244,6 +1262,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     whileHover={selectedHypothesis !== null ? { scale: 1.02, y: -1 } : {}}
                     whileTap={selectedHypothesis !== null ? { scale: 0.98 } : {}}
                     disabled={selectedHypothesis === null}
+                    ref={verdictRef}
                     onClick={handleProtocolReport}
                     className={`w-full py-3.5 px-4 rounded-full font-bold text-xs flex items-center justify-center space-x-2 transition ${
                       selectedHypothesis !== null
@@ -1274,6 +1293,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-4"
+                ref={resultRef}
               >
                 {/* Toast Flutuante de XP */}
                 <AnimatePresence>
