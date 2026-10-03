@@ -407,7 +407,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       case 'call':
         return <Phone className="w-3.5 h-3.5 text-[#0071e3]" />;
       case 'sms':
-        return <MessageSquare className="w-3.5 h-3.5 text-[#ff9f0a]" />;
+        return <MessageSquare className="w-3.5 h-3.5 text-[#ff2a2a]" />;
       case 'document':
         return <FileText className="w-3.5 h-3.5 text-[#bf5af2]" />;
       default:
@@ -425,7 +425,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       case 'phone':
         return <PhoneCall className="w-4 h-4 text-[#bf5af2]" />;
       case 'behavior':
-        return <Brain className="w-4 h-4 text-[#ff9f0a]" />;
+        return <Brain className="w-4 h-4 text-[#ff2a2a]" />;
       case 'system':
       default:
         return <Server className="w-4 h-4 text-[#64d2ff]" />;
@@ -441,7 +441,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       case 'phone':
         return 'bg-[#bf5af2]/10 border-[#bf5af2]/25 text-[#bf5af2]';
       case 'behavior':
-        return 'bg-[#ff9f0a]/10 border-[#ff9f0a]/25 text-[#ff9f0a]';
+        return 'bg-[#ff9f0a]/10 border-2 border-[#ff2a2a] text-[#ff2a2a]';
       case 'system':
       default:
         return 'bg-[#64d2ff]/10 border-[#64d2ff]/25 text-[#64d2ff]';
@@ -454,7 +454,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       return <MessageSquare className="w-4 h-4 text-[#30d158]" />;
     }
     if (cat.includes('sms') || cat.includes('encomenda')) {
-      return <Mail className="w-4 h-4 text-[#ff9f0a]" />;
+      return <Mail className="w-4 h-4 text-[#ff2a2a]" />;
     }
     if (cat.includes('segurança')) {
       return <ShieldCheck className="w-4 h-4 text-[#30d158]" />;
@@ -463,7 +463,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       return <PhoneCall className="w-4 h-4 text-[#ff3b30]" />;
     }
     if (cat.includes('comércio') || cat.includes('social') || cat.includes('loja')) {
-      return <ShoppingBag className="w-4 h-4 text-[#ff9f0a]" />;
+      return <ShoppingBag className="w-4 h-4 text-[#ff2a2a]" />;
     }
     if (cat.includes('vagas') || cat.includes('emprego') || cat.includes('tarefas')) {
       return <Briefcase className="w-4 h-4 text-[#2997ff]" />;
@@ -483,14 +483,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="p-4 rounded-2xl bg-[#1c1c1e] border border-white/[0.15] shadow-2xl flex items-center justify-between text-black max-w-lg mx-auto"
+            className="p-4 rounded-2xl bg-[#111] uk-panel border-4 border-[#ff2a2a] border border-white/[0.15] shadow-2xl flex items-center justify-between text-black max-w-lg mx-auto"
           >
             <div className="flex items-center space-x-3.5">
               <span className="text-2xl p-2 bg-white/[0.08] rounded-xl flex-shrink-0">
                 {recentBadgeUnlocked.icon}
               </span>
               <div>
-                <span className="text-[11px] text-[#ff9f0a] font-medium block">
+                <span className="text-[11px] text-[#ff2a2a] font-medium block">
                   Conquista Desbloqueada
                 </span>
                 <h4 className="font-semibold text-sm text-black">
@@ -534,7 +534,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </motion.div>
             )}
 
-            {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsBadgesModalOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-black text-xs font-medium transition cursor-pointer"><Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" /><span className="hidden sm:inline">Conquistas</span><span className="text-[10px] text-[#007AFF]">({unlockedBadgeIds.length}/{BADGES.length})</span></button>)}
+            {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsBadgesModalOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-black text-xs font-medium transition cursor-pointer"><Trophy className="w-3.5 h-3.5 text-[#ff2a2a]" /><span className="hidden sm:inline">Conquistas</span><span className="text-[10px] text-[#007AFF]">({unlockedBadgeIds.length}/{BADGES.length})</span></button>)}
 
             {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsFamilyGuideOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#2997ff] text-xs font-medium transition cursor-pointer"><BookOpen className="w-3.5 h-3.5" /><span className="hidden sm:inline">Cartilha</span></button>)}
           </div>
@@ -550,10 +550,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="lg:col-span-12 bg-white max-w-2xl mx-auto border-4 border-[#ff007f] rounded-none overflow-hidden shadow-[8px_8px_0_0_#00ffff] space-y-0 relative"
+          className="lg:col-span-12 uk-container max-w-2xl mx-auto space-y-0 relative"
         >
           {/* Header do Cartão Bento */}
-          <div className="px-6 py-4 bg-gray-50 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="px-6 py-4 uk-panel border-b-4 border-[#ff2a2a] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3 w-full">
               <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-black/[0.05] flex items-center justify-center">
                 {getCategoryIcon(currentCase.category)}
@@ -569,18 +569,18 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
 
           {/* Conteúdo do Incidente */}
-          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-[#1c1c1e]">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-[#111] uk-panel border-4 border-[#ff2a2a]">
             
             {/* Cronômetro Tático do Modo Sob Pressão */}
             
 
                         {/* BLOCO DE DÚVIDA / DILEMA INVESTIGATIVO (Gera Dúvida Real) */}
-                        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#ff9f0a]/10 to-[#ff9f0a]/5 border border-[#ff9f0a]/25 flex items-start gap-3">
-              <div className="w-7 h-7 rounded-xl bg-[#ff9f0a]/15 border border-[#ff9f0a]/30 flex items-center justify-center flex-shrink-0 text-[#ff9f0a] mt-0.5">
+                        <div className="p-3.5 rounded-2xl bg-[#440000] border border-2 border-[#ff2a2a] flex items-start gap-3">
+              <div className="w-7 h-7 rounded-xl bg-[#ff9f0a]/15 border border-[#ff9f0a]/30 flex items-center justify-center flex-shrink-0 text-[#ff2a2a] mt-0.5">
                 <HelpCircle className="w-4 h-4" />
               </div>
               <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-[#ff9f0a] uppercase tracking-wider block">
+                <span className="text-[10px] font-bold text-[#ff2a2a] uppercase tracking-wider block">
                   Dilema do Investigador:
                 </span>
                 <p className="text-xs text-gray-700 leading-relaxed font-medium">
@@ -655,7 +655,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             </div>
 
             {/* Caixa de Texto do Incidente (Autêntica, Ampla e Sem Poluição) */}
-            <div className={`bg-[#0c0c0d] border border-black/[0.05] rounded-2xl p-6 shadow-inner space-y-2 transition-all duration-500 ${expandedClueId !== null || currentAnswerData?.answered ? 'opacity-50 blur-[2px]' : ''}`}>
+            <div className={`bg-[#000] border-2 border-dashed border-[#ff2a2a] text-[#ff2a2a] rounded-2xl p-6 shadow-inner space-y-2 transition-all duration-500 ${expandedClueId !== null || currentAnswerData?.answered ? 'opacity-50 blur-[2px]' : ''}`}>
               <div className="text-[10px] text-[#007AFF] uppercase tracking-wider font-mono flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-[#2997ff]" />
                 <span>Texto Original Recebido:</span>
@@ -665,15 +665,79 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </p>
             </div>
 
-            {/* Orientação ao Investigador (Sem Spoilers) */}
-            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between text-xs text-[#007AFF]">
-              <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2">
-                <Search className="w-4 h-4 text-[#2997ff] flex-shrink-0" />
-                <span className="leading-relaxed">
-                  Use as <strong className="text-black">Dicas Rápidas</strong> ao lado para auditar dados, titulares e canais antes de emitir seu veredito.
-                </span>
+            {/* ULTRAKILL BUTTONS */}
+            {!currentAnswerData?.answered ? (
+              <div className="p-6 pt-2 flex flex-col space-y-6">
+                <button
+                  onClick={() => handleInspectClue(currentCase.clues[0])}
+                  className={`w-full py-4 text-2xl font-bold flex items-center justify-center space-x-2 ${
+                    currentCaseDiscovered.includes(currentCase.clues[0].id)
+                      ? 'uk-panel cursor-default opacity-50'
+                      : 'uk-btn-blue'
+                  }`}
+                >
+                  <Search className="w-6 h-6" />
+                  <span>
+                    {currentCaseDiscovered.includes(currentCase.clues[0].id)
+                      ? currentCase.clues[0].inspection.observation 
+                      : 'SCAN FOR WEAKNESS'}
+                  </span>
+                </button>
+
+                <div className="grid grid-cols-2 gap-6 pt-2 border-t-4 border-[#ff2a2a]">
+                  <button
+                    onClick={() => {
+                        setSelectedVerdict(true);
+                        setSelectedHypothesis(0); // auto select
+                        setTimeout(() => document.getElementById("hidden-submit")?.click(), 50);
+                    }}
+                    className="uk-btn-red flex flex-col items-center justify-center space-y-2 py-6"
+                  >
+                    <ShieldAlert className="w-12 h-12" />
+                    <span className="font-bold text-3xl tracking-widest">SCAM!</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                        setSelectedVerdict(false);
+                        setSelectedHypothesis(0); // auto select
+                        setTimeout(() => document.getElementById("hidden-submit")?.click(), 50);
+                    }}
+                    className="uk-btn-green flex flex-col items-center justify-center space-y-2 py-6"
+                  >
+                    <ShieldCheck className="w-12 h-12" />
+                    <span className="font-bold text-3xl tracking-widest">SAFE!</span>
+                  </button>
+                  <button id="hidden-submit" onClick={handleProtocolReport} className="hidden">Submit</button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-6 pt-2 space-y-6">
+                 <div className={`p-6 border-4 ${
+                      currentAnswerData.isCorrect ? 'uk-panel border-[#00ff00]' : 'uk-panel border-[#ff2a2a]'
+                    }`}>
+                      <h2 className={`font-bold text-4xl mb-2 flex items-center gap-2 ${currentAnswerData.isCorrect ? 'text-[#00ff00]' : 'text-[#ff2a2a]'}`}>
+                        {currentAnswerData.isCorrect ? 'BLOOD GAINED!' : 'FATAL ERROR!'}
+                      </h2>
+                      <p className="font-medium text-xl mb-4 text-[#ccc]">
+                        {currentCase.explanation}
+                      </p>
+                      
+                      <div className="bg-[#111] p-4 border-2 border-dashed border-[#ff2a2a]">
+                        <p className="font-bold text-sm mb-1 text-[#ff2a2a]">TERMINAL DATA:</p>
+                        <p className="font-bold text-xl text-[#ccc]">{currentCase.pedagogy.goldenRule}</p>
+                      </div>
+                  </div>
+
+                  <button
+                    onClick={handleNextCase}
+                    className="w-full py-4 uk-btn-red text-white flex items-center justify-center space-x-2 font-bold text-3xl"
+                  >
+                    <span>NEXT TARGET</span>
+                    <ChevronRight className="w-8 h-8" />
+                  </button>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -817,9 +881,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                                 </div>
                                 {clue.evidenceResult.fato && (
                                   <div className="text-[11px] text-[#007AFF] bg-gray-50 p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2">
-                                    <Lightbulb className="w-3.5 h-3.5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
+                                    <Lightbulb className="w-3.5 h-3.5 text-[#ff2a2a] flex-shrink-0 mt-0.5" />
                                     <div>
-                                      <strong className="text-[#ff9f0a]">Fato de Defesa: </strong>
+                                      <strong className="text-[#ff2a2a]">Fato de Defesa: </strong>
                                       <span className="text-black font-bold">{clue.evidenceResult.fato}</span>
                                     </div>
                                   </div>
@@ -911,7 +975,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       className="space-y-2.5 pt-2 border-t border-black/[0.05]"
                     >
                       <label className="text-xs font-semibold text-black flex items-center gap-1.5">
-                        <Eye className="w-3.5 h-3.5 text-[#ff9f0a]" />
+                        <Eye className="w-3.5 h-3.5 text-[#ff2a2a]" />
                         <span>
                           {selectedVerdict === true
                             ? 'Qual evidência comprova o golpe? (Fundamentação de Análise)'
@@ -1038,7 +1102,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                         {isHonor ? (
                           <CheckCircle2 className="w-5 h-5 text-[#30d158] flex-shrink-0" />
                         ) : isPartial ? (
-                          <AlertTriangle className="w-5 h-5 text-[#ff9f0a] flex-shrink-0" />
+                          <AlertTriangle className="w-5 h-5 text-[#ff2a2a] flex-shrink-0" />
                         ) : (
                           <XCircle className="w-5 h-5 text-[#ff3b30] flex-shrink-0" />
                         )}
@@ -1128,14 +1192,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="p-4 sm:p-5 rounded-2xl bg-[#1c1c1e] border border-[#ff9f0a]/30 space-y-3.5 shadow-xl"
+                          className="p-4 sm:p-5 rounded-2xl bg-[#111] uk-panel border-4 border-[#ff2a2a] border border-[#ff9f0a]/30 space-y-3.5 shadow-xl"
                         >
                           <div className="flex items-center justify-between pb-2 border-b border-black/[0.05]">
-                            <div className="flex items-center space-x-2 text-xs font-semibold text-[#ff9f0a]">
+                            <div className="flex items-center space-x-2 text-xs font-semibold text-[#ff2a2a]">
                               <RotateCcw className="w-4 h-4" />
                               <span>{currentCase.reinforcementDrill.title}</span>
                             </div>
-                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#ff9f0a]/15 text-[#ff9f0a] border border-[#ff9f0a]/30">
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#ff9f0a]/15 text-[#ff2a2a] border border-[#ff9f0a]/30">
                               Reforço Prático (+15 XP)
                             </span>
                           </div>
@@ -1242,7 +1306,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#1c1c1e] border border-white/[0.1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
+              className="bg-[#111] uk-panel border-4 border-[#ff2a2a] border border-white/[0.1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
                 <div>
@@ -1295,7 +1359,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#1c1c1e] border border-white/[0.1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
+              className="bg-[#111] uk-panel border-4 border-[#ff2a2a] border border-white/[0.1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
                 <div>
