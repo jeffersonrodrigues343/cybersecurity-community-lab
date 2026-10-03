@@ -670,14 +670,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2">
                 <Search className="w-4 h-4 text-[#2997ff] flex-shrink-0" />
                 <span className="leading-relaxed">
-                  Use as <strong className="text-white">Ferramentas de Investigação</strong> ao lado para auditar dados, titulares e canais antes de emitir seu veredito.
+                  Use as <strong className="text-white">Dicas Rápidas</strong> ao lado para auditar dados, titulares e canais antes de emitir seu veredito.
                 </span>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* COLUNA DIREITA: Ferramentas de Investigação & Decisão do Detetive (5 colunas) */}
+        {/* COLUNA DIREITA: Dicas Rápidas & Decisão do Detetive (5 colunas) */}
         <div className="lg:col-span-5 space-y-6">
           
                     {/* ferramentas de investigação visual (3 pistas) */}
@@ -686,10 +686,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               <div>
                 <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
                   <Search className="w-4 h-4 text-[#2997ff]" />
-                  <span>Ferramentas de Investigação</span>
+                  <span>Dicas Rápidas</span>
                 </h4>
                 <p className="text-xs text-[#00ffff]">
-                  Inspecione a informações técnicas técnica para avaliar a se é real do caso (+10 XP)
+                  Se bater a dúvida, clique nas pistas pra ver o que tá rolando!
                 </p>
               </div>
 
@@ -844,9 +844,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   <Gavel className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-white">Veredito do Detetive</h4>
+                  <h4 className="font-semibold text-sm text-white">O que você acha?</h4>
                   <p className="text-xs text-[#00ffff]">
-                    Qual é o seu julgamento sobre esta mensagem?
+                    Aperte e bata o martelo: É Golpe ou Tá Seguro?
                   </p>
                 </div>
               </div>
