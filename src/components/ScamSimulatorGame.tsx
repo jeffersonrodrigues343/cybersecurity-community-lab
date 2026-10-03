@@ -195,11 +195,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
     if (id.includes('whatsapp') || cat.includes('whatsapp') || cat.includes('família')) return 'whatsapp';
     if (id.includes('correios') || cat.includes('encomenda') || cat.includes('sms')) return 'correios';
-    if (id.includes('central') || id.includes('0800') || c.channel === 'call' || cat.includes('central')) return 'banco';
+    if (id.includes('central') || id.includes('0800') || c.channel === 'call' || cat.includes('central') || cat.includes('falsa') || cat.includes('urgência')) return 'banco';
     if (id.includes('loja') || cat.includes('comércio') || cat.includes('loja') || title.includes('desconto')) return 'loja';
     if (id.includes('tarefa') || cat.includes('vagas') || cat.includes('trabalho')) return 'tarefas';
     if (id.includes('fantasma') || cat.includes('remoto') || title.includes('anydesk')) return 'remoto';
-    if (id.includes('ecac') || id.includes('receita') || cat.includes('cidadania')) return 'oficial';
+    if (id.includes('ecac') || id.includes('receita') || cat.includes('cidadania') || cat.includes('legítimo') || cat.includes('oficial')) return 'oficial';
     return 'banco';
   };
 

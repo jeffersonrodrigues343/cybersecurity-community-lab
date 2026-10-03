@@ -309,12 +309,12 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
 }) => {
   const isCase1 = caseId === 'case-1-whatsapp' || (scenarioType === 'whatsapp' && !caseId.includes('6'));
   const isCase2 = caseId === 'case-2-correios' || scenarioType === 'correios';
-  const isCase3 = caseId === 'case-3-compra-aprovada';
-  const isCase4 = caseId === 'case-4-falsa-central';
+  const isCase3 = caseId === 'case-3-compra-aprovada' || (scenarioType === 'banco' && caseId.includes('compra'));
+  const isCase4 = caseId === 'case-4-falsa-central' || (scenarioType === 'banco' && !caseId.includes('compra'));
   const isCase5 = caseId === 'case-5-loja-falsa-promocao' || scenarioType === 'loja';
-  const isCase6 = caseId === 'case-6-sms-seguranca-real';
+  const isCase6 = caseId === 'case-6-sms-seguranca-real' || scenarioType === 'oficial';
   const isCase7 = caseId === 'case-7-vaga-tarefas' || scenarioType === 'tarefas';
-  const isCase8 = caseId === 'case-8-receita-ecac' || scenarioType === 'oficial';
+  const isCase8 = caseId === 'case-8-receita-ecac' || (scenarioType === 'oficial' && caseId.includes('receita'));
   const isCase9 = caseId === 'case-9-mao-fantasma-suporte' || scenarioType === 'remoto';
 
   return (
