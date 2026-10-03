@@ -5,15 +5,16 @@ const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const randomInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 
 // Gerador Procedural de Casos Hipotéticos Dinâmicos
-export function generateDynamicScamCase(): ScamCase {
-  const scenarioTypes = [
-    'whatsapp_parente',
-    'correios_sms',
-    'falsa_central',
-    'compra_legitima',
-  ];
+export function generateDynamicScamCase(streak: number = 0): ScamCase {
+  // DDA: Dynamic Difficulty Adjustment
+  // Base scam prob is 30% (tende a ser verídico). Aumenta 10% a cada acerto na streak. Max 80%.
+  const scamProb = Math.min(0.8, 0.3 + (streak * 0.1));
+  const isGeneratingScam = Math.random() < scamProb;
 
-  const selectedScenario = pick(scenarioTypes);
+  const scamTypes = ['whatsapp_parente', 'correios_sms', 'falsa_central'];
+  const legitTypes = ['compra_legitima'];
+
+  const selectedScenario = isGeneratingScam ? pick(scamTypes) : pick(legitTypes);
   const caseUid = `dynamic-${Date.now()}-${randomInt(100, 999)}`;
 
   switch (selectedScenario) {

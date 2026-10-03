@@ -371,7 +371,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     setDrillBonusAwarded(false);
 
     if (gameMode === 'dynamic') {
-      setDynamicCase(generateDynamicScamCase());
+      setDynamicCase(generateDynamicScamCase(streak));
       return;
     }
 
@@ -560,23 +560,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             </div>
 
  
-              <button
-                onClick={() => {
-                  sound.playBlip();
-                  setDynamicCase(generateDynamicScamCase());
-                  setExpandedClueId(null);
-                  setFloatingXp(null);
-                  setSelectedVerdict(null);
-                  setSelectedHypothesis(null);
-                  setDrillSelectedOptionId(null);
-                  setDrillSuccess(false);
-                  setDrillBonusAwarded(false);
-                }}
-                className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#bf5af2] to-[#2997ff] text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-purple-500/20 hover:opacity-95"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>🎲 Sortear Novo Cenário 2D</span>
-              </button>
+              
           </div>
 
           {/* Conteúdo do Incidente */}
