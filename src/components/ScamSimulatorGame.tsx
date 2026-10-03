@@ -65,7 +65,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
 
   useEffect(() => {
-    // Força o scroll pro topo absoluto assim que o caso novo for montado no DOM
+    // gambiarra pro scroll ir pro topo
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
@@ -73,7 +73,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     }, 50);
   }, [dynamicCase.id]);
   
-  // Registro de respostas e laudos periciais
+  // salva o que o usuario respondeu
   const [answers, setAnswers] = useState<{
     [caseId: string]: {
       answered: boolean;
@@ -89,24 +89,24 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     };
   }>({});
 
-  // Pistas investigadas no caso atual
+  // dicas clicadas
   const [discoveredClues, setDiscoveredClues] = useState<{ [caseId: string]: string[] }>({});
   const [expandedClueId, setExpandedClueId] = useState<string | null>(null);
   const [floatingXp, setFloatingXp] = useState<number | null>(null);
 
-  // Seleções ativas da Bancada Pericial
+  // o que ta selecionado agora
   const [selectedVerdict, setSelectedVerdict] = useState<boolean | null>(null);
   const [selectedHypothesis, setSelectedHypothesis] = useState<number | null>(null);
 
-  // Treino de Reforço em caso de erro
+  // se errar vai pra ca
   const [drillSelectedOptionId, setDrillSelectedOptionId] = useState<string | null>(null);
   const [drillSuccess, setDrillSuccess] = useState<boolean>(false);
   const [drillBonusAwarded, setDrillBonusAwarded] = useState<boolean>(false);
 
-  // Gamificação pedagógica
+  // sisteminha de xp e level
   const [streak, setStreak] = useState(0);
 
-  // Sistema de Medalhas / Conquistas
+  // badges
   const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('hacklearn_unlocked_badges');
@@ -143,21 +143,21 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     sound.playBadgeUnlock();
   };
 
-  // Casos do nível atual ou Caso Dinâmico
+  // pega o caso atual
   const levelCases = SCAM_CASES.filter((c) => c.level === currentLevel);
   const currentCase: ScamCase = dynamicCase;
 
-  // Modo Sob Pressão (Cronômetro Tático)
+  // modo rapido
   
   
     
-  // Reinicia cronômetro quando o caso muda
+  // reseta o timer
   useEffect(() => {
     
     
   }, [dynamicCase.id]);
 
-  // Contagem regressiva do Modo Sob Pressão
+  // diminui o tempo
   
   const getScenarioType = (c: ScamCase): 'whatsapp' | 'correios' | 'banco' | 'loja' | 'tarefas' | 'remoto' | 'oficial' | 'geral' => {
     const cat = (c.category || '').toLowerCase();
@@ -174,17 +174,17 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     return 'banco';
   };
 
-  // Pistas coletadas no caso atual
+  // dicas q ele achou
   const currentCaseDiscovered = discoveredClues[dynamicCase.id] || [];
 
-  // Métricas gerais de pontuação e progresso
+  // pontos totais
   const totalCases = SCAM_CASES.length;
   const currentAnswerData = answers[dynamicCase.id];
   const totalFinishedCount = Object.keys(answers).length;
   const isBasicoFinished = totalFinishedCount >= 3;
 
 
-  // Jogador clica para investigar uma pista específica
+  // click na dica
   const handleInspectClue = (clue: InvestigativeClue) => {
     sound.playBlip();
     setExpandedClueId((prev) => (prev === clue.id ? null : clue.id));
@@ -208,7 +208,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     }
   };
 
-  // Veredito e Julgamento do Caso pelo Detetive
+  // funcao de submit do form
   const handleProtocolReport = () => {
     if (selectedVerdict === null) return;
     if (selectedHypothesis === null) return;
@@ -218,10 +218,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     const hypothesisCorrect = selectedHypothesis === currentCase.correctEvidenceIndex;
     const cluesFoundCount = (discoveredClues[dynamicCase.id] || []).length;
 
-    // Bônus de 10 XP por cada pista investigada antes do laudo
+    // da ponto pelas dicas
     const bonusXp = isCorrect ? cluesFoundCount * 10 : 0;
     
-    // Bônus de Pressão Tática (+20 XP se acertou com louvor dentro do tempo)
+    // bonus tempo
     const pressureBonus = 0;
 
     let newStreak = streak;
@@ -245,7 +245,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       earnedTotal = (currentCase.xpReward || 0) + bonusXp + comboBonus + pressureBonus;
       setFloatingXp(earnedTotal);
 
-      // Efeito festivo de confetes Apple
+      // joga os confetes
       confetti({
         particleCount: 50,
         spread: 60,
@@ -265,11 +265,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         }
       }
 
-      // Conquistas de Desafio e Dificuldade
+      // libera os emblemas hardcore
       
       unlockBadge('badge-surgical-mind');
     } else if (isCorrect && !hypothesisCorrect) {
-      // Veredito correto, mas prova incorreta (acerto parcial)
+      // acertou mas errou a prova
       sound.playSuccess();
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
       earnedTotal = Math.round((currentCase.xpReward || 0) * 0.5) + bonusXp;
@@ -509,10 +509,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         )}
       </AnimatePresence>
 
-      {/* ======================================================== */}
-      {/* BLOCO 1: CENTRAL DE PROGRESSÃO & SELEÇÃO DE NÍVEIS (BENTO) */}
-      {/* ======================================================== */}
-      <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 shadow-lg">
+            {/* central de progressão & seleção de níveis (bento) */}
+            <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 shadow-lg">
         {/* Linha Superior: Seletor de Modo e Níveis */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
           
@@ -543,10 +541,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         </div>
       </div>
 
-      {/* ======================================================== */}
-      {/* CONSOLE PRINCIPAL DESKTOP (Split View: Inspeção + Auditoria) */}
-      {/* ======================================================== */}
-      <div ref={topRef} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* CONSOLE PRINCIPAL DESKTOP (Split View: Inspeção + Auditoria) */}
+            <div ref={topRef} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* COLUNA ESQUERDA: Cartão Bento do Incidente sob Investigação (7 colunas) */}
         <motion.div
@@ -578,10 +574,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             {/* Cronômetro Tático do Modo Sob Pressão */}
             
 
-            {/* ======================================================== */}
-            {/* BLOCO DE DÚVIDA / DILEMA INVESTIGATIVO (Gera Dúvida Real) */}
-            {/* ======================================================== */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#ff9f0a]/10 to-[#ff9f0a]/5 border border-[#ff9f0a]/25 flex items-start gap-3">
+                        {/* BLOCO DE DÚVIDA / DILEMA INVESTIGATIVO (Gera Dúvida Real) */}
+                        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#ff9f0a]/10 to-[#ff9f0a]/5 border border-[#ff9f0a]/25 flex items-start gap-3">
               <div className="w-7 h-7 rounded-xl bg-[#ff9f0a]/15 border border-[#ff9f0a]/30 flex items-center justify-center flex-shrink-0 text-[#ff9f0a] mt-0.5">
                 <HelpCircle className="w-4 h-4" />
               </div>
@@ -686,10 +680,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         {/* COLUNA DIREITA: Ferramentas de Investigação & Decisão do Detetive (5 colunas) */}
         <div className="lg:col-span-5 space-y-6">
           
-          {/* ======================================================== */}
-          {/* BLOCO 2: FERRAMENTAS DE INVESTIGAÇÃO VISUAL (3 PISTAS)   */}
-          {/* ======================================================== */}
-          <div ref={cluesRef} className={`bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''}`}>
+                    {/* ferramentas de investigação visual (3 pistas) */}
+                    <div ref={cluesRef} className={`bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''}`}>
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
@@ -697,7 +689,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   <span>Ferramentas de Investigação</span>
                 </h4>
                 <p className="text-xs text-[#00ffff]">
-                  Inspecione a telemetria técnica para avaliar a autenticidade do caso (+10 XP)
+                  Inspecione a informações técnicas técnica para avaliar a se é real do caso (+10 XP)
                 </p>
               </div>
 
@@ -748,7 +740,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             )}
                           </div>
                           <p className="text-[11px] text-[#00ffff]">
-                            {isDiscovered ? 'Telemetria pericial coletada • Toque para rever' : 'Toque para executar esta análise pericial'}
+                            {isDiscovered ? 'Dados do clique coletada • Toque para rever' : 'Toque para executar esta análise de análise'}
                           </p>
                         </div>
                       </div>
@@ -801,14 +793,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                               )}
                             </div>
 
-                            {/* Prompt Pericial Zero-Spoiler antes de responder */}
+                            {/* Prompt de Análise Zero-Spoiler antes de responder */}
                             {!isCaseAnswered ? (
                               <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-2 text-[11px] text-[#00ffff]">
                                 <Search className="w-3.5 h-3.5 text-[#2997ff] flex-shrink-0" />
                                 
                               </div>
                             ) : (
-                              /* Laudo e Fato de Defesa Revelados Somente Após o Veredito */
+                              /* Relatório e Fato de Defesa Revelados Somente Após o Veredito */
                               <motion.div
                                 initial={{ opacity: 0, y: 4 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -817,18 +809,18 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                                 <div className="p-2.5 rounded-xl bg-[#0071e3]/10 border border-[#0071e3]/20 flex items-start gap-2 text-[11px]">
                                   <Sparkles className="w-3.5 h-3.5 text-[#2997ff] flex-shrink-0 mt-0.5" />
                                   <div className="leading-relaxed">
-                                    <strong className="text-[#2997ff]">Conclusão Pericial: </strong>
+                                    <strong className="text-[#2997ff]">Conclusão de Análise: </strong>
                                     <span className="text-white font-bold">
                                       {clue.inspection?.observation || clue.evidenceResult.details}
                                     </span>
                                   </div>
                                 </div>
-                                {clue.evidenceResult.forensicFact && (
+                                {clue.evidenceResult.fato && (
                                   <div className="text-[11px] text-[#00ffff] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2">
                                     <Lightbulb className="w-3.5 h-3.5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
                                     <div>
                                       <strong className="text-[#ff9f0a]">Fato de Defesa: </strong>
-                                      <span className="text-white font-bold">{clue.evidenceResult.forensicFact}</span>
+                                      <span className="text-white font-bold">{clue.evidenceResult.fato}</span>
                                     </div>
                                   </div>
                                 )}
@@ -844,10 +836,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             </div>
           </div>
 
-          {/* ======================================================== */}
-          {/* BLOCO 3: O GRANDE VEREDITO DO DETETIVE (ÁGIL E DIVERTIDO) */}
-          {/* ======================================================== */}
-          <div className={`bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${!currentAnswerData?.answered && currentCaseDiscovered.length === 0 ? 'opacity-50 blur-[2px] grayscale pointer-events-none' : ''}`}>
+                    {/* o grande veredito do detetive (ágil e divertido) */}
+                    <div className={`bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${!currentAnswerData?.answered && currentCaseDiscovered.length === 0 ? 'opacity-50 blur-[2px] grayscale pointer-events-none' : ''}`}>
             <div className="border-b border-white/[0.08] pb-3 flex items-center justify-between">
               <div className="flex items-center space-x-2.5">
                 <div className="w-8 h-8 rounded-xl bg-[#0071e3]/15 border border-[#0071e3]/30 flex items-center justify-center text-[#2997ff]">
@@ -911,7 +901,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   </motion.button>
                 </div>
 
-                {/* Etapa 2: Abre a gaveta de evidências para sustentar o laudo */}
+                {/* Etapa 2: Abre a gaveta de evidências para sustentar o relatório */}
                 <AnimatePresence>
                   {selectedVerdict !== null && (
                     <motion.div
@@ -924,7 +914,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                         <Eye className="w-3.5 h-3.5 text-[#ff9f0a]" />
                         <span>
                           {selectedVerdict === true
-                            ? 'Qual evidência comprova o golpe? (Fundamentação Pericial)'
+                            ? 'Qual evidência comprova o golpe? (Fundamentação de Análise)'
                             : 'Qual evidência atesta que é seguro? (Fator de Legitimidade)'}
                         </span>
                       </label>
@@ -981,7 +971,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     <Gavel className="w-4 h-4" />
                     <span>
                       {selectedHypothesis === null
-                        ? 'Selecione a fundamentação pericial acima'
+                        ? 'Selecione a fundamentação de análise acima'
                         : selectedVerdict === true
                         ? '🔨 Bater o Martelo: É Golpe!'
                         : '🔨 Bater o Martelo: É Seguro!'}
@@ -1102,10 +1092,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             </summary>
                             <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-2">
                               <p className="text-[11px] text-white font-bold leading-relaxed">
-                                <span className="font-bold text-[#2997ff]">Gatilho Forense:</span> {currentCase.pedagogy.emotionalTrigger}
+                                <span className="font-bold text-[#2997ff]">Como eles te fisgam:</span> {currentCase.pedagogy.emotionalTrigger}
                               </p>
                               <p className="text-[11px] text-white font-bold leading-relaxed">
-                                <span className="font-bold text-[#30d158]">Lição Pedagógica:</span> {currentCase.pedagogy.kidsAnalogy}
+                                <span className="font-bold text-[#30d158]">Pra explicar pra criança:</span> {currentCase.pedagogy.kidsAnalogy}
                               </p>
                             </div>
                           </details>
@@ -1128,7 +1118,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             className="w-full py-5 bg-[#00ffff] text-black font-black text-xl uppercase tracking-widest flex items-center justify-center space-x-2 transition-all cursor-pointer border-4 border-black shadow-[8px_8px_0_0_#ff007f] hover:-translate-y-1 active:translate-y-2 active:shadow-none -skew-x-3"
                           >
                             <span>
-                              'Próximo Caso da Investigação'
+                              'Bora pro próximo caso'
                             </span>
                             <ChevronRight className="w-4 h-4" />
                           </motion.button>
@@ -1226,7 +1216,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                                 onClick={handleNextCase}
                                 className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#30d158] to-[#28cd41] text-black font-bold text-xs flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg shadow-green-500/25"
                               >
-                                <span>Conceito Dominado! Avançar para o Próximo Caso</span>
+                                <span>Entendi! Manda o próximo</span>
                                 <ChevronRight className="w-4 h-4 text-black" />
                               </motion.button>
                             </motion.div>
@@ -1244,10 +1234,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
       </div>
 
-      {/* ======================================================== */}
-      {/* MODAL 1: Sala de Conquistas (Desktop Modal)              */}
-      {/* ======================================================== */}
-      <AnimatePresence>
+            {/* MODAL 1: Sala de Conquistas (Desktop Modal)              */}
+            <AnimatePresence>
         {isBadgesModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl">
             <motion.div
@@ -1299,10 +1287,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         )}
       </AnimatePresence>
 
-      {/* ======================================================== */}
-      {/* MODAL 2: Cartilha da Família (Desktop Modal)             */}
-      {/* ======================================================== */}
-      <AnimatePresence>
+            {/* MODAL 2: Cartilha da Família (Desktop Modal)             */}
+            <AnimatePresence>
         {isFamilyGuideOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl">
             <motion.div

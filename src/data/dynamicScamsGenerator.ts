@@ -1,13 +1,13 @@
 import type { ScamCase, InvestigativeClue } from './scamsData';
 
-// Utilitários de Sorteio
+// funcoes random
 const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const randomInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 
-// Gerador Procedural de Casos Hipotéticos Dinâmicos
+// gera os casos dinamicamente
 export function generateDynamicScamCase(streak: number = 0): ScamCase {
-  // DDA: Dynamic Difficulty Adjustment
-  // Base scam prob is 30% (tende a ser verídico). Aumenta 10% a cada acerto na streak. Max 80%.
+  // ajusta a dificuldade baseado nos acertos
+  // se ta acertando muito, manda mais golpe
   const scamProb = Math.min(0.8, 0.3 + (streak * 0.1));
   const isGeneratingScam = Math.random() < scamProb;
 
@@ -55,7 +55,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'suspicious',
             headline: 'DDD incompatível e chip descartável!',
             details: `A linha telefônica foi cadastrada ontem sob o DDD ${strangeDDD}.`,
-            forensicFact: 'Criminosos adquirem chips pré-pagos de outros estados para aplicar golpes de falsa identidade.',
+            fato: 'Criminosos adquirem chips pré-pagos de outros estados para aplicar golpes de falsa identidade.',
           },
         },
         {
@@ -79,7 +79,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'suspicious',
             headline: 'Conta Pix pertence a terceiro desconhecido!',
             details: `O dinheiro iria para ${orangeName}, sem vínculo com a família.`,
-            forensicFact: 'Golpistas utilizam contas bancárias de intermediários ("laranjas") para pulverizar valores transferidos.',
+            fato: 'Golpistas utilizam contas bancárias de intermediários ("laranjas") para pulverizar valores transferidos.',
           },
         },
         {
@@ -103,7 +103,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'suspicious',
             headline: 'Recusa sistemática de verificação por voz!',
             details: 'O interlocutor evita qualquer meio vocal que revele que não é o familiar.',
-            forensicFact: 'A confirmação por voz no número habitual é a contraprova infalível contra o golpe do novo número.',
+            fato: 'A confirmação por voz no número habitual é a contraprova infalível contra o golpe do novo número.',
           },
         },
       ];
@@ -212,7 +212,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'suspicious',
             headline: 'Domínio descartável registrado há 2 dias no exterior!',
             details: `O site oficial dos Correios é exclusivamente correios.com.br.`,
-            forensicFact: 'Órgãos e empresas públicas brasileiras utilizam estritamente o sufixo oficial .com.br ou .gov.br.',
+            fato: 'Órgãos e empresas públicas brasileiras utilizam estritamente o sufixo oficial .com.br ou .gov.br.',
           },
         },
         {
@@ -236,7 +236,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'suspicious',
             headline: 'Código de encomenda inexistente!',
             details: 'A busca no sistema oficial retorna objeto não encontrado.',
-            forensicFact: 'Criminosos geram códigos aleatórios para assustar pessoas que costumam comprar pela internet.',
+            fato: 'Criminosos geram códigos aleatórios para assustar pessoas que costumam comprar pela internet.',
           },
         },
         {
@@ -260,14 +260,14 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'suspicious',
             headline: 'Enviado por celular comum em vez de shortcode!',
             details: 'Empresas públicas operam através de códigos curtos de 5 dígitos homologados pela Anatel.',
-            forensicFact: 'Linhas celulares comuns são empregadas em disparos ilegais de smishing para burlar filtros das operadoras.',
+            fato: 'Linhas celulares comuns são empregadas em disparos ilegais de smishing para burlar filtros das operadoras.',
           },
         },
       ];
 
       const hypotheses = [
         `O link utiliza domínio externo descartável (${fakeDomain}) e o código ${code} não existe no rastreamento oficial.`,
-        'O site possui certificado criptográfico HTTPS com cadeado verde, o que comprova autenticidade estatal.',
+        'O site possui certificado criptográfico HTTPS com cadeado verde, o que comprova se é real estatal.',
         'A alíquota de importação indicada não respeita a margem de isenção de 50 dólares fixada por tratado internacional.',
         'A notificação foi entregue fora do expediente dos centros de distribuição dos Correios.',
       ];
@@ -363,7 +363,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'clean',
             headline: 'Notificação nativa e informativa do banco!',
             details: 'O aviso não solicita senhas, dados nem pagamentos adicionais.',
-            forensicFact: 'Notificações push nativas configuram mecanismos de segurança e auditoria transparente para o usuário.',
+            fato: 'Notificações push nativas configuram mecanismos de segurança e auditoria transparente para o usuário.',
           },
         },
         {
@@ -387,7 +387,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'clean',
             headline: 'Comunicação informativa legítima!',
             details: 'Não há indução a links, Pix ou fornecimento de credenciais.',
-            forensicFact: 'Alertas reais de bancos nunca enviam links externos para cancelar compras.',
+            fato: 'Alertas reais de bancos nunca enviam links externos para cancelar compras.',
           },
         },
         {
@@ -411,7 +411,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'clean',
             headline: 'Compra recente confirmada no extrato!',
             details: 'O valor e o estabelecimento correspondem à despesa recém-efetuada pelo usuário.',
-            forensicFact: 'Muitos usuários confundem notificações rotineiras de aproximação com tentativas de fraude.',
+            fato: 'Muitos usuários confundem notificações rotineiras de aproximação com tentativas de fraude.',
           },
         },
       ];
@@ -514,7 +514,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             status: 'suspicious',
             headline: 'Banco NUNCA pede Pix para cancelar compras!',
             details: 'Transações fraudulentas são bloqueadas internamente pelo sistema do banco.',
-            forensicFact: 'A solicitação de Pix para "conta segura" ou "estorno" é a assinatura do Golpe da Falsa Central.',
+            fato: 'A solicitação de Pix para "conta segura" ou "estorno" é a assinatura do Golpe da Falsa Central.',
           },
         },
         {
@@ -525,20 +525,20 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
           question: 'O número 0800 na tela do celular garante legitimidade da ligação?',
           inspection: {
             type: 'official',
-            badge: 'Telefonia & Roteamento Anatel',
+            badge: 'Registro Anatel',
             field1Label: 'Identificação no Visor do Telefone',
             field1Value: '0800 729 0001 (Número do Banco)',
-            field2Label: 'Sentido do Tráfego Telefônico',
-            field2Value: 'Chamada Externa Ativa (Outbound / Origem Externa)',
+            field2Label: 'Sentido da Chamada',
+            field2Value: 'Chamada Recebida',
             field3Label: 'Regulamentação Anatel para Linhas 0800',
-            field3Value: 'Tarifação reversa exclusiva para recebimento (Inbound)',
-            observation: 'O número 0800 é exibido em chamada recebida (ativa), violando a arquitetura técnica regulamentar da Anatel.',
+            field3Value: 'Só recebe ligação, não faz',
+            observation: 'O 0800 tá te ligando, mas pelas regras da Anatel ele só deveria receber ligações.',
           },
           evidenceResult: {
             status: 'suspicious',
-            headline: 'Número mascarado por tecnologia de falsificação (Spoofing)!',
-            details: 'Criminosos utilizam tecnologia VoIP para fazer o visor do celular exibir o número real do banco.',
-            forensicFact: 'Linhas 0800 de bancos são configuradas apenas para RECEBER ligações de clientes.',
+            headline: 'Eles fraudaram o número na sua tela (Spoofing)!',
+            details: 'Os golpistas usam internet (VoIP) pra fingir que estão ligando do banco.',
+            fato: '0800 de banco só serve pra VOCÊ ligar pra eles, não o contrário.',
           },
         },
         {
@@ -556,22 +556,22 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             field2Value: targetName,
             field3Label: 'Natureza da Titularidade',
             field3Value: 'Pessoa Física - Banco Digital S.A.',
-            observation: `A suposta "conta de segurança" é uma conta corrente pessoal de pessoa física (${targetName}).`,
+            observation: `A tal "conta segura" na verdade é a conta pessoal de um CPF qualquer (${targetName}).`,
           },
           evidenceResult: {
             status: 'suspicious',
-            headline: 'A conta de segurança é a conta de um comparsa!',
+            headline: 'A conta é de um laranja!',
             details: `A conta de destino pertence a uma pessoa física individual chamada ${targetName}.`,
-            forensicFact: 'Não existe "conta cofre", "conta garantidora" ou "chave de segurança" no sistema financeiro nacional.',
+            fato: 'Não existe "conta cofre", "conta garantidora" ou "chave de segurança" no sistema financeiro nacional.',
           },
         },
       ];
 
       const hypotheses = [
-        'A central telefônica exige transferência Pix para "conta de segurança" (procedimento proibido e inexistente nas normas bancárias).',
-        'A ligação é confiável porque o visor do celular exibe exatamente o número 0800 do banco emissor.',
-        'O número 0800 exibido no visor do celular não corresponde ao canal de suporte impresso no verso do cartão físico.',
-        'A notificação da suposta compra fraudulenta foi recebida fora do horário de liquidação da compensação do Banco Central.',
+        'A central telefônica exige transferência Pix para "conta de segurança" (isso não existe no banco).',
+        'A ligação parece segura só porque o número 0800 é o mesmo do banco.',
+        'O número 0800 da tela é diferente do número que tá no verso do seu cartão.',
+        'A notificação da compra falsa chegou num horário que o banco nem funciona direito.',
       ];
 
       const correctIdx = pick([0, 1, 2, 3]);
@@ -588,7 +588,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         xpReward: 110,
         category: 'Falsa Central Telefônica',
         title: `Ligação do "Suporte Bancário": Cancelar Pix de ${bogusAmount}`,
-        dilemma: `Um atendente com o número 0800 do seu banco no visor afirma que identificou uma fraude de ${bogusAmount} e exige que você transfira seu saldo para uma "Conta Cofre de Proteção".`,
+        dilemma: `Um cara te liga, o visor mostra o 0800 do seu banco, e ele diz que rolou uma fraude de ${bogusAmount} e manda você transferir tudo para uma "Conta Cofre de Proteção".`,
         sender: 'Central de Prevenção a Fraudes',
         channel: 'call',
         time: `${randomInt(14, 19)}:${randomInt(10, 59)}`,
@@ -598,39 +598,39 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         isScam: true,
         evidenceHypotheses: hypotheses,
         correctEvidenceIndex: correctIdx,
-        keyEvidenceReason: 'Nenhuma instituição financeira solicita que o cliente realize um Pix para estornar transações ou proteger saldo.',
+        keyEvidenceReason: 'Nenhum banco pede pra você fazer Pix pra devolver dinheiro ou proteger sua conta.',
         redFlags: ['Ligação alarmante dizendo que a conta foi invadida', 'Pedido de Pix para "conta de segurança"', '0800 fazendo chamada ativa (spoofing)'],
-        explanation: 'Golpe da Falsa Central Telefônica com BINA Mascarada. Criminosos simulam o 0800 do banco para aplicar terror psicológico e induzir o cliente a transferir todo o saldo da conta.',
-        realWorldTip: 'Desligue a chamada imediatamente! Se tiver dúvida, ligue você mesmo para o número impresso atrás do seu cartão físico.',
+        explanation: 'Golpe da Falsa Central com BINA fake. Os golpistas fraudam o identificador de chamadas pra aparecer o 0800 do banco, fazem terror psicológico e te fazem raspar a própria conta.',
+        realWorldTip: 'Desliga na cara! Se ficar na dúvida, pega o cartão e liga pro número que tá atrás dele.',
         pedagogy: {
-          emotionalTrigger: 'Terror Psicológico de Perda Financeira',
-          kidsAnalogy: 'É como alguém na porta da sua casa dizendo que é da polícia e pedindo todo seu dinheiro para "guardar".',
-          parentsGuide: 'Combine com seus pais idosos: desligue na hora e ligue no número do verso do cartão físico.',
-          adultRemedy: 'Nunca transfira dinheiro. Se transferiu, acione o MED imediatamente no app.',
-          goldenRule: 'Banco nunca pede Pix para cancelar compra ou proteger dinheiro!',
+          emotionalTrigger: 'Medo de perder o que tem na conta',
+          kidsAnalogy: 'É tipo um cara bater na tua porta dizendo que é policial e pedir pra guardar teu dinheiro na casa dele.',
+          parentsGuide: 'Avisa os coroas: desliga na hora e liga pro número que tá impresso no cartão.',
+          adultRemedy: 'Nunca faça Pix em ligação. Se fez, corre no app do banco e aciona o Mecanismo Especial de Devolução (MED).',
+          goldenRule: 'O Banco NUNCA vai te pedir Pix pra cancelar fraude!',
         },
         reinforcementDrill: {
           title: 'Treino de Reação: A Ligação da Falsa Central',
-          question: 'Uma pessoa te liga dizendo ser da segurança do seu banco e pede que você transfira seu dinheiro para uma conta de segurança. O que fazer?',
-          context: 'A pressão psicológica e a pressa são usadas para não deixar a vítima pensar.',
+          question: 'Alguém liga dizendo ser da segurança do banco e manda transferir pra uma conta segura. O que você faz?',
+          context: 'Eles fazem pressão e botam pressa pra você nem ter tempo de raciocinar.',
           options: [
             {
               id: 'drill-fc-1',
-              text: 'Desligar o telefone imediatamente, pois banco nunca pede Pix para proteger saldo.',
+              text: 'Desliga na cara. Banco não pede Pix pra proteger grana.',
               isCorrect: true,
-              feedback: 'Perfeito! Desligar a chamada interrompe o golpe na raiz.',
+              feedback: 'Boa! Desligar é a única saída.',
             },
             {
               id: 'drill-fc-2',
-              text: 'Fazer a transferência rápida para evitar que o dinheiro seja roubado pelo golpista.',
+              text: 'Fazer o Pix correndo pra não perder o dinheiro.',
               isCorrect: false,
-              feedback: 'Perigo total! É exatamente essa transferência que rouba todo o seu saldo.',
+              feedback: 'Caiu no golpe! É exatamente nesse Pix que você perde tudo.',
             },
             {
               id: 'drill-fc-3',
-              text: 'Passar a senha do cartão para o atendente fazer o cancelamento por lá.',
+              text: 'Passar a senha pro atendente resolver.',
               isCorrect: false,
-              feedback: 'Jamais passe senhas por telefone para ninguém!',
+              feedback: 'Tá louco? Nunca se passa senha por telefone!',
             },
           ],
         },

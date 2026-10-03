@@ -9,7 +9,7 @@ export const Footer = () => {
           <div className="flex items-center space-x-2 text-[#d2d2d7]">
             <Shield className="w-3.5 h-3.5 text-[#2997ff]" />
             <span className="font-semibold text-xs text-white">HackLearn</span>
-            <span>• Simulador Educativo de Defesa Digital</span>
+            <span>• Simulador de Defesa Digital</span>
           </div>
 
           <div className="flex items-center space-x-3 text-[#86868b]">
@@ -21,7 +21,7 @@ export const Footer = () => {
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-[#86868b]">
           <p>
-            Plataforma pública e sem fins lucrativos desenvolvida para conscientização de famílias, jovens e adultos contra golpes virtuais.
+            Feito de graça pra ajudar o pessoal de casa a não cair em conto do vigário na internet.
           </p>
 
           <p className="text-[#86868b]">

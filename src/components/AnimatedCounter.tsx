@@ -27,7 +27,7 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
     const step = (timestamp: number) => {
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      // Apple fluid curve (easeOutExpo)
+      // math de animacao que peguei no codepen
       const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
       setDisplayValue(Math.round(startValue + diff * ease));
 

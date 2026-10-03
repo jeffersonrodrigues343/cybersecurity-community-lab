@@ -35,7 +35,7 @@ export const ReportModal = ({ isOpen, onClose }: ReportModalProps) => {
     {
       key: 'resultado',
       title: '5. Resultado da Ação & Conclusão',
-      content: `A plataforma web foi concluída com 100% de funcionalidade, disponibilizando os 3 níveis de dificuldade (Básico, Médio e Avançado), 8 conquistas pedagógicas desbloqueáveis, o Kit do Investigador Forense e certificação de conclusão sincronizada com backend em C# .NET 8, banco SQLite local e persistência em nuvem no Supabase. Membros da comunidade testaram a ferramenta, concluíram as trilhas e relataram maior segurança no uso do Pix, WhatsApp e internet banking. A gamificação pedagógica mostrou-se uma metodologia transformadora para a cidadania digital.`,
+      content: `A plataforma web foi concluída com 100% de funcionalidade, disponibilizando os 3 níveis de dificuldade (Básico, Médio e Avançado), 8 conquistas pedagógicas desbloqueáveis, o Kit do Investigador Forense e certificação de conclusão sincronizada com backend em C# .NET 8, banco SQLite local e persistência em nuvem no Supabase. Membros da comunidade testaram a ferramenta, concluíram as trilhas e relataram maior segurança no uso do Pix, WhatsApp e internet banking. A sistema de pontuação mostrou-se uma metodologia transformadora para a cidadania digital.`,
     },
     {
       key: 'percepcao',

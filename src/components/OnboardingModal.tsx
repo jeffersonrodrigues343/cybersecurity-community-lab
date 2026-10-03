@@ -54,7 +54,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                 className="w-10 h-10 rounded-full border-2 border-white/20 border-t-[#2997ff]"
               />
               <p className="text-xs text-[#86868b] tracking-wider uppercase font-mono">
-                Inicializando Estação Pericial...
+                Carregando os dados da treta...
               </p>
             </div>
           ) : (
@@ -64,13 +64,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               <div className="text-center space-y-2">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs text-[#86868b]">
                   <Sparkles className="w-3.5 h-3.5 text-[#2997ff]" />
-                  <span>Guia Rápido • Entenda em 1 Minuto</span>
+                  <span>Como Jogar</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
                   Como Funciona o Simulador
                 </h2>
                 <p className="text-xs sm:text-sm text-[#86868b] max-w-md mx-auto">
-                  Você analisará mensagens reais que circulam no Brasil. Siga apenas estes 3 passos:
+                  Você vai encarar mensagens reais que circulam no Brasil. O jogo é simples:
                 </p>
               </div>
 
@@ -86,7 +86,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                       1. Leia o Caso com Atenção
                     </h4>
                     <p className="text-xs text-[#86868b] leading-relaxed">
-                      Examine o texto recebido, o remetente e o canal (WhatsApp, SMS, Ligação ou E-mail).
+                      Leia a mensagem com calma e veja de quem veio. (WhatsApp, SMS, Ligação ou E-mail).
                     </p>
                   </div>
                 </div>
@@ -101,7 +101,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                       2. Inspecione as Pistas Técnicas
                     </h4>
                     <p className="text-xs text-[#86868b] leading-relaxed">
-                      Clique para auditar o registro do site (WHOIS), dados da chave PIX e urgência psicológica (+10 XP cada).
+                      Clique nas pistas para abrir a base de dados (WHOIS), dados da chave PIX e falsidade do autor (+10 XP cada).
                     </p>
                   </div>
                 </div>
@@ -113,7 +113,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                   </div>
                   <div className="space-y-0.5">
                     <h4 className="text-xs sm:text-sm font-semibold text-white">
-                      3. Emita seu Veredito
+                      3. Bata o Martelo
                     </h4>
                     <p className="text-xs text-[#86868b] leading-relaxed flex flex-wrap items-center gap-1.5 pt-0.5">
                       Decida entre
@@ -124,7 +124,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#30d158]/15 text-[#30d158] font-semibold text-[11px] border border-[#30d158]/30">
                         <ShieldCheck className="w-3 h-3" /> SEGURO
                       </span>.
-                      Suba de patente e libere seu certificado!
+                      Faça pontos e não caia em papo furado!
                     </p>
                   </div>
                 </div>

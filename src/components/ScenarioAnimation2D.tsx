@@ -27,9 +27,7 @@ interface ScenarioAnimation2DProps {
   onPropClick?: (propType: string) => void;
 }
 
-// =============================================================================
 // COMPONENTE VETORIAL DO BONECO PALITO (Réplica 2D Fiel de images.jpeg)
-// =============================================================================
 interface BonecoPalito2DProps {
   pose?: 'pondering' | 'holding_phone' | 'holding_coffee' | 'inspecting';
   characterType?: 'mom' | 'senior' | 'default';
@@ -298,9 +296,7 @@ const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
   );
 };
 
-// =============================================================================
-// COMPONENTE PRINCIPAL DO CENÁRIO 2D
-// =============================================================================
+// componente pai
 export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
   caseId = '',
   scenarioType,

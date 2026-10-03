@@ -23,7 +23,7 @@ export interface InvestigativeClue {
     status: 'suspicious' | 'clean';
     headline: string;
     details: string;
-    forensicFact: string;
+    fato: string;
   };
 }
 
@@ -114,10 +114,8 @@ export interface GlossaryItem {
 }
 
 export const SCAM_CASES: ScamCase[] = [
-  // ==========================================
-  // NIVEL 1: BASICO (Pistas Visuais e Erros Claros)
-  // ==========================================
-  {
+    // NIVEL 1: BASICO (Pistas Visuais e Erros Claros)
+    {
     id: 'case-1-whatsapp',
     level: 'basico',
     levelTitle: 'Nível 1 • Básico',
@@ -153,7 +151,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'DDD incompatível e chip comprado ontem!',
           details: 'A linha é do DDD 85 (Ceará), enquanto a família mora em São Paulo (11). O chip foi cadastrado ontem.',
-          forensicFact: 'Golpistas compram chips descartáveis de outros estados para aplicar o golpe do parente com número novo.',
+          fato: 'Golpistas compram chips descartáveis de outros estados para aplicar o golpe do parente com número novo.',
         },
       },
       {
@@ -177,7 +175,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'A conta pertence a um estranho (laranja)!',
           details: 'A filha diz que é para a faculdade, mas a conta Pix está em nome de um desconhecido chamado Valdir dos Santos.',
-          forensicFact: 'Faculdades e empresas cobram por CNPJ oficial ou boleto registrado, nunca por Pix pessoal de terceiros.',
+          fato: 'Faculdades e empresas cobram por CNPJ oficial ou boleto registrado, nunca por Pix pessoal de terceiros.',
         },
       },
       {
@@ -201,7 +199,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Recusa sistemática de falar por voz!',
           details: 'O golpista inventa desculpas para não mandar áudio nem atender ligações.',
-          forensicFact: 'A regra de ouro da família contra golpes é: nunca transfira sem ouvir a voz real do parente no número antigo.',
+          fato: 'A regra de ouro da família contra golpes é: nunca transfira sem ouvir a voz real do parente no número antigo.',
         },
       },
     ],
@@ -238,19 +236,19 @@ export const SCAM_CASES: ScamCase[] = [
                   id: "opt-1-a",
                   text: "Ligar imediatamente para o número ANTIGO dele ou fazer uma chamada de vídeo para ouvir a voz real.",
                   isCorrect: true,
-                  feedback: "Exato! A voz humana em tempo real no contato conhecido é a defesa definitiva contra golpistas."
+                  feedback: "Acertou! A voz humana em tempo real no contato conhecido é a único jeito de ter certeza."
             },
             {
                   id: "opt-1-b",
                   text: "Pedir uma foto do documento dele pelo próprio chat do WhatsApp novo.",
                   isCorrect: false,
-                  feedback: "Perigoso! Golpistas costumam ter fotos de documentos vazados na internet."
+                  feedback: "Cuidado! Golpistas costumam ter fotos de documentos vazados na internet."
             },
             {
                   id: "opt-1-c",
                   text: "Fazer o Pix para a chave indicada, pois a foto do perfil é realmente a dele.",
                   isCorrect: false,
-                  feedback: "Armadilha! Fotos de perfil do WhatsApp são públicas e qualquer criminoso pode copiar em 5 segundos."
+                  feedback: "Cilada! Fotos de perfil do WhatsApp são públicas e qualquer criminoso pode copiar em 5 segundos."
             }
       ]
 },
@@ -291,7 +289,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Site falso registrado há 3 dias!',
           details: 'O link enviado termina em .online e foi criado há 3 dias. O site oficial dos Correios é apenas correios.com.br.',
-          forensicFact: 'Empresas públicas brasileiras sempre usam domínios oficiais terminados em .com.br ou .gov.br.',
+          fato: 'Empresas públicas brasileiras sempre usam domínios oficiais terminados em .com.br ou .gov.br.',
         },
       },
       {
@@ -315,7 +313,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Código de rastreio falso!',
           details: 'Ao buscar o código no aplicativo oficial dos Correios, o pacote simplesmente não existe.',
-          forensicFact: 'Taxas de importação legítimas só podem ser pagas logando com Gov.br no portal Minhas Importações dos Correios.',
+          fato: 'Taxas de importação legítimas só podem ser pagas logando com Gov.br no portal Minhas Importações dos Correios.',
         },
       },
       {
@@ -339,7 +337,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Enviado por celular comum em vez de número corporativo!',
           details: 'Empresas oficiais usam códigos curtos (shortcodes) de 5 dígitos, nunca celulares pré-pagos comuns.',
-          forensicFact: 'Golpistas compram pacotes de disparo de SMS em massa usando números de telefone celular descartáveis.',
+          fato: 'Golpistas compram pacotes de disparo de SMS em massa usando números de telefone celular descartáveis.',
         },
       },
     ],
@@ -376,19 +374,19 @@ export const SCAM_CASES: ScamCase[] = [
                   id: "opt-2-a",
                   text: "https://rastreamento.correios.com.br (domínio oficial terminando em .com.br)",
                   isCorrect: true,
-                  feedback: "Correto! Os Correios do Brasil sempre utilizam o domínio oficial correios.com.br."
+                  feedback: "Isso aí! Os Correios do Brasil sempre utilizam o domínio oficial correios.com.br."
             },
             {
                   id: "opt-2-b",
                   text: "https://correios-taxas-alfandega.online/pagar",
                   isCorrect: false,
-                  feedback: "Incorreto! Finais como .online ou .site são comprados anonimamente para aplicar golpes."
+                  feedback: "Errou feio. Finais como .online ou .site são comprados anonimamente para aplicar golpes."
             },
             {
                   id: "opt-2-c",
                   text: "https://rastreio-correios.com.br.tk/encomenda",
                   isCorrect: false,
-                  feedback: "Atenção ao truque! O domínio real aqui é .tk no final; o correios.com.br é apenas um subdomínio falso."
+                  feedback: "Pegadinha! O domínio real aqui é .tk no final; o correios.com.br é apenas um subdomínio falso."
             }
       ]
 },
@@ -429,7 +427,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Notificação legítima do próprio app oficial!',
           details: 'A mensagem foi gerada internamente pelo aplicativo oficial do banco já instalado.',
-          forensicFact: 'Notificações push autênticas de aplicativos instalados não contêm links para navegadores web desconhecidos.',
+          fato: 'Notificações push autênticas de aplicativos instalados não contêm links para navegadores web desconhecidos.',
         },
       },
       {
@@ -453,7 +451,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Nenhuma solicitação de senha ou dinheiro!',
           details: 'O banco não pede para ligar em números suspeitos nem pede transferências.',
-          forensicFact: 'Comunicações de segurança legítimas apenas alertam o cliente e não exigem transferências de emergência.',
+          fato: 'Comunicações de segurança legítimas apenas alertam o cliente e não exigem transferências de emergência.',
         },
       },
       {
@@ -477,7 +475,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Transação real feita por você mesmo!',
           details: 'O valor e o local correspondem à sua compra recente na padaria.',
-          forensicFact: 'Muitos usuários se assustam por engano com notificações normais de compras feitas por aproximação.',
+          fato: 'Muitos usuários se assustam por engano com notificações normais de compras feitas por aproximação.',
         },
       },
     ],
@@ -515,22 +513,20 @@ export const SCAM_CASES: ScamCase[] = [
                   id: "opt-3-b",
                   text: "Avisos reais exigem que você ligue em até 10 minutos para confirmar seu CPF.",
                   isCorrect: false,
-                  feedback: "Incorreto! Impor contagem regressiva para falar com atendente é tática clássica de engenharia social."
+                  feedback: "Errou feio. Impor contagem regressiva para falar com atendente é tática clássica de engenharia social."
             },
             {
                   id: "opt-3-c",
                   text: "Avisos reais cobram uma taxa de cancelamento caso você não reconheça o débito.",
                   isCorrect: false,
-                  feedback: "Incorreto! O cancelamento de compras fraudulentas é direito do consumidor garantido sem nenhuma cobrança."
+                  feedback: "Errou feio. O cancelamento de compras fraudulentas é direito do consumidor garantido sem nenhuma cobrança."
             }
       ]
 },
   },
 
-  // ==========================================
-  // NIVEL 2: MEDIO (Engenharia Social e Spoofing)
-  // ==========================================
-  {
+    // NIVEL 2: MEDIO (Engenharia Social e Spoofing)
+    {
     id: 'case-4-falsa-central',
     level: 'medio',
     levelTitle: 'Nível 2 • Médio',
@@ -566,7 +562,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'O banco NUNCA pede Pix para cancelar compras!',
           details: 'Quando há uma fraude real, o banco bloqueia a transação internamente. Pedir Pix para "conta de segurança" é golpe garantido.',
-          forensicFact: 'O "Golpe da Falsa Central" é responsável por mais de 40% das perdas financeiras de idosos e adultos no Brasil.',
+          fato: 'O "Golpe da Falsa Central" é responsável por mais de 40% das perdas financeiras de idosos e adultos no Brasil.',
         },
       },
       {
@@ -590,7 +586,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Número mascarado por tecnologia de falsificação (Spoofing)!',
           details: 'O criminoso usa tecnologia de telefonia via internet para alterar o número que aparece no visor do seu telefone.',
-          forensicFact: 'Centrais 0800 de bancos são configuradas apenas para RECEBER ligações, quase nunca para fazer chamadas ativas para clientes.',
+          fato: 'Centrais 0800 de bancos são configuradas apenas para RECEBER ligações, quase nunca para fazer chamadas ativas para clientes.',
         },
       },
       {
@@ -614,7 +610,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'A conta de segurança é a conta de um comparsa!',
           details: 'Se você fizer o Pix, o dinheiro vai direto para a conta de uma pessoa física e some em segundos.',
-          forensicFact: 'Não existe "conta cofre", "chave de segurança" ou "conta garantidora" no sistema financeiro nacional.',
+          fato: 'Não existe "conta cofre", "chave de segurança" ou "conta garantidora" no sistema financeiro nacional.',
         },
       },
     ],
@@ -704,7 +700,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Domínio falso mascarado com nome da loja!',
           details: 'Grandes varejistas brasileiras sempre usam seus domínios principais (.com.br), nunca finais como .shop ou .top criados para golpes.',
-          forensicFact: 'Criminosos clonam o design exato das lojas em minutos usando templates pirateados.',
+          fato: 'Criminosos clonam o design exato das lojas em minutos usando templates pirateados.',
         },
       },
       {
@@ -728,7 +724,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Força o pagamento exclusivo por Pix!',
           details: 'Lojas falsas desativam propositalmente o cartão de crédito porque compras com cartão podem ser canceladas via chargeback.',
-          forensicFact: 'Lojas falsas só aceitam Pix porque o dinheiro cai imediatamente na conta dos criminosos.',
+          fato: 'Lojas falsas só aceitam Pix porque o dinheiro cai imediatamente na conta dos criminosos.',
         },
       },
       {
@@ -752,7 +748,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Preço milagroso totalmente fora da realidade!',
           details: 'Nenhuma loja vende mercadorias de alta demanda abaixo do custo de fábrica.',
-          forensicFact: 'O gatilho da ganância e da oportunidade imperdível é o mais explorado em golpes de comércio eletrônico nas redes sociais.',
+          fato: 'O gatilho da ganância e da oportunidade imperdível é o mais explorado em golpes de comércio eletrônico nas redes sociais.',
         },
       },
     ],
@@ -782,7 +778,7 @@ export const SCAM_CASES: ScamCase[] = [
     },
     reinforcementDrill: {
       title: "Treino de Compras: Descontos Miraculosos na Internet",
-      question: "Você vê um anúncio nas redes sociais com um smartphone top de linha por R$ 399 no Pix (preço normal R$ 3.500). Qual é a conclusão pericial?",
+      question: "Você vê um anúncio nas redes sociais com um smartphone top de linha por R$ 399 no Pix (preço normal R$ 3.500). Qual é a conclusão de análise?",
       context: "Preços abaixo do custo de fábrica combinados com exclusividade de Pix imediato são 100% de probabilidade de fraude.",
       options: [
             {
@@ -842,7 +838,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Envio imediato em resposta direta ao seu login!',
           details: 'O SMS foi gerado exatamente no instante em que você solicitou acesso no computador.',
-          forensicFact: 'Autenticação de dois fatores legítima ocorre em sincronia direta com a ação voluntária do usuário.',
+          fato: 'Autenticação de dois fatores legítima ocorre em sincronia direta com a ação voluntária do usuário.',
         },
       },
       {
@@ -866,7 +862,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Canal oficial de shortcode bancário de 5 dígitos!',
           details: 'O número 28588 é o canal de mensageria oficial registrado do Banco do Brasil.',
-          forensicFact: 'Shortcodes de 5 dígitos são rigorosamente auditados pelas operadoras de telefonia e custam caro para serem mantidos.',
+          fato: 'Shortcodes de 5 dígitos são rigorosamente auditados pelas operadoras de telefonia e custam caro para serem mantidos.',
         },
       },
       {
@@ -890,7 +886,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Alerta antifraude explícito na mensagem!',
           details: 'A mensagem cumpre todas as boas práticas de segurança: sem links, sem pedidos de ligação e alertando contra golpistas.',
-          forensicFact: 'Golpistas tentam roubar esses códigos legítimos ligando para você e pedindo para "confirmar o código para cancelar a fraude".',
+          fato: 'Golpistas tentam roubar esses códigos legítimos ligando para você e pedindo para "confirmar o código para cancelar a fraude".',
         },
       },
     ],
@@ -922,7 +918,7 @@ export const SCAM_CASES: ScamCase[] = [
                   id: "opt-6-a",
                   text: "NUNCA ditar nem enviar o código para ninguém: códigos de SMS são de uso exclusivo e pessoal.",
                   isCorrect: true,
-                  feedback: "Correto! Códigos de 2FA são como chaves físicas da sua casa: se você entregar pelo telefone, o invasor entra."
+                  feedback: "Isso aí! Códigos de 2FA são como chaves físicas da sua casa: se você entregar pelo telefone, o invasor entra."
             },
             {
                   id: "opt-6-b",
@@ -934,16 +930,14 @@ export const SCAM_CASES: ScamCase[] = [
                   id: "opt-6-c",
                   text: "Digitar o código no teclado numérico da chamada telefônica.",
                   isCorrect: false,
-                  feedback: "Incorreto! Teclados de telefone emitem tons DTMF que gravam o código digitado com facilidade."
+                  feedback: "Errou feio. Teclados de telefone emitem tons DTMF que gravam o código digitado com facilidade."
             }
       ]
 },
   },
 
-  // ==========================================
-  // NIVEL 3: AVANCADO (Golpes Modernos & Risco Real)
-  // ==========================================
-  {
+    // NIVEL 3: AVANCADO (Golpes Modernos & Risco Real)
+    {
     id: 'case-7-vaga-tarefas',
     level: 'avancado',
     levelTitle: 'Nível 3 • Avançado',
@@ -979,7 +973,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Golpe da Tarefa: Isca inicial para roubar depósitos maiores!',
           details: 'Os criminosos pagam um valor simbólico no primeiro dia para a vítima achar que é sério. Depois exigem depósitos crescentes para liberar o dinheiro.',
-          forensicFact: 'A Polícia Civil já registrou vítimas que perderam mais de R$ 50.000 no golpe das tarefas no Telegram tentando recuperar o dinheiro investido.',
+          fato: 'A Polícia Civil já registrou vítimas que perderam mais de R$ 50.000 no golpe das tarefas no Telegram tentando recuperar o dinheiro investido.',
         },
       },
       {
@@ -1003,7 +997,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Empresas reais nunca cobram para você trabalhar!',
           details: 'A Shopee não contrata por grupos de Telegram nem solicita pagamentos prévios de candidatos.',
-          forensicFact: 'Se você precisa pagar para receber seu salário, você não é funcionário: é a vítima de um esquema de pirâmide financeira.',
+          fato: 'Se você precisa pagar para receber seu salário, você não é funcionário: é a vítima de um esquema de pirâmide financeira.',
         },
       },
       {
@@ -1027,7 +1021,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Promessa salarial irreal para tarefas sem qualificação!',
           details: 'Nenhum negócio do mundo paga R$ 500 por dia para uma pessoa curtir vídeos de 30 segundos.',
-          forensicFact: 'Criminosos exploram a vulnerabilidade de pessoas desempregadas ou que buscam renda extra rápida.',
+          fato: 'Criminosos exploram a vulnerabilidade de pessoas desempregadas ou que buscam renda extra rápida.',
         },
       },
     ],
@@ -1076,7 +1070,7 @@ export const SCAM_CASES: ScamCase[] = [
                   id: "opt-7-c",
                   text: "É seguro pagar os R$ 150 se eles tiverem cumprido o primeiro pagamento de R$ 20.",
                   isCorrect: false,
-                  feedback: "Armadilha! Os primeiros R$ 20 são exatamente a isca usada para fazer você confiar e perder quantias muito maiores."
+                  feedback: "Cilada! Os primeiros R$ 20 são exatamente a isca usada para fazer você confiar e perder quantias muito maiores."
             }
       ]
 },
@@ -1117,7 +1111,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Mensagem lida dentro da área interna autenticada do Governo Federal!',
           details: 'O contribuinte acessou voluntariamente o domínio oficial .gov.br com autenticação forte Gov.br.',
-          forensicFact: 'Criminosos não conseguem injetar mensagens dentro da caixa postal do portal e-CAC governamental oficial.',
+          fato: 'Criminosos não conseguem injetar mensagens dentro da caixa postal do portal e-CAC governamental oficial.',
         },
       },
       {
@@ -1141,7 +1135,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Sem pedidos de Pix ou transferências imediatas!',
           details: 'Golpes da Receita inventam boletos ou chaves Pix com ameaça de prisão no mesmo dia. Notificações reais dão prazo legal para envio de recibos.',
-          forensicFact: 'A Receita Federal nunca cobra multas ou tributos via Pix de pessoas físicas em mensagens instantâneas.',
+          fato: 'A Receita Federal nunca cobra multas ou tributos via Pix de pessoas físicas em mensagens instantâneas.',
         },
       },
       {
@@ -1165,7 +1159,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'clean',
           headline: 'Dados perfeitamente consistentes com sua declaração real!',
           details: 'O valor, o nome do profissional e o ano batem exatamente com o que você declarou.',
-          forensicFact: 'Muitos brasileiros caem no erro de achar que toda notificação fiscal é golpe, perdem o prazo legal e acabam tendo o CPF bloqueado.',
+          fato: 'Muitos brasileiros caem no erro de achar que toda notificação fiscal é golpe, perdem o prazo legal e acabam tendo o CPF bloqueado.',
         },
       },
     ],
@@ -1250,7 +1244,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'O aplicativo dá controle remoto total do seu celular ao criminoso!',
           details: 'AnyDesk, TeamViewer e RustDesk são softwares de acesso remoto. Se você instalar e passar o código, o golpista mexe no seu celular como se estivesse com ele na mão.',
-          forensicFact: 'Este é o chamado "Golpe da Mão Fantasma": a tela do celular do usuário apaga e o criminoso faz transferências em segundo plano.',
+          fato: 'Este é o chamado "Golpe da Mão Fantasma": a tela do celular do usuário apaga e o criminoso faz transferências em segundo plano.',
         },
       },
       {
@@ -1274,7 +1268,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Terror psicológico para forçar a obediência cega!',
           details: 'O criminoso ameaça perda de seguro e bloqueio de conta para fazer a vítima instalar o app no desespero.',
-          forensicFact: 'Profissionais de segurança reais nunca proíbem um cliente de desligar a ligação ou de comparecer à agência física.',
+          fato: 'Profissionais de segurança reais nunca proíbem um cliente de desligar a ligação ou de comparecer à agência física.',
         },
       },
       {
@@ -1298,7 +1292,7 @@ export const SCAM_CASES: ScamCase[] = [
           status: 'suspicious',
           headline: 'Violação frontal das diretrizes de segurança bancária!',
           details: 'A Federação Brasileira de Bancos (Febraban) alerta repetidamente: nenhum banco pede instalação de ferramentas de suporte.',
-          forensicFact: 'Mais de 100 mil contas foram invadidas no Brasil por meio do Golpe da Mão Fantasma nos últimos dois anos.',
+          fato: 'Mais de 100 mil contas foram invadidas no Brasil por meio do Golpe da Mão Fantasma nos últimos dois anos.',
         },
       },
     ],
@@ -1341,7 +1335,7 @@ export const SCAM_CASES: ScamCase[] = [
                   id: "opt-9-b",
                   text: "O golpe ocorre apenas porque o AnyDesk é um vírus ilegal proibido na Google Play Store.",
                   isCorrect: false,
-                  feedback: "Incorreto! O AnyDesk é um software legítimo para profissionais de TI, mas criminosos o usam como ferramenta de invasão em leigos."
+                  feedback: "Errou feio. O AnyDesk é um software legítimo para profissionais de TI, mas criminosos o usam como ferramenta de invasão em leigos."
             },
             {
                   id: "opt-9-c",
@@ -1394,7 +1388,7 @@ export const BADGES: Badge[] = [
   {
     id: 'badge-streak-fire',
     title: 'Faro de Sherlock',
-    description: 'Acertou 3 casos seguidos com fundamentação pericial perfeita.',
+    description: 'Acertou 3 casos seguidos com fundamentação de análise perfeita.',
     icon: '🔥',
     category: 'streak',
     rarity: 'ouro',
@@ -1421,7 +1415,7 @@ export const BADGES: Badge[] = [
   {
     id: 'badge-ice-cold',
     title: 'Mente Fria Sob Pressão',
-    description: 'Solucionou um caso complexo com laudo perfeito sob o cronômetro tático de emergência.',
+    description: 'Solucionou um caso complexo com relatório perfeito sob o cronômetro tático de emergência.',
     icon: '⏱️',
     category: 'detective',
     rarity: 'ouro',

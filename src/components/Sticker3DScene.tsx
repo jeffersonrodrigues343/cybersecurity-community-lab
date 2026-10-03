@@ -173,10 +173,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       return cyl;
     };
 
-    // =========================================================================
-    // FACTORY DO BONECO PALITO (Fidelidade ao arquivo images.jpeg)
-    // =========================================================================
-    const createBonecoPalito = (
+        // FACTORY DO BONECO PALITO (Fidelidade ao arquivo images.jpeg)
+        const createBonecoPalito = (
       customPose: 'pondering' | 'holding_phone' | 'holding_coffee' | 'alarmed' | 'inspecting' = 'pondering'
     ) => {
       const stickmanGroup = new THREE.Group();
@@ -553,10 +551,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       };
     };
 
-    // =========================================================================
-    // INSTANCIAÇÃO DO BONECO PALITO CONFORME O CENÁRIO
-    // =========================================================================
-    let stickmanInstance: ReturnType<typeof createBonecoPalito>;
+        // INSTANCIAÇÃO DO BONECO PALITO CONFORME O CENÁRIO
+        let stickmanInstance: ReturnType<typeof createBonecoPalito>;
 
     if (isCase4) {
       stickmanInstance = createBonecoPalito('holding_phone');
@@ -574,10 +570,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
     stickerRoot.add(stickmanInstance.group);
     interactiveObjects.push(stickmanInstance.group);
 
-    // =========================================================================
-    // CENÁRIO 1: WhatsApp Filho / Parente com Celular Quebrado
-    // =========================================================================
-    if (isCase1) {
+        // CENÁRIO 1: WhatsApp Filho / Parente com Celular Quebrado
+        if (isCase1) {
       // 1. Celular Trincado 3D (Interativo)
       const phoneGroup = new THREE.Group();
       phoneGroup.name = 'celular-quebrado';
@@ -641,10 +635,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(bubbleGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO 2: Correios / Encomenda Retida na Alfândega
-    // =========================================================================
-    else if (isCase2) {
+        // CENÁRIO 2: Correios / Encomenda Retida na Alfândega
+        else if (isCase2) {
       // 1. Esteira Rolante 3D
       const beltGeo = new THREE.BoxGeometry(3.0, 0.22, 1.4);
       const beltMat = createStickerMaterial(0x2f3542, 0.5);
@@ -702,10 +694,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(stampGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO 3: Padaria Estrela / Notificação Legítima de Cartão NFC
-    // =========================================================================
-    else if (isCase3) {
+        // CENÁRIO 3: Padaria Estrela / Notificação Legítima de Cartão NFC
+        else if (isCase3) {
       // 1. Balcão de Madeira
       const counterGeo = new THREE.BoxGeometry(3.2, 0.3, 1.4);
       const counterMat = createStickerMaterial(0x8a532b, 0.4);
@@ -766,10 +756,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(cardGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO 4: Falsa Central Telefônica 0800 & Conta Cofre
-    // =========================================================================
-    else if (isCase4) {
+        // CENÁRIO 4: Falsa Central Telefônica 0800 & Conta Cofre
+        else if (isCase4) {
       // 1. Aparelho Telefônico Retrô Segurado pelo Boneco
       const phoneGroup = new THREE.Group();
       phoneGroup.name = 'telefone-0800';
@@ -820,10 +808,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(vaultGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO 5: Loja Falsa / Air Fryer 85% OFF no Instagram
-    // =========================================================================
-    else if (isCase5) {
+        // CENÁRIO 5: Loja Falsa / Air Fryer 85% OFF no Instagram
+        else if (isCase5) {
       // 1. Fritadeira Air Fryer 3D (Interativa)
       const fryerGroup = new THREE.Group();
       fryerGroup.name = 'air-fryer';
@@ -870,10 +856,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(promoGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO 6: SMS 2FA Autêntico / Login Bancário no PC
-    // =========================================================================
-    else if (isCase6) {
+        // CENÁRIO 6: SMS 2FA Autêntico / Login Bancário no PC
+        else if (isCase6) {
       // 1. Monitor Desktop com tela de banco
       const pcGroup = new THREE.Group();
       pcGroup.name = 'computador-login';
@@ -910,10 +894,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(shieldGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO 7: Golpe das Tarefas / Pirâmide de Curtidas
-    // =========================================================================
-    else if (isCase7) {
+        // CENÁRIO 7: Golpe das Tarefas / Pirâmide de Curtidas
+        else if (isCase7) {
       // 1. Botão 3D de Play / Curtida do YouTube
       const playGroup = new THREE.Group();
       playGroup.name = 'tarefas-curtida';
@@ -963,10 +945,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(pyramidGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO 8: Gov.br / Malha Fina e-CAC Oficial
-    // =========================================================================
-    else if (isCase8) {
+        // CENÁRIO 8: Gov.br / Malha Fina e-CAC Oficial
+        else if (isCase8) {
       // 1. Selo Ouro Gov.br
       const govGroup = new THREE.Group();
       govGroup.name = 'govbr-selo-ouro';
@@ -997,10 +977,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(folderGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO 9: Golpe da Mão Fantasma / Suporte Remoto AnyDesk
-    // =========================================================================
-    else if (isCase9) {
+        // CENÁRIO 9: Golpe da Mão Fantasma / Suporte Remoto AnyDesk
+        else if (isCase9) {
       // 1. Smartphone da Vítima
       const victimPhoneGroup = new THREE.Group();
       victimPhoneGroup.name = 'celular-remoto';
@@ -1047,10 +1025,8 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
       interactiveObjects.push(ghostHandGroup);
     }
 
-    // =========================================================================
-    // CENÁRIO GENÉRICO / DINÂMICO
-    // =========================================================================
-    else {
+        // CENÁRIO GENÉRICO / DINÂMICO
+        else {
       const shieldGroup = new THREE.Group();
       shieldGroup.name = 'escudo-geral';
       shieldGroup.position.set(0.6, 0, 0.5);
@@ -1114,7 +1090,7 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
         while (topParent.parent && topParent.parent !== stickerRoot) {
           topParent = topParent.parent;
         }
-        setHoveredProp(topParent.name || 'Pista Pericial');
+        setHoveredProp(topParent.name || 'Pista de Análise');
         canvas.style.cursor = 'pointer';
       } else {
         setHoveredProp(null);
