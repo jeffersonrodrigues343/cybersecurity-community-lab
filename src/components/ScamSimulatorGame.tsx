@@ -25,7 +25,7 @@ import {
   Server,
   Clock,
   Lightbulb,
-  Zap,
+  
   ShoppingBag,
   Briefcase,
   Lock,
@@ -54,7 +54,7 @@ interface ScamSimulatorGameProps {
 }
 
 export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpdate }) => {
-  const [gameMode, setGameMode] = useState<'campaign' | 'dynamic'>('campaign');
+  const gameMode = 'dynamic';
   const [dynamicCase, setDynamicCase] = useState<ScamCase>(() => generateDynamicScamCase());
   const [currentLevel, setCurrentLevel] = useState<ScamLevel>('basico');
   const [currentCaseIndex, setCurrentCaseIndex] = useState(0);
@@ -136,8 +136,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
   // Casos do nível atual ou Caso Dinâmico
   const levelCases = SCAM_CASES.filter((c) => c.level === currentLevel);
-  const currentCase: ScamCase =
-    gameMode === 'dynamic' ? dynamicCase : (levelCases[currentCaseIndex] || levelCases[0]);
+  const currentCase: ScamCase = dynamicCase;
 
   // Modo Sob Pressão (Cronômetro Tático)
   const [isPressureMode, setIsPressureMode] = useState<boolean>(() => {
@@ -431,21 +430,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     }
   };
 
-  const handleSelectLevel = (level: ScamLevel) => {
-    sound.playBlip();
-    setGameMode('campaign');
-    setCurrentLevel(level);
-    setCurrentCaseIndex(0);
-    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
-    setExpandedClueId(null);
-    setFloatingXp(null);
-    setSelectedVerdict(null);
-    setSelectedHypothesis(null);
-    setDrillSelectedOptionId(null);
-    setDrillSuccess(false);
-    setDrillBonusAwarded(false);
-  };
-
+  
   const getChannelIcon = (channel: string) => {
     switch (channel) {
       case 'whatsapp':
@@ -461,17 +446,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
     }
   };
 
-  const getLevelIcon = (level: ScamLevel) => {
-    switch (level) {
-      case 'basico':
-        return <ShieldCheck className="w-3.5 h-3.5 text-[#30d158]" />;
-      case 'medio':
-        return <AlertTriangle className="w-3.5 h-3.5 text-[#ff9f0a]" />;
-      case 'avancado':
-        return <Zap className="w-3.5 h-3.5 text-[#ff3b30]" />;
-    }
-  };
-
+  
   const getClueCategoryIcon = (category: string) => {
     switch (category) {
       case 'whois':
@@ -573,95 +548,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
           
           <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-center lg:justify-start">
-            {/* Alternador de Modo: Campanha vs Cenários Dinâmicos 3D */}
-            <div className="flex items-center space-x-1 p-1 rounded-full bg-black/60 border border-white/[0.08]">
-              <button
-                onClick={() => {
-                  sound.playBlip();
-                  setGameMode('campaign');
-                  setExpandedClueId(null);
-                  setSelectedVerdict(null);
-                  setSelectedHypothesis(null);
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition flex items-center space-x-1.5 cursor-pointer ${
-                  gameMode === 'campaign'
-                    ? 'bg-[#0071e3] text-white shadow-sm'
-                    : 'text-[#86868b] hover:text-white'
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Casos Oficiais (9 Níveis)</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  sound.playBlip();
-                  setGameMode('dynamic');
-                  setExpandedClueId(null);
-                  setSelectedVerdict(null);
-                  setSelectedHypothesis(null);
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition flex items-center space-x-1.5 cursor-pointer ${
-                  gameMode === 'dynamic'
-                    ? 'bg-gradient-to-r from-[#bf5af2] to-[#2997ff] text-white shadow-md shadow-purple-500/20'
-                    : 'text-[#86868b] hover:text-white'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#ff9f0a]" />
-                <span>⚡ Cenários Dinâmicos 2D</span>
-              </button>
-            </div>
-
-            {/* Seletor de Níveis (em modo campanha) */}
-            {gameMode === 'campaign' ? (
-              <div className="flex items-center space-x-1 p-1 rounded-full bg-black/50 border border-white/[0.06] max-w-full overflow-x-auto scrollbar-hide">
-                {(['basico', 'medio', 'avancado'] as ScamLevel[]).map((level) => {
-                  const lCases = SCAM_CASES.filter((c) => c.level === level);
-                  const lFinished = lCases.filter((c) => answers[c.id]?.answered).length;
-                  const isCurrent = currentLevel === level;
-
-                  return (
-                    <button
-                      key={level}
-                      onClick={() => handleSelectLevel(level)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition flex items-center space-x-1.5 cursor-pointer ${
-                        isCurrent
-                          ? 'bg-white/20 text-white shadow-sm'
-                          : 'text-[#86868b] hover:text-white'
-                      }`}
-                    >
-                      {getLevelIcon(level)}
-                      <span className="capitalize">{level}</span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                          isCurrent ? 'bg-white/20 text-white' : 'bg-white/5 text-[#86868b]'
-                        }`}
-                      >
-                        {lFinished}/{lCases.length}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  sound.playBlip();
-                  setDynamicCase(generateDynamicScamCase());
-                  setExpandedClueId(null);
-                  setFloatingXp(null);
-                  setSelectedVerdict(null);
-                  setSelectedHypothesis(null);
-                  setDrillSelectedOptionId(null);
-                  setDrillSuccess(false);
-                  setDrillBonusAwarded(false);
-                }}
-                className="px-3.5 py-1.5 rounded-full bg-[#bf5af2]/15 hover:bg-[#bf5af2]/25 text-[#bf5af2] border border-[#bf5af2]/35 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>🎲 Sortear Outro Cenário 2D</span>
-              </button>
-            )}
+            <span className="text-white font-bold text-sm flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-[#bf5af2]" /> Simulador Aleatório</span>
           </div>
 
           {/* Patente Atual do Jogador, Combo Streak & Modo Sob Pressão */}
@@ -733,37 +620,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </div>
             </div>
 
-            {gameMode === 'campaign' ? (
-              <div className="flex items-center space-x-1.5">
-                {levelCases.map((c, idx) => {
-                  const isAns = answers[c.id]?.answered;
-                  const isAct = currentCaseIndex === idx;
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => {
-                        sound.playBlip();
-                        setCurrentCaseIndex(idx);
-                        setExpandedClueId(null);
-                        setFloatingXp(null);
-                        setSelectedVerdict(null);
-                        setSelectedHypothesis(null);
-                      }}
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer flex items-center space-x-1 ${
-                        isAct
-                          ? 'bg-[#0071e3] text-white shadow-sm'
-                          : isAns
-                          ? 'bg-white/[0.08] text-[#30d158] hover:bg-white/[0.12]'
-                          : 'bg-white/[0.04] text-[#86868b] hover:text-white'
-                      }`}
-                    >
-                      <span>Caso {idx + 1}</span>
-                      {isAns && <CheckCircle2 className="w-3 h-3 text-[#30d158]" />}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
+ 
               <button
                 onClick={() => {
                   sound.playBlip();
@@ -781,7 +638,6 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>🎲 Sortear Novo Cenário 2D</span>
               </button>
-            )}
           </div>
 
           {/* Conteúdo do Incidente */}
