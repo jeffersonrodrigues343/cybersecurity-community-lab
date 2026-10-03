@@ -197,3 +197,12 @@
 .apple-glow-pulse {
   animation: apple-pulse-glow 3s infinite ease-in-out;
 }
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+

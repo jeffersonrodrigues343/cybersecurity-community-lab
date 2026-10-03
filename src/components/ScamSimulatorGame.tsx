@@ -597,7 +597,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
             {/* Seletor de Níveis (em modo campanha) */}
             {gameMode === 'campaign' ? (
-              <div className="flex items-center space-x-1 p-1 rounded-full bg-black/50 border border-white/[0.06]">
+              <div className="flex items-center space-x-1 p-1 rounded-full bg-black/50 border border-white/[0.06] max-w-full overflow-x-auto scrollbar-hide">
                 {(['basico', 'medio', 'avancado'] as ScamLevel[]).map((level) => {
                   const lCases = SCAM_CASES.filter((c) => c.level === level);
                   const lFinished = lCases.filter((c) => answers[c.id]?.answered).length;
@@ -648,7 +648,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
 
           {/* Patente Atual do Jogador, Combo Streak & Modo Sob Pressão */}
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2">
             {/* Toggle Modo Sob Pressão (Cronômetro Tático) */}
             {isBasicoFinished && (
               <button
@@ -774,7 +774,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             {isPressureMode && (
               <div className="p-3.5 rounded-2xl bg-black/40 border border-white/[0.08] space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2">
                     <Clock
                       className={`w-4 h-4 ${
                         timeLeft <= 15
@@ -948,7 +948,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
             {/* Orientação ao Investigador (Sem Spoilers) */}
             <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between text-xs text-[#86868b]">
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2">
                 <Search className="w-4 h-4 text-[#2997ff] flex-shrink-0" />
                 <span className="leading-relaxed">
                   Use as <strong className="text-white">Ferramentas de Investigação</strong> ao lado para auditar dados, titulares e canais antes de emitir seu veredito.
