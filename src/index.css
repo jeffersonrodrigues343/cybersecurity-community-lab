@@ -4,15 +4,15 @@
 
 @layer base {
   h1, h2, h3, h4, h5, h6, .font-black {
-    font-family: 'VT323', monospace;
+    font-family: "Impact", "Arial Black", sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
   
   body {
-    font-family: 'VT323', monospace;
-    background-color: #a82216;
-    color: #a82216;
+    font-family: "Impact", "Arial Black", sans-serif;
+    background-color: #ff00ff;
+    color: #ff00ff;
     overflow-x: hidden;
     text-transform: uppercase;
     /* Basic CRT effect on the whole body */
@@ -22,16 +22,16 @@
 
 /* ULTRAKILL HUD STYLES */
 .uk-container {
-  background-color: #a82216;
-  border: 2px solid #5a4133;
-  box-shadow: inset 0 0 20px #000000;
+  background-color: #ff00ff;
+  border: 8px solid #ff00ff; background-color: #0000ff;
+  box-shadow: 10px 10px 0px #ffff00;
   image-rendering: pixelated;
 }
 
 .uk-btn-red {
-  background-color: #a82216;
-  border: 2px solid #5a4133;
-  color: #a82216;
+  background-color: #ff00ff;
+  border: 8px solid #ff00ff; background-color: #0000ff;
+  color: #ff00ff;
   box-shadow: 4px 4px 0px #330000;
   transition: all 0.1s steps(2);
 }
@@ -39,14 +39,14 @@
 .uk-btn-red:active {
   transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px #330000;
-  background-color: #a82216;
-  color: #a82216;
+  background-color: #ff00ff;
+  color: #ff00ff;
 }
 
 .uk-btn-blue {
-  background-color: #a82216;
-  border: 2px solid #48525b;
-  color: #a82216;
+  background-color: #ff00ff;
+  border: 4px dotted #0000ff;
+  color: #ff00ff;
   box-shadow: 4px 4px 0px #002244;
   transition: all 0.1s steps(2);
 }
@@ -54,14 +54,14 @@
 .uk-btn-blue:active {
   transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px #002244;
-  background-color: #a82216;
-  color: #a82216;
+  background-color: #ff00ff;
+  color: #ff00ff;
 }
 
 .uk-btn-green {
-  background-color: #a82216;
-  border: 2px solid #55663d;
-  color: #a82216;
+  background-color: #ff00ff;
+  border: 4px solid #ff0000;
+  color: #ff00ff;
   box-shadow: 4px 4px 0px #002200;
   transition: all 0.1s steps(2);
 }
@@ -69,13 +69,13 @@
 .uk-btn-green:active {
   transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px #002200;
-  background-color: #a82216;
-  color: #a82216;
+  background-color: #ff00ff;
+  color: #ff00ff;
 }
 
 .uk-panel {
-  background-color: #a82216;
+  background-color: #ff00ff;
   border: 2px dashed #555;
-  color: #a82216;
+  color: #ff00ff;
 }
 
