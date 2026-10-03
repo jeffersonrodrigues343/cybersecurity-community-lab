@@ -32,6 +32,7 @@ import {
   Gavel,
   Eye,
   RotateCcw,
+  Layers,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -49,6 +50,7 @@ import { sound } from '../utils/audio';
 import confetti from 'canvas-confetti';
 import { AnimatedCounter } from './AnimatedCounter';
 import { ScenarioAnimation2D } from './ScenarioAnimation2D';
+import { Sticker3DScene } from './Sticker3DScene';
 import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 
 interface ScamSimulatorGameProps {
@@ -56,6 +58,7 @@ interface ScamSimulatorGameProps {
 }
 
 export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpdate }) => {
+  const [visualMode, setVisualMode] = useState<'3d-sticker' | '2d-theater'>('3d-sticker');
   const [gameMode, setGameMode] = useState<'campaign' | 'dynamic'>('campaign');
   const [dynamicCase, setDynamicCase] = useState<ScamCase>(() => generateDynamicScamCase());
   const [currentLevel, setCurrentLevel] = useState<ScamLevel>('basico');
@@ -935,40 +938,118 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </div>
             </div>
 
-            {/* Teatro Pericial 2D Contextual com Bonecos e Cenário Hipotético */}
-            <ScenarioAnimation2D
-              caseId={currentCase.id}
-              scenarioType={getScenarioType(currentCase)}
-              isScam={currentCase.isScam}
-              verdictResult={
-                currentAnswerData?.answered
-                  ? currentAnswerData.isCorrect
-                    ? 'correct'
-                    : 'incorrect'
-                  : null
-              }
-              onPropClick={(propName) => {
-                sound.playBlip();
-                if (propName.includes('celular') || propName.includes('whatsapp') || propName.includes('2fa')) {
-                  const target = currentCase.clues.find((c) => c.category === 'phone' || c.category === 'behavior');
-                  if (target) handleInspectClue(target);
-                } else if (propName.includes('pacote') || propName.includes('correios')) {
-                  const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'system');
-                  if (target) handleInspectClue(target);
-                } else if (propName.includes('banco') || propName.includes('terminal') || propName.includes('cofre') || propName.includes('padaria')) {
-                  const target = currentCase.clues.find((c) => c.category === 'pix' || c.category === 'official');
-                  if (target) handleInspectClue(target);
-                } else if (propName.includes('computador') || propName.includes('remoto') || propName.includes('anydesk')) {
-                  const target = currentCase.clues.find((c) => c.category === 'system' || c.category === 'behavior');
-                  if (target) handleInspectClue(target);
-                } else if (propName.includes('promocao') || propName.includes('fryer')) {
-                  const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'pix');
-                  if (target) handleInspectClue(target);
-                } else if (currentCase.clues[0]) {
-                  handleInspectClue(currentCase.clues[0]);
+            {/* Seletor de Modo de Visualização do Cenário: 3D Sticker vs 2D */}
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider">
+                Visualização do Incidente
+              </span>
+              <div className="flex items-center space-x-1 p-0.5 rounded-full bg-black/60 border border-white/[0.08]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playBlip();
+                    setVisualMode('3d-sticker');
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    visualMode === '3d-sticker'
+                      ? 'bg-gradient-to-r from-[#bf5af2] to-[#2997ff] text-white shadow-md shadow-purple-500/25'
+                      : 'text-[#86868b] hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>3D Sticker Animado</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playBlip();
+                    setVisualMode('2d-theater');
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    visualMode === '2d-theater'
+                      ? 'bg-white/20 text-white shadow-sm'
+                      : 'text-[#86868b] hover:text-white'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Teatro 2D</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Renderização do Cenário: 3D Sticker Holográfico ou Teatro 2D */}
+            {visualMode === '3d-sticker' ? (
+              <Sticker3DScene
+                caseId={currentCase.id}
+                scenarioType={getScenarioType(currentCase)}
+                isScam={currentCase.isScam}
+                verdictResult={
+                  currentAnswerData?.answered
+                    ? currentAnswerData.isCorrect
+                      ? 'correct'
+                      : 'incorrect'
+                    : null
                 }
-              }}
-            />
+                onPropClick={(propName) => {
+                  sound.playBlip();
+                  if (propName.includes('celular') || propName.includes('whatsapp') || propName.includes('2fa') || propName.includes('telefone') || propName.includes('bina')) {
+                    const target = currentCase.clues.find((c) => c.category === 'phone' || c.category === 'behavior');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('pacote') || propName.includes('correios') || propName.includes('taxa')) {
+                    const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'system');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('banco') || propName.includes('terminal') || propName.includes('cofre') || propName.includes('padaria') || propName.includes('cartao')) {
+                    const target = currentCase.clues.find((c) => c.category === 'pix' || c.category === 'official');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('computador') || propName.includes('remoto') || propName.includes('anydesk') || propName.includes('fantasma')) {
+                    const target = currentCase.clues.find((c) => c.category === 'system' || c.category === 'behavior');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('promocao') || propName.includes('fryer')) {
+                    const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'pix');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('govbr') || propName.includes('ecac')) {
+                    const target = currentCase.clues.find((c) => c.category === 'official' || c.category === 'system');
+                    if (target) handleInspectClue(target);
+                  } else if (currentCase.clues[0]) {
+                    handleInspectClue(currentCase.clues[0]);
+                  }
+                }}
+              />
+            ) : (
+              <ScenarioAnimation2D
+                caseId={currentCase.id}
+                scenarioType={getScenarioType(currentCase)}
+                isScam={currentCase.isScam}
+                verdictResult={
+                  currentAnswerData?.answered
+                    ? currentAnswerData.isCorrect
+                      ? 'correct'
+                      : 'incorrect'
+                    : null
+                }
+                onPropClick={(propName) => {
+                  sound.playBlip();
+                  if (propName.includes('celular') || propName.includes('whatsapp') || propName.includes('2fa')) {
+                    const target = currentCase.clues.find((c) => c.category === 'phone' || c.category === 'behavior');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('pacote') || propName.includes('correios')) {
+                    const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'system');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('banco') || propName.includes('terminal') || propName.includes('cofre') || propName.includes('padaria')) {
+                    const target = currentCase.clues.find((c) => c.category === 'pix' || c.category === 'official');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('computador') || propName.includes('remoto') || propName.includes('anydesk')) {
+                    const target = currentCase.clues.find((c) => c.category === 'system' || c.category === 'behavior');
+                    if (target) handleInspectClue(target);
+                  } else if (propName.includes('promocao') || propName.includes('fryer')) {
+                    const target = currentCase.clues.find((c) => c.category === 'whois' || c.category === 'pix');
+                    if (target) handleInspectClue(target);
+                  } else if (currentCase.clues[0]) {
+                    handleInspectClue(currentCase.clues[0]);
+                  }
+                }}
+              />
+            )}
 
             {/* Linha de Metadados do Remetente */}
             <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
