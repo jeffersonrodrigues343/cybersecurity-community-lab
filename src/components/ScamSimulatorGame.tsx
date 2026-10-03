@@ -381,11 +381,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       if (currentLevel === 'basico') {
         setCurrentLevel('medio');
         setCurrentCaseIndex(0);
-    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 200);
       } else if (currentLevel === 'medio') {
         setCurrentLevel('avancado');
         setCurrentCaseIndex(0);
-    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+    setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 200);
       }
     }
   };
