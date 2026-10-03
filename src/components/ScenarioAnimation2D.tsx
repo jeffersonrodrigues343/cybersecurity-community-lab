@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import {
-  MessageSquare,
   PhoneCall,
   Clock,
   ShieldCheck,
@@ -28,13 +27,220 @@ interface ScenarioAnimation2DProps {
   onPropClick?: (propType: string) => void;
 }
 
+// =============================================================================
+// COMPONENTE VETORIAL DO BONECO PALITO (Réplica 2D Fiel de images.jpeg)
+// =============================================================================
+interface BonecoPalito2DProps {
+  pose?: 'pondering' | 'holding_phone' | 'holding_coffee' | 'inspecting';
+  verdictResult?: 'correct' | 'incorrect' | null;
+  thoughtBubble?: string;
+  dilemmaLabel?: string;
+}
+
+const BonecoPalito2D: React.FC<BonecoPalito2DProps> = ({
+  pose = 'pondering',
+  verdictResult = null,
+  thoughtBubble,
+  dilemmaLabel = 'Dilema do Cidadão',
+}) => {
+  const isHappy = verdictResult === 'correct';
+  const isShocked = verdictResult === 'incorrect';
+
+  return (
+    <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white/[0.02] border border-white/[0.06] relative">
+      {/* Balão de Pensamento Cômico */}
+      {thoughtBubble && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative mb-2 px-3 py-1.5 rounded-xl bg-black/60 border border-white/10 text-[11px] text-white/90 text-center font-medium shadow-md max-w-[210px] leading-tight"
+        >
+          <span>{thoughtBubble}</span>
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-black/60 border-r border-b border-white/10 rotate-45" />
+        </motion.div>
+      )}
+
+      {/* SVG Animado do Boneco Palito */}
+      <motion.div
+        animate={
+          isHappy
+            ? { y: [0, -12, 0], scale: [1, 1.04, 1] }
+            : isShocked
+            ? { x: [-3, 3, -3, 3, 0] }
+            : { y: [0, -3, 0] }
+        }
+        transition={
+          isHappy
+            ? { repeat: Infinity, duration: 1.2, ease: 'easeInOut' }
+            : isShocked
+            ? { repeat: Infinity, duration: 0.8 }
+            : { repeat: Infinity, duration: 3.2, ease: 'easeInOut' }
+        }
+        className="relative w-28 sm:w-32 h-44 flex items-center justify-center select-none"
+      >
+        <svg
+          viewBox="0 0 130 200"
+          className="w-full h-full drop-shadow-md overflow-visible"
+        >
+          {/* 1. Sombra de Hachura Cômica no Chão (Traços de nanquim da imagem) */}
+          <g stroke="#1a202c" strokeWidth="2.2" strokeLinecap="round" opacity="0.7">
+            <line x1="28" y1="194" x2="42" y2="184" />
+            <line x1="38" y1="194" x2="52" y2="184" />
+            <line x1="48" y1="194" x2="62" y2="184" />
+            <line x1="58" y1="194" x2="72" y2="184" />
+            <line x1="68" y1="194" x2="82" y2="184" />
+            <line x1="78" y1="194" x2="92" y2="184" />
+            <line x1="88" y1="194" x2="102" y2="184" />
+          </g>
+          <ellipse cx="65" cy="189" rx="38" ry="5.5" fill="#000000" fillOpacity="0.25" />
+
+          {/* 2. Pés Ovais Brancos com Borda Preta */}
+          <ellipse cx="50" cy="184" rx="10" ry="3.8" fill="#ffffff" stroke="#090b10" strokeWidth="3" />
+          <ellipse cx="80" cy="184" rx="10" ry="3.8" fill="#ffffff" stroke="#090b10" strokeWidth="3" />
+
+          {/* 3. Pernas Palito */}
+          <line x1="56" y1="126" x2="52" y2="182" stroke="#090b10" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M 68 126 L 75 155 L 80 182" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+
+          {/* 4. Tronco em Pílula Branca com Contorno Preto */}
+          <rect x="52" y="80" width="20" height="46" rx="9" fill="#ffffff" stroke="#090b10" strokeWidth="3.5" />
+
+          {/* 5. Braços Conforme a Pose */}
+          {isHappy ? (
+            /* Comemoração: Braços erguidos em V */
+            <g>
+              <path d="M 52 86 L 32 64 L 24 42" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <path d="M 72 86 L 92 64 L 100 42" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <ellipse cx="23" cy="41" rx="3" ry="3" fill="#090b10" />
+              <ellipse cx="101" cy="41" rx="3" ry="3" fill="#090b10" />
+            </g>
+          ) : isShocked ? (
+            /* Choque: Mãos nas bochechas */
+            <g>
+              <path d="M 52 88 L 36 72 L 44 56" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <path d="M 72 88 L 88 72 L 80 56" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <ellipse cx="44" cy="56" rx="3" ry="3" fill="#090b10" />
+              <ellipse cx="80" cy="56" rx="3" ry="3" fill="#090b10" />
+            </g>
+          ) : pose === 'holding_phone' ? (
+            /* Segurando telefone no ouvido */
+            <g>
+              {/* Braço na cintura */}
+              <path d="M 52 88 L 36 108 L 48 122" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <ellipse cx="49" cy="123" rx="3.5" ry="3.5" fill="none" stroke="#090b10" strokeWidth="3" />
+
+              {/* Braço no telefone */}
+              <path d="M 72 88 L 90 76 L 82 50" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              {/* Fone vermelho retrô */}
+              <path d="M 80 40 C 88 42, 88 56, 80 60" stroke="#ff3b30" strokeWidth="5.5" strokeLinecap="round" fill="none" />
+            </g>
+          ) : pose === 'holding_coffee' ? (
+            /* Segurando xícara de café */
+            <g>
+              {/* Braço no café */}
+              <path d="M 72 88 L 90 98 L 86 82" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              {/* Caneca */}
+              <rect x="82" y="74" width="13" height="13" rx="3" fill="#ffffff" stroke="#090b10" strokeWidth="2.5" />
+              <path d="M 95 78 Q 100 80 95 84" stroke="#090b10" strokeWidth="2" fill="none" />
+
+              {/* Braço no queixo */}
+              <path d="M 52 88 L 38 106 L 58 68" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M 60 67 C 62 63, 66 63, 64 70" stroke="#090b10" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+            </g>
+          ) : pose === 'inspecting' ? (
+            /* Segurando lupa */
+            <g>
+              {/* Braço na cintura */}
+              <path d="M 52 88 L 36 108 L 48 122" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <ellipse cx="49" cy="123" rx="3.5" ry="3.5" fill="none" stroke="#090b10" strokeWidth="3" />
+
+              {/* Braço com lupa */}
+              <path d="M 72 88 L 92 84 L 80 54" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <circle cx="82" cy="48" r="8" fill="none" stroke="#2997ff" strokeWidth="3" />
+              <line x1="88" y1="54" x2="94" y2="60" stroke="#090b10" strokeWidth="3" />
+            </g>
+          ) : (
+            /* POSE OFICIAL DE IMAGES.JPEG: O PENSADOR (Mão no queixo + Mão na cintura) */
+            <g>
+              {/* Braço direito: Mão na cintura */}
+              <path d="M 52 88 L 36 108 L 48 122" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <ellipse cx="49" cy="123" rx="3.5" ry="3.5" fill="none" stroke="#090b10" strokeWidth="3" />
+
+              {/* Braço esquerdo: Mão no queixo tocando exatamente a base do rosto */}
+              <path d="M 72 88 L 86 112 L 68 68" stroke="#090b10" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              {/* Dedos em concha no queixo */}
+              <path d="M 64 68 C 67 63, 71 63, 69 70" stroke="#090b10" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+            </g>
+          )}
+
+          {/* 6. Pescoço */}
+          <line x1="62" y1="72" x2="62" y2="82" stroke="#090b10" strokeWidth="4" strokeLinecap="round" />
+
+          {/* 7. Cabeça (Círculo Branco com Borda Nanquim) */}
+          <circle cx="62" cy="48" r="23" fill="#ffffff" stroke="#090b10" strokeWidth="3.5" />
+
+          {/* 8. Os 3 Fios de Cabelo Icônicos (\ | /) no topo da cabeça */}
+          <path d="M 62 25 C 53 14, 46 8, 38 4" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M 62 25 C 63 14, 64 8, 66 2" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M 62 25 C 71 14, 79 8, 88 5" stroke="#090b10" strokeWidth="3" fill="none" strokeLinecap="round" />
+
+          {/* 9. Rosto Expressivo */}
+          {isHappy ? (
+            /* Expressão de Alívio / Acerto */
+            <g>
+              <path d="M 48 36 Q 54 32, 60 36" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+              <path d="M 65 36 Q 71 32, 77 36" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+              <path d="M 50 48 Q 54 42, 58 48" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+              <path d="M 67 48 Q 71 42, 75 48" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+              <path d="M 53 56 Q 63 68, 73 56" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+            </g>
+          ) : isShocked ? (
+            /* Expressão de Choque / Erro com Gota de Suor */
+            <g>
+              <path d="M 48 36 L 58 41" stroke="#090b10" strokeWidth="2.8" strokeLinecap="round" />
+              <path d="M 77 36 L 67 41" stroke="#090b10" strokeWidth="2.8" strokeLinecap="round" />
+              <circle cx="54" cy="46" r="4.2" fill="none" stroke="#090b10" strokeWidth="2.2" />
+              <circle cx="54" cy="46" r="1.6" fill="#090b10" />
+              <circle cx="71" cy="46" r="4.2" fill="none" stroke="#090b10" strokeWidth="2.2" />
+              <circle cx="71" cy="46" r="1.6" fill="#090b10" />
+              <path d="M 53 60 L 57 63 L 61 59 L 65 63 L 69 60" stroke="#090b10" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              {/* Gota de suor azul */}
+              <path d="M 78 32 C 75 36, 75 41, 78 42 C 81 41, 81 36, 78 32" fill="#2997ff" />
+            </g>
+          ) : (
+            /* EXPRESSÃO IDLE: O Pensador com Dúvida de images.jpeg */
+            <g>
+              {/* Sobrancelha Esquerda bem arqueada (questionadora) */}
+              <path d="M 48 39 Q 55 31, 60 38" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+              {/* Sobrancelha Direita focada */}
+              <path d="M 65 40 Q 70 38, 77 42" stroke="#090b10" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+              {/* Olhos ovais pretos */}
+              <ellipse cx="54" cy="46" rx="2.4" ry="4.5" fill="#090b10" />
+              <ellipse cx="71" cy="46" rx="2.4" ry="4.5" fill="#090b10" />
+              {/* Boca ondulada de dúvida cômica */}
+              <path d="M 55 60 Q 60 57, 65 62 T 71 58" stroke="#090b10" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            </g>
+          )}
+        </svg>
+      </motion.div>
+
+      {/* Legenda do Boneco */}
+      <span className="text-[10px] font-bold text-[#86868b] uppercase tracking-wider mt-1">
+        {dilemmaLabel}
+      </span>
+    </div>
+  );
+};
+
+// =============================================================================
+// COMPONENTE PRINCIPAL DO CENÁRIO 2D
+// =============================================================================
 export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
   caseId = '',
   scenarioType,
   verdictResult = null,
   onPropClick,
 }) => {
-  // Identificação do contexto específico do enunciado
   const isCase1 = caseId === 'case-1-whatsapp' || (scenarioType === 'whatsapp' && !caseId.includes('6'));
   const isCase2 = caseId === 'case-2-correios' || scenarioType === 'correios';
   const isCase3 = caseId === 'case-3-compra-aprovada';
@@ -55,7 +261,7 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         <div className="flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-[#0071e3] animate-pulse" />
           <span className="text-[11px] font-mono tracking-wider uppercase text-white font-semibold flex items-center gap-1.5">
-            <span>Encenação 2D do Enunciado</span>
+            <span>Teatro 2D • Cenário Narrativo do Caso</span>
           </span>
         </div>
 
@@ -71,65 +277,38 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
             </span>
           )}
           <span className="text-[10px] text-[#86868b] bg-white/[0.04] px-2 py-0.5 rounded-full border border-white/[0.06]">
-            Toque nos elementos para inspecionar
+            Toque nos elementos para periciar
           </span>
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* PALCO 2D INTERATIVO (ENCENAÇÃO NARRATIVA BASEADA NO ENUNCIADO)            */}
-      {/* ========================================================================= */}
+      {/* PALCO 2D INTERATIVO */}
       <div className="relative z-10 min-h-[190px] sm:min-h-[210px] flex items-center justify-center">
 
         {/* ----------------------------------------------------------------------- */}
-        {/* CASO 1: CELULAR QUEBRADO DA FILHA + PEDIDO DE PIX URGENTE               */}
+        {/* CASO 1: CELULAR QUEBRADO DO FILHO + PEDIDO DE PIX URGENTE               */}
         {/* ----------------------------------------------------------------------- */}
         {isCase1 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* Boneco 1: A Mãe apreensiva recebendo a mensagem */}
-            <div className="md:col-span-5 flex items-center space-x-3 bg-white/[0.02] p-3 rounded-2xl border border-white/[0.06]">
-              {/* Avatar da Mãe / Responsável */}
-              <motion.div
-                animate={{ y: [0, -3, 0] }}
-                transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[#8a3b5c] to-[#4a154b] p-0.5 shadow-lg flex-shrink-0"
-              >
-                <div className="w-full h-full rounded-2xl bg-[#14151b] flex flex-col items-center justify-center relative overflow-hidden">
-                  <div className="w-6 h-6 rounded-full bg-[#e8cfb8] mb-1" />
-                  <div className="w-9 h-6 rounded-t-full bg-[#8a3b5c]" />
-                  <motion.div
-                    animate={{ scaleY: [1, 0.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 4, times: [0, 0.05, 0.1] }}
-                    className="absolute top-4 w-3.5 h-1 bg-[#14151b] rounded-full"
-                  />
-                </div>
-                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#25d366] flex items-center justify-center shadow-md">
-                  <Smartphone className="w-3 h-3 text-white" />
-                </span>
-              </motion.div>
-
-              <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold text-[#86868b] tracking-wider block">
-                  Receptor do Dilema
-                </span>
-                <p className="text-xs font-semibold text-white leading-tight">
-                  Mãe / Parente em Casa
-                </p>
-                <p className="text-[11px] text-[#25d366] flex items-center gap-1 font-medium">
-                  <MessageSquare className="w-3 h-3" /> Mensagem recebida no WhatsApp
-                </p>
-              </div>
+            {/* Boneco Palito: A Mãe com a mão no queixo em dúvida */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="pondering"
+                verdictResult={verdictResult}
+                dilemmaLabel="Mãe / Responsável"
+                thoughtBubble='"Será mesmo meu filho com número novo pedindo Pix?"'
+              />
             </div>
 
-            {/* Centro: Chat com Urgência e Situação do Enunciado */}
-            <div className="md:col-span-7 flex flex-col sm:flex-row items-center gap-3">
-              {/* Celular caído no chão com a tela quebrada alegada no enunciado */}
+            {/* Elementos Periciais Centrais */}
+            <div className="md:col-span-8 flex flex-col sm:flex-row items-center gap-3">
+              {/* Celular com tela quebrada */}
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => onPropClick && onPropClick('celular_quebrado')}
-                className="flex-1 w-full p-3 rounded-2xl bg-black/40 border border-white/[0.08] hover:border-[#0071e3]/50 transition text-left cursor-pointer group shadow-lg"
+                className="flex-1 w-full p-3.5 rounded-2xl bg-black/40 border border-white/[0.08] hover:border-[#0071e3]/50 transition text-left cursor-pointer group shadow-lg"
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10px] text-[#ff3b30] font-bold uppercase tracking-wider flex items-center gap-1">
@@ -140,33 +319,27 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center space-x-2.5">
-                  {/* Ícone de Celular com Trinca */}
                   <div className="w-10 h-10 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/25 flex items-center justify-center text-[#ff3b30] relative overflow-hidden flex-shrink-0">
                     <Smartphone className="w-5 h-5" />
-                    <motion.div
-                      animate={{ opacity: [0.3, 1, 0.3] }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                      className="absolute inset-0 bg-[radial-gradient(circle_at_center,#ff3b3040_0,transparent_70%)]"
-                    />
                   </div>
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#2997ff] transition">
                       "Celular Caiu e Quebrou"
                     </h5>
                     <p className="text-[11px] text-[#86868b] line-clamp-1">
-                      Justificativa para o número desconhecido
+                      Justificativa para o número novo sem foto
                     </p>
                   </div>
                 </div>
               </motion.button>
 
-              {/* Pedido de Pix Urgente de R$ 480 para Faculdade */}
+              {/* Pedido de Pix Urgente R$ 480 */}
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => onPropClick && onPropClick('pix_faculdade')}
-                className="flex-1 w-full p-3 rounded-2xl bg-[#0071e3]/10 border border-[#0071e3]/25 hover:border-[#2997ff] transition text-left cursor-pointer group shadow-lg"
+                className="flex-1 w-full p-3.5 rounded-2xl bg-[#0071e3]/10 border border-[#0071e3]/25 hover:border-[#2997ff] transition text-left cursor-pointer group shadow-lg"
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10px] text-[#2997ff] font-bold uppercase tracking-wider flex items-center gap-1">
@@ -185,7 +358,7 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                       Pix para Faculdade
                     </h5>
                     <p className="text-[11px] text-[#d2d2d7]">
-                      Chave informada no chat
+                      Chave aleatória em nome de terceiro
                     </p>
                   </div>
                 </div>
@@ -195,45 +368,42 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         )}
 
         {/* ----------------------------------------------------------------------- */}
-        {/* CASO 2: PACOTE RETIDO NA ALFÂNDEGA + CANCELA ADUANEIRA FECHADA          */}
+        {/* CASO 2: PACOTE RETIDO NA ALFÂNDEGA + CANCELA ADUANEIRA                   */}
         {/* ----------------------------------------------------------------------- */}
         {isCase2 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* Esteira de Fiscalização Aduaneira */}
-            <div className="md:col-span-6 bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-bold text-[#ff9f0a] tracking-wider flex items-center gap-1.5">
-                  <Building className="w-3 h-3" /> Fiscalização Aduaneira / Correios
-                </span>
-                <span className="text-[10px] font-mono text-[#86868b]">Objeto: NL8392019BR</span>
-              </div>
-
-              {/* Pacote com Cancela / Barreira Aduaneira */}
-              <div className="relative p-3 rounded-xl bg-black/50 border border-white/[0.08] flex items-center space-x-3 overflow-hidden">
-                <motion.div
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ repeat: Infinity, duration: 3 }}
-                  className="w-12 h-12 rounded-xl bg-[#b08257]/20 border border-[#b08257]/40 flex items-center justify-center text-[#d4a373] flex-shrink-0"
-                >
-                  <Package className="w-6 h-6" />
-                </motion.div>
-                <div className="flex-1 space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white">Encomenda Internacional</span>
-                    <span className="text-[10px] bg-[#ff3b30]/20 text-[#ff3b30] font-bold px-1.5 py-0.2 rounded border border-[#ff3b30]/30">
-                      RETIDO
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#86868b]">Aguardando quitação de taxa de importação</p>
-                </div>
-
-                {/* Cancela de Bloqueio Listrada */}
-                <div className="absolute top-0 right-0 bottom-0 w-2.5 bg-[repeating-linear-gradient(45deg,#ff9f0a,#ff9f0a_6px,#000_6px,#000_12px)] opacity-80" />
-              </div>
+            {/* Boneco Palito: Comprador em dúvida */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="pondering"
+                verdictResult={verdictResult}
+                dilemmaLabel="Destinatário"
+                thoughtBubble='"Encomenda retida? Mas eu paguei o frete completo..."'
+              />
             </div>
 
-            {/* Notificação SMS de Cobrança Urgente */}
-            <div className="md:col-span-6 space-y-2.5">
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Pacote Retido com Cancela */}
+              <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-[#ff9f0a] tracking-wider flex items-center gap-1">
+                    <Building className="w-3 h-3" /> Correios / Alfândega
+                  </span>
+                  <span className="text-[10px] font-mono text-[#86868b]">NL8392019BR</span>
+                </div>
+                <div className="relative p-2.5 rounded-xl bg-black/50 border border-white/[0.08] flex items-center space-x-2.5 overflow-hidden">
+                  <div className="w-10 h-10 rounded-xl bg-[#b08257]/20 border border-[#b08257]/40 flex items-center justify-center text-[#d4a373] flex-shrink-0">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 space-y-0.5">
+                    <span className="text-xs font-bold text-white block">Pacote Retido</span>
+                    <span className="text-[10px] text-[#ff3b30] font-semibold">Exige taxa alfandegária</span>
+                  </div>
+                  <div className="absolute top-0 right-0 bottom-0 w-2 bg-[repeating-linear-gradient(45deg,#ff3b30,#ff3b30_4px,#fff_4px,#fff_8px)] opacity-90" />
+                </div>
+              </div>
+
+              {/* Notificação SMS de Cobrança com Link Falso */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.02 }}
@@ -243,7 +413,7 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-[#ff3b30] uppercase tracking-wider flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Prazo: Pague Hoje ou Devolução
+                    <Clock className="w-3 h-3" /> Prazo Urgente
                   </span>
                   <span className="text-[10px] text-[#2997ff] font-semibold flex items-center gap-1">
                     <Search className="w-3 h-3" /> Auditar Link
@@ -252,10 +422,10 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#ff3b30] transition">
-                      Taxa de R$ 27,90 Solicitada
+                      Taxa de R$ 27,90
                     </h5>
                     <p className="text-[11px] text-[#86868b] font-mono">
-                      Link: correios-taxas-alfandega.online
+                      correios-taxas-alfandega.online
                     </p>
                   </div>
                   <span className="text-xs font-mono font-bold text-[#ffd60a] bg-black/40 px-2 py-1 rounded-lg border border-white/10">
@@ -272,37 +442,38 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         {/* ----------------------------------------------------------------------- */}
         {isCase3 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* O Balcão da Padaria Estrela com Café e Maquininha */}
-            <div className="md:col-span-6 bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3.5">
-              <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-[#5c4033]/25 border border-[#5c4033]/40 flex items-center justify-center text-[#d4a373] text-xl font-bold shadow-md">
-                  ☕
-                </div>
-                <motion.div
-                  animate={{ y: [-2, -8, -2], opacity: [0.2, 0.7, 0.2] }}
-                  transition={{ repeat: Infinity, duration: 2.5 }}
-                  className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] text-white/60 pointer-events-none"
-                >
-                  ♨️
-                </motion.div>
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <h5 className="text-xs font-bold text-white">Padaria Estrela</h5>
-                  <span className="text-[10px] text-[#30d158] bg-[#30d158]/10 px-1.5 py-0.2 rounded font-semibold border border-[#30d158]/20">
-                    Débito Físico
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#86868b]">Compra de R$ 34,90 realizada há 1 minuto</p>
-                <div className="flex items-center gap-1.5 text-[10px] text-[#30d158] font-medium pt-0.5">
-                  <Wifi className="w-3 h-3 rotate-90" />
-                  <span>Aproximação Contactless Reconhecida</span>
-                </div>
-              </div>
+            {/* Boneco Palito: Segurando caneca de café */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="holding_coffee"
+                verdictResult={verdictResult}
+                dilemmaLabel="Cliente na Padaria"
+                thoughtBubble='"Tomei meu café e passei o cartão agora mesmo!"'
+              />
             </div>
 
-            {/* Notificação Push Oficial no Celular */}
-            <div className="md:col-span-6">
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Balcão da Padaria Estrela com Maquininha */}
+              <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#5c4033]/25 border border-[#5c4033]/40 flex items-center justify-center text-xl font-bold shadow-md flex-shrink-0">
+                  ☕
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <h5 className="text-xs font-bold text-white">Padaria Estrela</h5>
+                    <span className="text-[10px] text-[#30d158] bg-[#30d158]/10 px-1.5 py-0.2 rounded font-semibold border border-[#30d158]/20">
+                      Físico
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#86868b]">Compra de R$ 34,90 no débito</p>
+                  <div className="flex items-center gap-1 text-[10px] text-[#30d158] font-medium pt-0.5">
+                    <Wifi className="w-3 h-3 rotate-90" />
+                    <span>NFC Reconhecido na Maquininha</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notificação Push Oficial no Celular */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.02 }}
@@ -319,13 +490,13 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#30d158] transition">
-                      Alerta Transparente em Tempo Real
+                      Push em Tempo Real
                     </h5>
                     <p className="text-[11px] text-[#86868b]">
-                      "Compra de R$ 34,90 em Padaria Estrela"
+                      "Compra de R$ 34,90 aprovada"
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-white bg-white/[0.06] px-2.5 py-1 rounded-xl border border-white/[0.08]">
+                  <span className="text-xs font-bold text-white bg-white/[0.06] px-2 py-1 rounded-xl border border-white/[0.08]">
                     Legítimo
                   </span>
                 </div>
@@ -339,29 +510,37 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         {/* ----------------------------------------------------------------------- */}
         {isCase4 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* Visor do Celular com Spoofing 0800 */}
-            <div className="md:col-span-6 bg-black/50 p-3.5 rounded-2xl border border-white/[0.08] space-y-2">
-              <div className="flex items-center justify-between text-[10px] text-[#86868b]">
-                <span className="uppercase font-bold text-[#ff3b30] flex items-center gap-1 animate-pulse">
-                  <PhoneCall className="w-3 h-3" /> Chamada Externa Ativa
-                </span>
-                <span className="font-mono">Visor do Aparelho</span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-mono font-bold text-white tracking-wide">
-                    0800 729 0001
-                  </h4>
-                  <p className="text-[10px] text-[#2997ff]">Identificação do Banco no Celular</p>
-                </div>
-                <span className="text-[10px] bg-[#ff3b30]/15 text-[#ff3b30] px-2 py-0.5 rounded font-mono font-bold border border-[#ff3b30]/25">
-                  BINA Mascarada
-                </span>
-              </div>
+            {/* Boneco Palito: Com fone de ouvido atendendo a chamada com receio */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="holding_phone"
+                verdictResult={verdictResult}
+                dilemmaLabel="Correntista em Pânico"
+                thoughtBubble='"O atendente jura que é do banco e quer que eu envie o dinheiro pra um cofre!"'
+              />
             </div>
 
-            {/* A "Conta Cofre" Exigida na Ligação */}
-            <div className="md:col-span-6">
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Visor do Celular com Spoofing 0800 */}
+              <div className="bg-black/50 p-3.5 rounded-2xl border border-white/[0.08] space-y-2">
+                <div className="flex items-center justify-between text-[10px] text-[#86868b]">
+                  <span className="uppercase font-bold text-[#ff3b30] flex items-center gap-1 animate-pulse">
+                    <PhoneCall className="w-3 h-3" /> Chamada Externa
+                  </span>
+                  <span className="font-mono">BINA Anatel</span>
+                </div>
+                <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-mono font-bold text-white">0800 729 0001</h4>
+                    <p className="text-[10px] text-[#2997ff]">Identificador na tela</p>
+                  </div>
+                  <span className="text-[10px] bg-[#ff3b30]/15 text-[#ff3b30] px-2 py-0.5 rounded font-mono font-bold border border-[#ff3b30]/25">
+                    Spoofing
+                  </span>
+                </div>
+              </div>
+
+              {/* A "Conta Cofre" Exigida na Ligação */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.02 }}
@@ -371,7 +550,7 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-[#ff3b30] uppercase tracking-wider flex items-center gap-1">
-                    <Lock className="w-3 h-3" /> Exigência do Atendente
+                    <Lock className="w-3 h-3" /> Exigência Imediata
                   </span>
                   <span className="text-[10px] text-[#2997ff] font-semibold flex items-center gap-1">
                     <Search className="w-3 h-3" /> Checar Titular
@@ -380,10 +559,10 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#ff3b30] transition">
-                      "Transfira para a Conta Cofre Provisória"
+                      "Transfira para a Conta Cofre"
                     </h5>
                     <p className="text-[11px] text-[#d2d2d7]">
-                      Suposta proteção contra golpe de R$ 2.800
+                      Proteção ilusória contra falso golpe
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[#ff3b30] bg-[#ff3b30]/15 px-2 py-1 rounded-lg border border-[#ff3b30]/25">
@@ -400,24 +579,34 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         {/* ----------------------------------------------------------------------- */}
         {isCase5 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* O Anúncio com Super Desconto */}
-            <div className="md:col-span-6 bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-[#ff3b30]/15 border border-[#ff3b30]/30 flex flex-col items-center justify-center text-white shadow-md flex-shrink-0">
-                <span className="text-[11px] font-bold text-[#ff3b30] leading-none">-85%</span>
-                <span className="text-[9px] uppercase tracking-tighter text-[#86868b]">Promo</span>
-              </div>
-              <div className="space-y-0.5">
-                <h5 className="text-xs font-bold text-white">Air Fryer Digital 5 Litros</h5>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#86868b] line-through">R$ 699,00</span>
-                  <span className="text-sm font-bold text-[#30d158]">R$ 119,90 no Pix</span>
-                </div>
-                <p className="text-[10px] text-[#ff9f0a] font-medium">Anúncio patrocinado no Instagram</p>
-              </div>
+            {/* Boneco Palito: Comprador impressionado e desconfiado */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="pondering"
+                verdictResult={verdictResult}
+                dilemmaLabel="Consumidor no Instagram"
+                thoughtBubble='"De R$ 700 por R$ 119? E só aceita Pix porque o cartão deu erro?"'
+              />
             </div>
 
-            {/* Checkout Falso com Cartão Bloqueado forçando Pix */}
-            <div className="md:col-span-6">
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* O Anúncio com Super Desconto */}
+              <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#ff3b30]/15 border border-[#ff3b30]/30 flex flex-col items-center justify-center text-white shadow-md flex-shrink-0">
+                  <span className="text-xs font-bold text-[#ff3b30] leading-none">-85%</span>
+                  <span className="text-[8px] uppercase tracking-tighter text-[#86868b]">Promo</span>
+                </div>
+                <div className="space-y-0.5">
+                  <h5 className="text-xs font-bold text-white">Air Fryer Digital 5L</h5>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#86868b] line-through">R$ 699</span>
+                    <span className="text-sm font-bold text-[#30d158]">R$ 119,90 no Pix</span>
+                  </div>
+                  <p className="text-[10px] text-[#ff9f0a] font-medium">Anúncio patrocinado</p>
+                </div>
+              </div>
+
+              {/* Checkout Falso Bloqueando Cartão de Crédito */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.02 }}
@@ -427,7 +616,7 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-[#ff9f0a] uppercase tracking-wider flex items-center gap-1">
-                    <CreditCard className="w-3 h-3" /> Simulação de Carrinho
+                    <CreditCard className="w-3 h-3" /> Simulação de Compra
                   </span>
                   <span className="text-[10px] text-[#2997ff] font-semibold flex items-center gap-1">
                     <Search className="w-3 h-3" /> Ver Domínio
@@ -436,10 +625,10 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#2997ff] transition">
-                      Cartão de Crédito com Erro 403
+                      Cartão Bloqueado (Erro 403)
                     </h5>
                     <p className="text-[11px] text-[#86868b]">
-                      Site força exclusivamente pagamento por Pix
+                      Força exclusivamente pagamento instantâneo
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[#ff3b30] bg-[#ff3b30]/15 px-2 py-0.5 rounded border border-[#ff3b30]/30">
@@ -456,24 +645,34 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         {/* ----------------------------------------------------------------------- */}
         {isCase6 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* Login no Computador Desktop */}
-            <div className="md:col-span-6 bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3.5">
-              <div className="w-12 h-12 rounded-xl bg-[#0071e3]/20 border border-[#0071e3]/30 flex items-center justify-center text-[#2997ff] flex-shrink-0">
-                <Building className="w-6 h-6" />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5">
-                  <h5 className="text-xs font-bold text-white">Login Voluntário no bb.com.br</h5>
-                  <span className="text-[9px] bg-[#30d158]/15 text-[#30d158] font-bold px-1.5 py-0.2 rounded">
-                    Solicitado por você
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#86868b]">Acesso iniciado no navegador há 3 segundos</p>
-              </div>
+            {/* Boneco Palito: Usuário no computador */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="pondering"
+                verdictResult={verdictResult}
+                dilemmaLabel="Usuário no PC"
+                thoughtBubble='"Eu mesmo fiz o login no navegador e recebi o código SMS agora!"'
+              />
             </div>
 
-            {/* Código de Segurança 2FA Recebido via Shortcode */}
-            <div className="md:col-span-6">
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Login Desktop */}
+              <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-xl bg-[#0071e3]/20 border border-[#0071e3]/30 flex items-center justify-center text-[#2997ff] flex-shrink-0">
+                  <Building className="w-6 h-6" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <h5 className="text-xs font-bold text-white">Login no bb.com.br</h5>
+                    <span className="text-[9px] bg-[#30d158]/15 text-[#30d158] font-bold px-1.5 py-0.2 rounded">
+                      Iniciado por Você
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#86868b]">Navegador seguro com HTTPS oficial</p>
+                </div>
+              </div>
+
+              {/* Código 2FA Seguro */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.02 }}
@@ -483,14 +682,14 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-[#2997ff] uppercase tracking-wider flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Shortcode 28588 (Oficial)
+                    <ShieldCheck className="w-3.5 h-3.5" /> Shortcode 28588
                   </span>
-                  <span className="text-[10px] text-[#30d158] font-semibold">2 Fatores Legítimo</span>
+                  <span className="text-[10px] text-[#30d158] font-semibold">2FA Autêntico</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#2997ff] transition">
-                      Código de Autorização: 839-201
+                      Token: 839-201
                     </h5>
                     <p className="text-[11px] text-[#86868b]">
                       "O Banco NUNCA liga pedindo este código"
@@ -506,29 +705,39 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         )}
 
         {/* ----------------------------------------------------------------------- */}
-        {/* CASO 7: GOLPE DAS TAREFAS - CURTIR VÍDEOS COM PIRÂMIDE DE DEPÓSITOS    */}
+        {/* CASO 7: GOLPE DAS TAREFAS - PIRÂMIDE DE CURTIDAS COM DEPÓSITOS VIP     */}
         {/* ----------------------------------------------------------------------- */}
         {isCase7 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* A Isca: R$ 350 a R$ 500 por dia para curtir vídeos */}
-            <div className="md:col-span-6 bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3.5">
-              <div className="w-12 h-12 rounded-xl bg-[#ff0000]/15 border border-[#ff0000]/30 flex items-center justify-center text-[#ff0000] flex-shrink-0">
-                <ThumbsUp className="w-6 h-6" />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5">
-                  <h5 className="text-xs font-bold text-white">Trabalho de Curtir Vídeos</h5>
-                  <span className="text-[9px] bg-[#ff3b30]/15 text-[#ff3b30] font-bold px-1.5 py-0.2 rounded">
-                    Telegram
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#30d158] font-bold">Promessa: R$ 350 a R$ 500 / dia</p>
-                <p className="text-[10px] text-[#86868b]">Sem nenhuma qualificação ou contrato</p>
-              </div>
+            {/* Boneco Palito: Trabalhador iludido */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="pondering"
+                verdictResult={verdictResult}
+                dilemmaLabel="Candidato a Vaga"
+                thoughtBubble='"Ganhar R$ 500 por dia só curtindo vídeo? Mas por que tenho que pagar R$ 100?"'
+              />
             </div>
 
-            {/* A Armadilha: Depósito Prévio de R$ 100 para "Tarefas VIP" */}
-            <div className="md:col-span-6">
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Promessa de Renda Fácil */}
+              <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-xl bg-[#ff0000]/15 border border-[#ff0000]/30 flex items-center justify-center text-[#ff0000] flex-shrink-0">
+                  <ThumbsUp className="w-6 h-6" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <h5 className="text-xs font-bold text-white">Tarefas no Telegram</h5>
+                    <span className="text-[9px] bg-[#ff3b30]/15 text-[#ff3b30] font-bold px-1.5 py-0.2 rounded">
+                      Isca Fácil
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#30d158] font-bold">Promessa: R$ 350 a R$ 500 / dia</p>
+                  <p className="text-[10px] text-[#86868b]">Sem contrato de trabalho formal</p>
+                </div>
+              </div>
+
+              {/* Depósito VIP para Liberar Saques */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.02 }}
@@ -538,7 +747,7 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-[#ff9f0a] uppercase tracking-wider flex items-center gap-1">
-                    <Layers className="w-3 h-3" /> Mecânica de Pirâmide
+                    <Layers className="w-3 h-3" /> Armadilha de Pirâmide
                   </span>
                   <span className="text-[10px] text-[#2997ff] font-semibold flex items-center gap-1">
                     <Search className="w-3 h-3" /> Analisar RH
@@ -547,10 +756,10 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#ff9f0a] transition">
-                      "Pague R$ 100 no Pix para Liberar Saques"
+                      "Pague R$ 100 para Liberar Saques"
                     </h5>
                     <p className="text-[11px] text-[#86868b]">
-                      Trabalhador é quem tem que pagar para trabalhar
+                      Trabalhador é obrigado a depositar para receber
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[#ff3b30] bg-[#ff3b30]/15 px-2 py-0.5 rounded border border-[#ff3b30]/30">
@@ -567,25 +776,35 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         {/* ----------------------------------------------------------------------- */}
         {isCase8 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* Totem Institucional Gov.br Ouro */}
-            <div className="md:col-span-6 bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3.5">
-              <div className="w-12 h-12 rounded-xl bg-[#ffd700]/15 border border-[#ffd700]/30 flex items-center justify-center text-[#ffd700] flex-shrink-0">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5">
-                  <h5 className="text-xs font-bold text-white">Portal e-CAC / Gov.br</h5>
-                  <span className="text-[9px] bg-[#ffd700]/20 text-[#ffd700] font-bold px-1.5 py-0.2 rounded border border-[#ffd700]/30">
-                    Selo Ouro
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#86868b]">Acessado via cav.receita.fazenda.gov.br</p>
-                <p className="text-[10px] text-[#30d158] font-medium">Caixa Postal interna autenticada</p>
-              </div>
+            {/* Boneco Palito: Com lupa analisando o documento */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="inspecting"
+                verdictResult={verdictResult}
+                dilemmaLabel="Contribuinte"
+                thoughtBubble='"Notificação dentro da minha conta Gov.br oficial com 30 dias de prazo legal..."'
+              />
             </div>
 
-            {/* Notificação Legal sem Pedido de Pix */}
-            <div className="md:col-span-6">
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Selo Ouro Gov.br */}
+              <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-xl bg-[#ffd700]/15 border border-[#ffd700]/30 flex items-center justify-center text-[#ffd700] flex-shrink-0">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <h5 className="text-xs font-bold text-white">Portal e-CAC Gov.br</h5>
+                    <span className="text-[9px] bg-[#ffd700]/20 text-[#ffd700] font-bold px-1.5 py-0.2 rounded border border-[#ffd700]/30">
+                      Selo Ouro
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#86868b]">cav.receita.fazenda.gov.br</p>
+                  <p className="text-[10px] text-[#30d158] font-medium">Caixa Postal interna autenticada</p>
+                </div>
+              </div>
+
+              {/* Notificação Legal Sem Pedido de Pix */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.02 }}
@@ -602,10 +821,10 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#30d158] transition">
-                      Auditoria de Despesa Médica (R$ 4.200)
+                      Auditoria de Despesa Médica
                     </h5>
                     <p className="text-[11px] text-[#86868b]">
-                      Sem cobrança de Pix: apenas envio de recibos no portal
+                      Apenas envio de comprovantes fiscais no sistema
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[#30d158] bg-[#30d158]/15 px-2 py-0.5 rounded border border-[#30d158]/25">
@@ -622,25 +841,35 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         {/* ----------------------------------------------------------------------- */}
         {isCase9 && (
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* O Terror Psicológico do Vírus Alegado */}
-            <div className="md:col-span-6 bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3.5">
-              <div className="w-12 h-12 rounded-xl bg-[#ff3b30]/15 border border-[#ff3b30]/30 flex items-center justify-center text-[#ff3b30] flex-shrink-0 animate-pulse">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5">
-                  <h5 className="text-xs font-bold text-white">Ligação do "Engenheiro do Banco"</h5>
-                  <span className="text-[9px] bg-[#ff3b30]/20 text-[#ff3b30] font-bold px-1.5 py-0.2 rounded">
-                    Ameaça
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#ff3b30] font-medium">"Seu celular está infectado por vírus!"</p>
-                <p className="text-[10px] text-[#86868b]">Pressão psicológica para não desligar a chamada</p>
-              </div>
+            {/* Boneco Palito: Em alerta/aflição */}
+            <div className="md:col-span-4 flex justify-center">
+              <BonecoPalito2D
+                pose="pondering"
+                verdictResult={verdictResult}
+                dilemmaLabel="Vítima sob Pressão"
+                thoughtBubble='"O atendente quer que eu instale um app de controle remoto no meu celular!"'
+              />
             </div>
 
-            {/* A Mão Fantasma: Pedido para Baixar AnyDesk / TeamViewer */}
-            <div className="md:col-span-6">
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Pressão de Falso Vírus */}
+              <div className="bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06] flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-xl bg-[#ff3b30]/15 border border-[#ff3b30]/30 flex items-center justify-center text-[#ff3b30] flex-shrink-0 animate-pulse">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <h5 className="text-xs font-bold text-white">Falso Engenheiro do Banco</h5>
+                    <span className="text-[9px] bg-[#ff3b30]/20 text-[#ff3b30] font-bold px-1.5 py-0.2 rounded">
+                      Terror
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#ff3b30] font-medium">"Seu aparelho foi invadido por vírus!"</p>
+                  <p className="text-[10px] text-[#86868b]">Pressão psicológica para não desligar</p>
+                </div>
+              </div>
+
+              {/* Pedido de AnyDesk / Acesso Remoto */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.02 }}
@@ -653,16 +882,16 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
                     <Lock className="w-3 h-3" /> Golpe da Mão Fantasma
                   </span>
                   <span className="text-[10px] text-[#2997ff] font-semibold flex items-center gap-1">
-                    <Search className="w-3 h-3" /> Consultar Febraban
+                    <Search className="w-3 h-3" /> Consultar Alerta
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="text-xs font-bold text-white group-hover:text-[#ff3b30] transition">
-                      "Baixe o AnyDesk para Eu Limpar o Vírus"
+                      "Instale o AnyDesk / RustDesk"
                     </h5>
                     <p className="text-[11px] text-[#86868b]">
-                      Entrega o controle remoto total do celular ao criminoso
+                      Entrega o controle e as senhas do aparelho
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[#ff3b30] bg-[#ff3b30]/15 px-2 py-0.5 rounded border border-[#ff3b30]/30">
