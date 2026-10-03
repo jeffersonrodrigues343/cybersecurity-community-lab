@@ -223,3 +223,53 @@
 .animate-float {
   animation: float-slow 4s ease-in-out infinite;
 }
+
+/* EXTREME DOPAMINE FX */
+@keyframes neon-pulse {
+  0%, 100% { box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, inset 0 0 10px #ff00ff; border-color: #ff00ff; }
+  50% { box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, inset 0 0 20px #00ffff; border-color: #00ffff; }
+}
+.dopamine-border {
+  animation: neon-pulse 1.5s infinite alternate;
+}
+
+@keyframes heartbeat-bounce {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.15); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.15); }
+  60% { transform: scale(1); }
+}
+.dopamine-heartbeat {
+  animation: heartbeat-bounce 1.5s infinite;
+}
+
+@keyframes hyper-shine {
+  0% { transform: translateX(-150%) skewX(-45deg); opacity: 0; }
+  10% { opacity: 0.5; }
+  20% { transform: translateX(150%) skewX(-45deg); opacity: 0; }
+  100% { transform: translateX(150%) skewX(-45deg); opacity: 0; }
+}
+.dopamine-shine {
+  position: relative;
+  overflow: hidden;
+}
+.dopamine-shine::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 50%; height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.8), transparent);
+  animation: hyper-shine 3s infinite;
+  z-index: 10;
+}
+
+@keyframes bg-scroll {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.dopamine-bg {
+  background: linear-gradient(-45deg, #ff0055, #6a00ff, #00d4ff, #ff00c8);
+  background-size: 400% 400%;
+  animation: bg-scroll 5s ease infinite;
+}

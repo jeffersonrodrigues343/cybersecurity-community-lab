@@ -529,9 +529,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 initial={{ scale: 0.85 }}
                 animate={{ scale: [1, 1.15, 1], rotate: [0, -6, 6, 0] }}
                 transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                className="flex items-center space-x-1 px-3 py-1 rounded-full bg-[#ff9f0a]/15 text-[#ff9f0a] text-xs font-semibold border border-[#ff9f0a]/30 shadow-sm"
+                className="flex items-center space-x-1 px-4 py-1.5 rounded-full dopamine-bg text-white text-sm font-black border-2 border-white shadow-[0_0_15px_rgba(255,0,255,0.8)] dopamine-heartbeat"
               >
-                <Flame className="w-3.5 h-3.5 fill-[#ff9f0a]" />
+                <Flame className="w-4 h-4 text-white fill-white" />
                 <span>{streak}x Combo</span>
               </motion.div>
             )}
@@ -723,7 +723,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                         ? 'border-[#2997ff]/50 bg-[#1a1a1c] shadow-xl shadow-blue-500/5'
                         : isDiscovered
                         ? 'border-white/[0.12] bg-[#161617]'
-                        : 'border-white/[0.06] bg-[#121213] hover:border-[#2997ff]/40 hover:bg-[#1a1a1c] hover:shadow-[0_0_15px_rgba(41,151,255,0.15)]'
+                        : 'border-white/[0.06] bg-[#121213] hover:border-[#ff00ff] hover:bg-[#1a1a1c] hover:shadow-[0_0_25px_rgba(255,0,255,0.6)] hover:scale-[1.03] transition-all duration-200'
                     }`}
                   >
                     <button
@@ -1125,7 +1125,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             whileTap={{ scale: 0.97 }}
                             transition={{ type: "spring", stiffness: 400, damping: 22 }}
                             onClick={handleNextCase}
-                            className="w-full py-4 rounded-full bg-gradient-to-r from-[#0071e3] to-[#2997ff] hover:from-[#2997ff] hover:to-[#0071e3] text-white font-bold text-sm flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(41,151,255,0.4)] hover:shadow-[0_0_30px_rgba(41,151,255,0.6)] hover:scale-[1.02]"
+                            className="w-full py-5 rounded-full dopamine-bg text-white font-black text-base uppercase tracking-wider flex items-center justify-center space-x-2 transition-all cursor-pointer dopamine-border dopamine-shine hover:scale-[1.05]"
                           >
                             <span>
                               'Próximo Caso da Investigação'
