@@ -681,7 +681,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         <div className="lg:col-span-5 space-y-6">
           
                     {/* ferramentas de investigação visual (3 pistas) */}
-                    <div ref={cluesRef} className={`bg-[#161617] border-2 rounded-none p-5 space-y-4 shadow-[4px_4px_0_0_#ff007f] transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''} ${currentCaseDiscovered.length === 0 ? 'border-[#ff007f] dopamine-heartbeat' : 'border-white'}`}>
+                    <div ref={cluesRef} className={`bg-[#161617] border-2 border-white rounded-none p-5 space-y-4 shadow-[4px_4px_0_0_#ff007f] transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''}`}>
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
@@ -855,13 +855,6 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             {!currentAnswerData?.answered ? (
               <div className="space-y-4">
                 {/* Etapa 1: Veredito Principal em 2 Botões Grandes */}
-                {currentCaseDiscovered.length === 0 ? (
-                  <div className="p-4 rounded-xl border border-[#ff007f] bg-black/50 text-center animate-pulse">
-                    <p className="text-[#ff007f] font-black uppercase text-sm tracking-wider">
-                      🔒 Você precisa investigar pelo menos 1 pista (Ferramentas de Investigação acima) antes de dar o Veredito!
-                    </p>
-                  </div>
-                ) : (
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <motion.button
                     whileHover={{ scale: 1.02, y: -1 }}
@@ -907,7 +900,6 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     </div>
                   </motion.button>
                 </div>
-                )}
 
                 {/* Etapa 2: Abre a gaveta de evidências para sustentar o relatório */}
                 <AnimatePresence>
