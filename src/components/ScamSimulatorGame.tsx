@@ -38,7 +38,6 @@ import {
   BADGES,
   FAMILY_GOLDEN_RULES,
   GLOSSARY_ITEMS,
-  calculatePlayerRank,
   type ScamCase,
   type ScamLevel,
   type InvestigativeClue,
@@ -47,7 +46,6 @@ import {
 } from '../data/scamsData';
 import { sound } from '../utils/audio';
 import confetti from 'canvas-confetti';
-import { AnimatedCounter } from './AnimatedCounter';
 import { ScenarioAnimation2D } from './ScenarioAnimation2D';
 import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 
@@ -206,23 +204,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   // Métricas gerais de pontuação e progresso
   const totalCases = SCAM_CASES.length;
   const currentAnswerData = answers[currentCase.id];
+  const totalFinishedCount = Object.keys(answers).length;
+  const isBasicoFinished = totalFinishedCount >= 3;
 
-  const totalScore = Math.max(0, Object.entries(answers).reduce((acc, [caseId, data]) => {
-    if (!data.isCorrect) {
-      return acc - (data.penaltyXp || 0);
-    }
-    const found = SCAM_CASES.find((c) => c.id === caseId);
-    const baseReward = data.hypothesisCorrect !== false ? (found?.xpReward || 0) : Math.round((found?.xpReward || 0) * 0.5);
-    return acc + baseReward + (data.bonusXp || 0) + (data.comboBonus || 0);
-  }, 0));
-
-  const playerRank = calculatePlayerRank(totalScore);
 
   const levelFinishedCount = levelCases.filter((c) => answers[c.id]?.answered).length;
   const levelProgressPercentage = Math.round((levelFinishedCount / levelCases.length) * 100);
-
-  const totalFinishedCount = Object.keys(answers).length;
-  const totalProgressPercentage = Math.round((totalFinishedCount / totalCases) * 100);
 
   // Jogador clica para investigar uma pista específica
   const handleInspectClue = (clue: InvestigativeClue) => {
@@ -686,7 +673,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               <span className="hidden sm:inline">{isPressureMode ? '⏱️ Sob Pressão' : '🧘 Modo Calmo'}</span>
             </button>
 
-            {streak > 1 && (
+            {isBasicoFinished && streak > 1 && (
               <motion.div
                 initial={{ scale: 0.85 }}
                 animate={{ scale: [1, 1.15, 1], rotate: [0, -6, 6, 0] }}
@@ -698,37 +685,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </motion.div>
             )}
 
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs text-white shadow-sm">
-              <span>{playerRank.icon}</span>
-              <span className="font-medium text-[#f5f5f7]">{playerRank.name}</span>
-              <span className="text-[#86868b]">•</span>
-              <AnimatedCounter value={totalScore} className="font-semibold text-[#2997ff]" suffix=" XP" />
-            </div>
+            
 
-            <button
-              onClick={() => {
-                sound.playBlip();
-                setIsBadgesModalOpen(true);
-              }}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-medium transition cursor-pointer"
-            >
-              <Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" />
-              <span className="hidden sm:inline">Conquistas</span>
-              <span className="text-[10px] text-[#86868b]">
-                ({unlockedBadgeIds.length}/{BADGES.length})
-              </span>
-            </button>
+            {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsBadgesModalOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-medium transition cursor-pointer"><Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" /><span className="hidden sm:inline">Conquistas</span><span className="text-[10px] text-[#86868b]">({unlockedBadgeIds.length}/{BADGES.length})</span></button>)}
 
-            <button
-              onClick={() => {
-                sound.playBlip();
-                setIsFamilyGuideOpen(true);
-              }}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#2997ff] text-xs font-medium transition cursor-pointer"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cartilha</span>
-            </button>
+            {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsFamilyGuideOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#2997ff] text-xs font-medium transition cursor-pointer"><BookOpen className="w-3.5 h-3.5" /><span className="hidden sm:inline">Cartilha</span></button>)}
           </div>
         </div>
 
@@ -742,7 +703,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               </span>
             </span>
             <span>
-              {levelFinishedCount}/{levelCases.length} no nível ({levelProgressPercentage}%) • Trilha Geral: {totalFinishedCount}/{totalCases} ({totalProgressPercentage}%)
+              
             </span>
           </div>
           <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/[0.06]">
@@ -997,10 +958,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 </div>
               </div>
 
-              <span className="text-xs font-semibold text-[#30d158] bg-[#30d158]/10 px-3 py-1 rounded-full border border-[#30d158]/20 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-[#30d158]" />
-                +{currentCase.xpReward} XP Base
-              </span>
+              
             </div>
 
             {/* Caixa de Texto do Incidente (Autêntica, Ampla e Sem Poluição) */}
@@ -1148,7 +1106,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             {!isCaseAnswered ? (
                               <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-2 text-[11px] text-[#86868b]">
                                 <Search className="w-3.5 h-3.5 text-[#2997ff] flex-shrink-0" />
-                                <span>Telemetria pericial extraída. Compare estes registros com o teor da mensagem para tirar suas conclusões.</span>
+                                
                               </div>
                             ) : (
                               /* Laudo e Fato de Defesa Revelados Somente Após o Veredito */
@@ -1435,24 +1393,20 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                           ) : null}
 
                           {/* Debriefing Pedagógico Silas & Clara */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                            <div className="p-3 rounded-xl bg-white/[0.02] border border-[#2997ff]/20 space-y-1">
-                              <span className="text-[11px] font-bold text-[#2997ff] flex items-center gap-1">
-                                🕵️‍♂️ Silas (Forense):
-                              </span>
+                          <details className="pt-1 group">
+                            <summary className="text-[11px] text-[#86868b] cursor-pointer hover:text-white transition flex items-center gap-1 list-none outline-none">
+                              <span>🕵️‍♂️ Silas & 👩‍🏫 Clara: Análise Detalhada</span>
+                              <span className="text-[9px] bg-white/[0.06] px-1.5 rounded-full">Ver mais</span>
+                            </summary>
+                            <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-2">
                               <p className="text-[11px] text-[#d2d2d7] leading-relaxed">
-                                Gatilho desarmado: <strong>{currentCase.pedagogy.emotionalTrigger}</strong>.
+                                <span className="font-bold text-[#2997ff]">Gatilho Forense:</span> {currentCase.pedagogy.emotionalTrigger}
+                              </p>
+                              <p className="text-[11px] text-[#d2d2d7] leading-relaxed">
+                                <span className="font-bold text-[#30d158]">Lição Pedagógica:</span> {currentCase.pedagogy.kidsAnalogy}
                               </p>
                             </div>
-                            <div className="p-3 rounded-xl bg-white/[0.02] border border-[#30d158]/20 space-y-1">
-                              <span className="text-[11px] font-bold text-[#30d158] flex items-center gap-1">
-                                👩‍🏫 Clara (Pedagoga):
-                              </span>
-                              <p className="text-[11px] text-[#d2d2d7] leading-relaxed">
-                                {currentCase.pedagogy.kidsAnalogy}
-                              </p>
-                            </div>
-                          </div>
+                          </details>
 
                           {/* Regra de Ouro */}
                           <div className="p-3.5 rounded-2xl bg-[#30d158]/10 border border-[#30d158]/20 flex items-start gap-2.5 text-xs text-white">

@@ -327,7 +327,7 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
         <div className="flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-[#0071e3] animate-pulse" />
           <span className="text-[11px] font-mono tracking-wider uppercase text-white font-semibold flex items-center gap-1.5">
-            <span>Teatro 2D • Cenário Narrativo do Caso</span>
+            
           </span>
         </div>
 
@@ -342,9 +342,7 @@ export const ScenarioAnimation2D: React.FC<ScenarioAnimation2DProps> = ({
               <AlertTriangle className="w-3 h-3" /> Veredito Incorreto
             </span>
           )}
-          <span className="text-[10px] text-[#86868b] bg-white/[0.04] px-2 py-0.5 rounded-full border border-white/[0.06]">
-            Toque nos elementos para periciar
-          </span>
+          
         </div>
       </div>
 

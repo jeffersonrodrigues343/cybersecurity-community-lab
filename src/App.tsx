@@ -28,7 +28,7 @@ export function App() {
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
 
-  const totalScore = 900;
+  
 
   const handleScoreUpdate = (newXp: number, count: number, isFinished: boolean) => {
     setScore(newXp);
@@ -71,9 +71,9 @@ export function App() {
       {/* Barra de Navegação */}
       <Header
         score={score}
-        totalScore={totalScore}
-        completedCount={completedCount}
-        onOpenReportModal={() => setIsReportOpen(true)}
+        
+        
+        
         onOpenInstructions={() => setIsOnboardingOpen(true)}
       />
 
