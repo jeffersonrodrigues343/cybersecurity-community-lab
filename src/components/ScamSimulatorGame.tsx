@@ -483,7 +483,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="p-4 rounded-2xl bg-[#1c1c1e] border border-white/[0.15] shadow-2xl flex items-center justify-between text-white max-w-lg mx-auto"
+            className="p-4 rounded-2xl bg-[#1c1c1e] border border-white/[0.15] shadow-2xl flex items-center justify-between text-black max-w-lg mx-auto"
           >
             <div className="flex items-center space-x-3.5">
               <span className="text-2xl p-2 bg-white/[0.08] rounded-xl flex-shrink-0">
@@ -493,15 +493,15 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 <span className="text-[11px] text-[#ff9f0a] font-medium block">
                   Conquista Desbloqueada
                 </span>
-                <h4 className="font-semibold text-sm text-white">
+                <h4 className="font-semibold text-sm text-black">
                   {recentBadgeUnlocked.title}
                 </h4>
-                <p className="text-xs text-[#00ffff]">{recentBadgeUnlocked.description}</p>
+                <p className="text-xs text-[#007AFF]">{recentBadgeUnlocked.description}</p>
               </div>
             </div>
             <button
               onClick={() => setRecentBadgeUnlocked(null)}
-              className="px-3 py-1.5 rounded-full bg-white/[0.1] hover:bg-white/[0.15] text-white text-xs font-medium transition cursor-pointer"
+              className="px-3 py-1.5 rounded-full bg-white/[0.1] hover:bg-white/[0.15] text-black text-xs font-medium transition cursor-pointer"
             >
               OK
             </button>
@@ -510,12 +510,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       </AnimatePresence>
 
             {/* central de progressão & seleção de níveis (bento) */}
-            <div className="bg-[#161617] border border-white/[0.08] rounded-2xl p-4 space-y-3.5 shadow-lg">
+            <div className="bg-[#161617] border border-black/[0.05] rounded-2xl p-4 space-y-3.5 shadow-lg">
         {/* Linha Superior: Seletor de Modo e Níveis */}
         <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
           
           <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-center lg:justify-start">
-            <span className="text-white font-bold text-sm flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-[#bf5af2]" /> Simulador Aleatório</span>
+            <span className="text-black font-bold text-sm flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-[#bf5af2]" /> Simulador Aleatório</span>
           </div>
 
           {/* Patente Atual do Jogador, Combo Streak & Modo Sob Pressão */}
@@ -527,14 +527,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 initial={{ scale: 0.85 }}
                 animate={{ scale: [1, 1.15, 1], rotate: [0, -6, 6, 0] }}
                 transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                className="flex items-center space-x-1 px-4 py-1.5 rounded-full dopamine-bg text-white text-sm font-black border-2 border-white shadow-[0_0_15px_rgba(255,0,255,0.8)] dopamine-heartbeat"
+                className="flex items-center space-x-1 px-4 py-1.5 rounded-full dopamine-bg text-black text-sm font-black border-2 border-white shadow-[0_0_15px_rgba(255,0,255,0.8)] dopamine-heartbeat"
               >
-                <Flame className="w-4 h-4 text-white fill-white" />
+                <Flame className="w-4 h-4 text-black fill-white" />
                 <span>{streak}x Combo</span>
               </motion.div>
             )}
 
-            {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsBadgesModalOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-xs font-medium transition cursor-pointer"><Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" /><span className="hidden sm:inline">Conquistas</span><span className="text-[10px] text-[#00ffff]">({unlockedBadgeIds.length}/{BADGES.length})</span></button>)}
+            {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsBadgesModalOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-black text-xs font-medium transition cursor-pointer"><Trophy className="w-3.5 h-3.5 text-[#ff9f0a]" /><span className="hidden sm:inline">Conquistas</span><span className="text-[10px] text-[#007AFF]">({unlockedBadgeIds.length}/{BADGES.length})</span></button>)}
 
             {isBasicoFinished && (<button onClick={() => { sound.playBlip(); setIsFamilyGuideOpen(true); }} className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-[#2997ff] text-xs font-medium transition cursor-pointer"><BookOpen className="w-3.5 h-3.5" /><span className="hidden sm:inline">Cartilha</span></button>)}
           </div>
@@ -550,17 +550,17 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="lg:col-span-12 bg-[#0a0a0c] max-w-2xl mx-auto border-4 border-[#ff007f] rounded-none overflow-hidden shadow-[8px_8px_0_0_#00ffff] space-y-0 relative"
+          className="lg:col-span-12 bg-white max-w-2xl mx-auto border-4 border-[#ff007f] rounded-none overflow-hidden shadow-[8px_8px_0_0_#00ffff] space-y-0 relative"
         >
           {/* Header do Cartão Bento */}
-          <div className="px-6 py-4 bg-white/[0.02] border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="px-6 py-4 bg-gray-50 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3 w-full">
-              <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-black/[0.05] flex items-center justify-center">
                 {getCategoryIcon(currentCase.category)}
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white tracking-tight">{currentCase.title}</h3>
-                <span className="text-[11px] text-[#00ffff] font-medium">{currentCase.category}</span>
+                <h3 className="text-sm font-semibold text-black tracking-tight">{currentCase.title}</h3>
+                <span className="text-[11px] text-[#007AFF] font-medium">{currentCase.category}</span>
               </div>
             </div>
 
@@ -583,7 +583,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 <span className="text-[10px] font-bold text-[#ff9f0a] uppercase tracking-wider block">
                   Dilema do Investigador:
                 </span>
-                <p className="text-xs text-[#f5f5f7] leading-relaxed font-medium">
+                <p className="text-xs text-gray-700 leading-relaxed font-medium">
                   {currentCase.dilemma}
                 </p>
               </div>
@@ -628,10 +628,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             />
 
             {/* Linha de Metadados do Remetente */}
-            <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
+            <div className="flex items-center justify-between pb-3.5 border-b border-black/[0.05]">
               <div className="flex items-center gap-3 w-full">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-white/10 to-white/20 border border-white/10 flex items-center justify-center font-semibold text-white text-sm">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-white/10 to-white/20 border border-white/10 flex items-center justify-center font-semibold text-black text-sm">
                     {currentCase.sender.charAt(0)}
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#161617] border border-white/15 flex items-center justify-center shadow-sm">
@@ -639,12 +639,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white text-sm">{currentCase.sender}</h3>
-                  <div className="flex items-center space-x-2 text-xs text-[#00ffff]">
+                  <h3 className="font-semibold text-black text-sm">{currentCase.sender}</h3>
+                  <div className="flex items-center space-x-2 text-xs text-[#007AFF]">
                     <span className="capitalize">{currentCase.channel}</span>
                     <span>•</span>
                     <span className="flex items-center space-x-1">
-                      <Clock className="w-3 h-3 text-[#00ffff]" />
+                      <Clock className="w-3 h-3 text-[#007AFF]" />
                       <span>Hoje às {currentCase.time}</span>
                     </span>
                   </div>
@@ -655,22 +655,22 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
             </div>
 
             {/* Caixa de Texto do Incidente (Autêntica, Ampla e Sem Poluição) */}
-            <div className={`bg-[#0c0c0d] border border-white/[0.08] rounded-2xl p-6 shadow-inner space-y-2 transition-all duration-500 ${expandedClueId !== null || currentAnswerData?.answered ? 'opacity-50 blur-[2px]' : ''}`}>
-              <div className="text-[10px] text-[#00ffff] uppercase tracking-wider font-mono flex items-center gap-1.5">
+            <div className={`bg-[#0c0c0d] border border-black/[0.05] rounded-2xl p-6 shadow-inner space-y-2 transition-all duration-500 ${expandedClueId !== null || currentAnswerData?.answered ? 'opacity-50 blur-[2px]' : ''}`}>
+              <div className="text-[10px] text-[#007AFF] uppercase tracking-wider font-mono flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-[#2997ff]" />
                 <span>Texto Original Recebido:</span>
               </div>
-              <p className="text-white text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap select-text font-normal font-sans">
+              <p className="text-black text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap select-text font-normal font-sans">
                 {currentCase.messageContent}
               </p>
             </div>
 
             {/* Orientação ao Investigador (Sem Spoilers) */}
-            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between text-xs text-[#00ffff]">
+            <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between text-xs text-[#007AFF]">
               <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2">
                 <Search className="w-4 h-4 text-[#2997ff] flex-shrink-0" />
                 <span className="leading-relaxed">
-                  Use as <strong className="text-white">Dicas Rápidas</strong> ao lado para auditar dados, titulares e canais antes de emitir seu veredito.
+                  Use as <strong className="text-black">Dicas Rápidas</strong> ao lado para auditar dados, titulares e canais antes de emitir seu veredito.
                 </span>
               </div>
             </div>
@@ -684,11 +684,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     <div ref={cluesRef} className={`bg-[#161617] border-2 border-white rounded-none p-5 space-y-4 shadow-[4px_4px_0_0_#ff007f] transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''}`}>
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-semibold text-sm text-white flex items-center gap-1.5">
+                <h4 className="font-semibold text-sm text-black flex items-center gap-1.5">
                   <Search className="w-4 h-4 text-[#2997ff]" />
                   <span>Dicas Rápidas</span>
                 </h4>
-                <p className="text-xs text-[#00ffff]">
+                <p className="text-xs text-[#007AFF]">
                   Se bater a dúvida, clique nas pistas pra ver o que tá rolando!
                 </p>
               </div>
@@ -731,7 +731,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                           {getClueCategoryIcon(clue.category)}
                         </div>
                         <div className="space-y-0.5">
-                          <div className="text-xs font-semibold text-white flex flex-wrap items-center gap-2">
+                          <div className="text-xs font-semibold text-black flex flex-wrap items-center gap-2">
                             <span>{clue.buttonLabel}</span>
                             {isDiscovered && (
                               <span className="text-[10px] text-[#30d158] font-medium bg-[#30d158]/10 px-2 py-0.2 rounded-full border border-[#30d158]/20 flex items-center gap-1">
@@ -739,13 +739,13 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-[#00ffff]">
+                          <p className="text-[11px] text-[#007AFF]">
                             {isDiscovered ? 'Dados do clique coletada • Toque para rever' : 'Toque para executar esta análise de análise'}
                           </p>
                         </div>
                       </div>
                       <ChevronRight
-                        className={`w-4 h-4 text-[#00ffff] transition-transform flex-shrink-0 ml-2 ${
+                        className={`w-4 h-4 text-[#007AFF] transition-transform flex-shrink-0 ml-2 ${
                           isExpanded ? 'rotate-90 text-[#2997ff]' : ''
                         }`}
                       />
@@ -761,9 +761,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                           className="px-4 pb-4 pt-1 space-y-3 text-xs border-t border-white/[0.06]"
                         >
                           {/* Painel Visual Simulando a Ferramenta */}
-                          <div className="bg-[#121214] border border-white/[0.08] rounded-xl p-3.5 space-y-2.5 shadow-inner">
+                          <div className="bg-[#121214] border border-black/[0.05] rounded-xl p-3.5 space-y-2.5 shadow-inner">
                             <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] text-[11px]">
-                              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-black flex items-center gap-1.5">
                                 <span>{clue.inspection?.badge || 'Inspeção Detalhada'}</span>
                               </span>
                               <span className="text-[10px] text-[#2997ff] bg-[#2997ff]/10 px-2 py-0.5 rounded-full font-medium border border-[#2997ff]/20">
@@ -775,27 +775,27 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             <div className="space-y-1.5 text-xs">
                               {clue.inspection?.field1Label && (
                                 <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.04] flex flex-col sm:flex-row sm:items-center justify-between gap-0.5">
-                                  <span className="text-[#00ffff] text-[11px]">{clue.inspection.field1Label}:</span>
-                                  <span className="text-white font-medium text-[11px] sm:text-xs">{clue.inspection.field1Value}</span>
+                                  <span className="text-[#007AFF] text-[11px]">{clue.inspection.field1Label}:</span>
+                                  <span className="text-black font-medium text-[11px] sm:text-xs">{clue.inspection.field1Value}</span>
                                 </div>
                               )}
                               {clue.inspection?.field2Label && (
                                 <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.04] flex flex-col sm:flex-row sm:items-center justify-between gap-0.5">
-                                  <span className="text-[#00ffff] text-[11px]">{clue.inspection.field2Label}:</span>
-                                  <span className="text-white font-medium text-[11px] sm:text-xs">{clue.inspection.field2Value}</span>
+                                  <span className="text-[#007AFF] text-[11px]">{clue.inspection.field2Label}:</span>
+                                  <span className="text-black font-medium text-[11px] sm:text-xs">{clue.inspection.field2Value}</span>
                                 </div>
                               )}
                               {clue.inspection?.field3Label && (
                                 <div className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.04] flex flex-col sm:flex-row sm:items-center justify-between gap-0.5">
-                                  <span className="text-[#00ffff] text-[11px]">{clue.inspection.field3Label}:</span>
-                                  <span className="text-white font-medium text-[11px] sm:text-xs">{clue.inspection.field3Value}</span>
+                                  <span className="text-[#007AFF] text-[11px]">{clue.inspection.field3Label}:</span>
+                                  <span className="text-black font-medium text-[11px] sm:text-xs">{clue.inspection.field3Value}</span>
                                 </div>
                               )}
                             </div>
 
                             {/* Prompt de Análise Zero-Spoiler antes de responder */}
                             {!isCaseAnswered ? (
-                              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-2 text-[11px] text-[#00ffff]">
+                              <div className="p-2.5 rounded-xl bg-gray-50 border border-white/[0.05] flex items-center gap-2 text-[11px] text-[#007AFF]">
                                 <Search className="w-3.5 h-3.5 text-[#2997ff] flex-shrink-0" />
                                 
                               </div>
@@ -810,17 +810,17 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                                   <Sparkles className="w-3.5 h-3.5 text-[#2997ff] flex-shrink-0 mt-0.5" />
                                   <div className="leading-relaxed">
                                     <strong className="text-[#2997ff]">Conclusão de Análise: </strong>
-                                    <span className="text-white font-bold">
+                                    <span className="text-black font-bold">
                                       {clue.inspection?.observation || clue.evidenceResult.details}
                                     </span>
                                   </div>
                                 </div>
                                 {clue.evidenceResult.fato && (
-                                  <div className="text-[11px] text-[#00ffff] bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2">
+                                  <div className="text-[11px] text-[#007AFF] bg-gray-50 p-2.5 rounded-xl border border-white/[0.04] flex items-start gap-2">
                                     <Lightbulb className="w-3.5 h-3.5 text-[#ff9f0a] flex-shrink-0 mt-0.5" />
                                     <div>
                                       <strong className="text-[#ff9f0a]">Fato de Defesa: </strong>
-                                      <span className="text-white font-bold">{clue.evidenceResult.fato}</span>
+                                      <span className="text-black font-bold">{clue.evidenceResult.fato}</span>
                                     </div>
                                   </div>
                                 )}
@@ -837,15 +837,15 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
 
                     {/* o grande veredito do detetive (ágil e divertido) */}
-                    <div className={`bg-[#161617] border border-white/[0.08] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${!currentAnswerData?.answered && currentCaseDiscovered.length === 0 ? 'opacity-50 blur-[2px] grayscale pointer-events-none' : ''}`}>
-            <div className="border-b border-white/[0.08] pb-3 flex items-center justify-between">
+                    <div className={`bg-[#161617] border border-black/[0.05] rounded-2xl p-5 space-y-4 shadow-lg transition-all duration-500 ${!currentAnswerData?.answered && currentCaseDiscovered.length === 0 ? 'opacity-50 blur-[2px] grayscale pointer-events-none' : ''}`}>
+            <div className="border-b border-black/[0.05] pb-3 flex items-center justify-between">
               <div className="flex items-center space-x-2.5">
                 <div className="w-8 h-8 rounded-xl bg-[#0071e3]/15 border border-[#0071e3]/30 flex items-center justify-center text-[#2997ff]">
                   <Gavel className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-white">O que você acha?</h4>
-                  <p className="text-xs text-[#00ffff]">
+                  <h4 className="font-semibold text-sm text-black">O que você acha?</h4>
+                  <p className="text-xs text-[#007AFF]">
                     Aperte e bata o martelo: É Golpe ou Tá Seguro?
                   </p>
                 </div>
@@ -867,13 +867,13 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     }}
                     className={`p-3.5 rounded-2xl border text-left transition flex flex-col items-center justify-center cursor-pointer shadow-md ${
                       selectedVerdict === true
-                        ? 'bg-[#ff3b30] border-[#ff3b30] text-white shadow-red-500/25 ring-2 ring-red-400/40'
-                        : 'bg-white/[0.03] border-white/[0.08] text-[#a1a1a6] hover:border-white/[0.2] hover:text-white'
+                        ? 'bg-[#ff3b30] border-[#ff3b30] text-black shadow-red-500/25 ring-2 ring-red-400/40'
+                        : 'bg-white/[0.03] border-black/[0.05] text-[#a1a1a6] hover:border-white/[0.2] hover:text-black'
                     }`}
                   >
-                    <ShieldAlert className={`w-5 h-5 mb-1 ${selectedVerdict === true ? 'text-white' : 'text-[#ff3b30]'}`} />
+                    <ShieldAlert className={`w-5 h-5 mb-1 ${selectedVerdict === true ? 'text-black' : 'text-[#ff3b30]'}`} />
                     <div className="text-xs font-bold tracking-wide">🚨 É GOLPE!</div>
-                    <div className={`text-[10px] mt-0.5 ${selectedVerdict === true ? 'text-white/90' : 'text-[#00ffff]'}`}>
+                    <div className={`text-[10px] mt-0.5 ${selectedVerdict === true ? 'text-black/90' : 'text-[#007AFF]'}`}>
                       Desmascarar Fraude
                     </div>
                   </motion.button>
@@ -889,13 +889,13 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     }}
                     className={`p-3.5 rounded-2xl border text-left transition flex flex-col items-center justify-center cursor-pointer shadow-md ${
                       selectedVerdict === false
-                        ? 'bg-[#30d158] border-[#30d158] text-white shadow-green-500/25 ring-2 ring-green-400/40'
-                        : 'bg-white/[0.03] border-white/[0.08] text-[#a1a1a6] hover:border-white/[0.2] hover:text-white'
+                        ? 'bg-[#30d158] border-[#30d158] text-black shadow-green-500/25 ring-2 ring-green-400/40'
+                        : 'bg-white/[0.03] border-black/[0.05] text-[#a1a1a6] hover:border-white/[0.2] hover:text-black'
                     }`}
                   >
-                    <ShieldCheck className={`w-5 h-5 mb-1 ${selectedVerdict === false ? 'text-white' : 'text-[#30d158]'}`} />
+                    <ShieldCheck className={`w-5 h-5 mb-1 ${selectedVerdict === false ? 'text-black' : 'text-[#30d158]'}`} />
                     <div className="text-xs font-bold tracking-wide">🛡️ É SEGURO!</div>
-                    <div className={`text-[10px] mt-0.5 ${selectedVerdict === false ? 'text-white/90' : 'text-[#00ffff]'}`}>
+                    <div className={`text-[10px] mt-0.5 ${selectedVerdict === false ? 'text-black/90' : 'text-[#007AFF]'}`}>
                       Comunicação Real
                     </div>
                   </motion.button>
@@ -908,9 +908,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="space-y-2.5 pt-2 border-t border-white/[0.08]"
+                      className="space-y-2.5 pt-2 border-t border-black/[0.05]"
                     >
-                      <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      <label className="text-xs font-semibold text-black flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-[#ff9f0a]" />
                         <span>
                           {selectedVerdict === true
@@ -932,16 +932,16 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                               }}
                               className={`w-full p-3 rounded-xl border text-left transition flex items-start space-x-2.5 cursor-pointer ${
                                 isSelected
-                                  ? 'bg-[#0071e3]/20 border-[#2997ff] text-white shadow-md shadow-blue-500/10'
-                                  : 'bg-white/[0.02] border-white/[0.08] text-[#a1a1a6] hover:border-white/[0.2] hover:text-white'
+                                  ? 'bg-[#0071e3]/20 border-[#2997ff] text-black shadow-md shadow-blue-500/10'
+                                  : 'bg-gray-50 border-black/[0.05] text-[#a1a1a6] hover:border-white/[0.2] hover:text-black'
                               }`}
                             >
                               <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold ${
-                                isSelected ? 'border-[#2997ff] bg-[#0071e3] text-white' : 'border-white/[0.2] text-[#00ffff]'
+                                isSelected ? 'border-[#2997ff] bg-[#0071e3] text-black' : 'border-white/[0.2] text-[#007AFF]'
                               }`}>
                                 {String.fromCharCode(65 + idx)}
                               </div>
-                              <span className="text-xs leading-relaxed text-white font-bold">
+                              <span className="text-xs leading-relaxed text-black font-bold">
                                 {hypo}
                               </span>
                             </button>
@@ -964,8 +964,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     onClick={handleProtocolReport}
                     className={`w-full py-3.5 px-4 rounded-full font-bold text-xs flex items-center justify-center space-x-2 transition ${
                       selectedHypothesis !== null
-                        ? 'bg-gradient-to-r from-[#0071e3] to-[#2997ff] text-white cursor-pointer shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40'
-                        : 'bg-white/[0.06] border border-white/[0.08] text-[#71717a] cursor-not-allowed'
+                        ? 'bg-gradient-to-r from-[#0071e3] to-[#2997ff] text-black cursor-pointer shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40'
+                        : 'bg-white/[0.06] border border-black/[0.05] text-[#71717a] cursor-not-allowed'
                     }`}
                   >
                     <Gavel className="w-4 h-4" />
@@ -980,7 +980,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                 )}
 
                 {currentCaseDiscovered.length < currentCase.clues.length && (
-                  <p className="text-[11px] text-[#00ffff] text-center">
+                  <p className="text-[11px] text-[#007AFF] text-center">
                     💡 Dica: Você olhou {currentCaseDiscovered.length} de {currentCase.clues.length} pistas. Quanto mais pistas abrir, mais fácil fica acertar!
                   </p>
                 )}
@@ -1029,10 +1029,10 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                         animate={{ opacity: 1, scale: 1 }}
                         className={`p-3.5 rounded-2xl border flex items-center space-x-3 shadow-md ${
                           isHonor
-                            ? 'bg-[#30d158]/10 border-[#30d158]/35 text-white'
+                            ? 'bg-[#30d158]/10 border-[#30d158]/35 text-black'
                             : isPartial
-                            ? 'bg-[#ff9f0a]/10 border-[#ff9f0a]/35 text-white'
-                            : 'bg-[#ff3b30]/10 border-[#ff3b30]/35 text-white'
+                            ? 'bg-[#ff9f0a]/10 border-[#ff9f0a]/35 text-black'
+                            : 'bg-[#ff3b30]/10 border-[#ff3b30]/35 text-black'
                         }`}
                       >
                         {isHonor ? (
@@ -1048,7 +1048,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             {isPartial && '⚠️ Veredito correto, mas a prova decisiva era outra!'}
                             {isFail && (currentAnswerData.penaltyXp ? `❌ VOCÊ CAIU NO GOLPE! (-${currentAnswerData.penaltyXp} XP)` : '❌ VOCÊ CAIU NO GOLPE!')}
                           </h4>
-                          <p className="text-[11px] text-white font-bold">
+                          <p className="text-[11px] text-black font-bold">
                             {isHonor && 'Percepção forense impecável! Você protegeu a vítima com precisão.'}
                             {isPartial && 'Você acertou o resultado, mas precisa dominar a evidência técnica.'}
                             {isFail && 'Você foi enganado pelo truque do criminoso. Vamos treinar para não cair mais!'}
@@ -1064,18 +1064,18 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                           className="space-y-3"
                         >
                           {/* Prova Decisiva */}
-                          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] space-y-1 text-xs">
+                          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-black/[0.05] space-y-1 text-xs">
                             <span className="text-[#2997ff] font-semibold text-[11px] flex items-center gap-1.5">
                               <Search className="w-3.5 h-3.5" /> A Prova Decisiva:
                             </span>
-                            <p className="text-[#f5f5f7] leading-relaxed">
+                            <p className="text-gray-700 leading-relaxed">
                               {currentCase.keyEvidenceReason}
                             </p>
                           </div>
 
                           {/* Bônus de Reflexo Sob Pressão */}
                           {currentAnswerData.pressureBonus ? (
-                            <div className="p-2.5 rounded-xl bg-[#2997ff]/10 border border-[#2997ff]/25 flex items-center justify-between text-xs text-white">
+                            <div className="p-2.5 rounded-xl bg-[#2997ff]/10 border border-[#2997ff]/25 flex items-center justify-between text-xs text-black">
                               <div className="flex items-center gap-2">
                                 <Clock className="w-3.5 h-3.5 text-[#2997ff]" />
                                 <span>Reflexo Tático Sob Pressão</span>
@@ -1086,26 +1086,26 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
                           {/* Debriefing Pedagógico Silas & Clara */}
                           <details className="pt-1 group">
-                            <summary className="text-[11px] text-[#00ffff] cursor-pointer hover:text-white transition flex items-center gap-1 list-none outline-none">
+                            <summary className="text-[11px] text-[#007AFF] cursor-pointer hover:text-black transition flex items-center gap-1 list-none outline-none">
                               <span>🕵️‍♂️ Silas & 👩‍🏫 Clara: Análise Detalhada</span>
                               <span className="text-[9px] bg-white/[0.06] px-1.5 rounded-full">Ver mais</span>
                             </summary>
-                            <div className="mt-2 p-3 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-2">
-                              <p className="text-[11px] text-white font-bold leading-relaxed">
+                            <div className="mt-2 p-3 rounded-xl bg-gray-50 border border-black/[0.05] space-y-2">
+                              <p className="text-[11px] text-black font-bold leading-relaxed">
                                 <span className="font-bold text-[#2997ff]">Como eles te fisgam:</span> {currentCase.pedagogy.emotionalTrigger}
                               </p>
-                              <p className="text-[11px] text-white font-bold leading-relaxed">
+                              <p className="text-[11px] text-black font-bold leading-relaxed">
                                 <span className="font-bold text-[#30d158]">Pra explicar pra criança:</span> {currentCase.pedagogy.kidsAnalogy}
                               </p>
                             </div>
                           </details>
 
                           {/* Regra de Ouro */}
-                          <div className="p-3.5 rounded-2xl bg-[#30d158]/10 border border-[#30d158]/20 flex items-start gap-2.5 text-xs text-white">
+                          <div className="p-3.5 rounded-2xl bg-[#30d158]/10 border border-[#30d158]/20 flex items-start gap-2.5 text-xs text-black">
                             <ShieldCheck className="w-4 h-4 text-[#30d158] flex-shrink-0 mt-0.5" />
                             <div>
                               <strong className="text-[#30d158]">Regra de Ouro para a Família: </strong>
-                              <span className="text-white font-bold">"{currentCase.pedagogy.goldenRule}"</span>
+                              <span className="text-black font-bold">"{currentCase.pedagogy.goldenRule}"</span>
                             </div>
                           </div>
 
@@ -1130,7 +1130,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                           animate={{ opacity: 1, y: 0 }}
                           className="p-4 sm:p-5 rounded-2xl bg-[#1c1c1e] border border-[#ff9f0a]/30 space-y-3.5 shadow-xl"
                         >
-                          <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
+                          <div className="flex items-center justify-between pb-2 border-b border-black/[0.05]">
                             <div className="flex items-center space-x-2 text-xs font-semibold text-[#ff9f0a]">
                               <RotateCcw className="w-4 h-4" />
                               <span>{currentCase.reinforcementDrill.title}</span>
@@ -1141,11 +1141,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                           </div>
 
                           <div className="space-y-1">
-                            <p className="text-xs font-medium text-white leading-relaxed">
+                            <p className="text-xs font-medium text-black leading-relaxed">
                               {currentCase.reinforcementDrill.question}
                             </p>
                             {currentCase.reinforcementDrill.context && (
-                              <p className="text-[11px] text-[#00ffff]">
+                              <p className="text-[11px] text-[#007AFF]">
                                 💡 {currentCase.reinforcementDrill.context}
                               </p>
                             )}
@@ -1163,9 +1163,9 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                                   className={`w-full p-3 rounded-xl border text-left transition flex flex-col space-y-1.5 cursor-pointer ${
                                     isSelected
                                       ? opt.isCorrect
-                                        ? 'bg-[#30d158]/15 border-[#30d158] text-white shadow-md shadow-green-500/10'
-                                        : 'bg-[#ff3b30]/15 border-[#ff3b30] text-white'
-                                      : 'bg-black border-2 border-white text-white font-bold hover:bg-[#ff007f] hover:text-black hover:border-white hover:-skew-x-2 transition-all'
+                                        ? 'bg-[#30d158]/15 border-[#30d158] text-black shadow-md shadow-green-500/10'
+                                        : 'bg-[#ff3b30]/15 border-[#ff3b30] text-black'
+                                      : 'bg-black border-2 border-white text-black font-bold hover:bg-[#ff007f] hover:text-black hover:border-white hover:-skew-x-2 transition-all'
                                   }`}
                                 >
                                   <div className="flex items-start space-x-2">
@@ -1173,8 +1173,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                                       isSelected
                                         ? opt.isCorrect
                                           ? 'border-[#30d158] bg-[#30d158] text-black'
-                                          : 'border-[#ff3b30] bg-[#ff3b30] text-white'
-                                        : 'border-white/[0.2] text-[#00ffff]'
+                                          : 'border-[#ff3b30] bg-[#ff3b30] text-black'
+                                        : 'border-white/[0.2] text-[#007AFF]'
                                     }`}>
                                       {isSelected ? (opt.isCorrect ? '✓' : '✕') : '•'}
                                     </div>
@@ -1244,16 +1244,16 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-[#1c1c1e] border border-white/[0.1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
                 <div>
-                  <h3 className="font-semibold text-base text-white">Sala de Conquistas</h3>
-                  <p className="text-xs text-[#00ffff]">
+                  <h3 className="font-semibold text-base text-black">Sala de Conquistas</h3>
+                  <p className="text-xs text-[#007AFF]">
                     {unlockedBadgeIds.length} de {BADGES.length} conquistas desbloqueadas
                   </p>
                 </div>
                 <button
                   onClick={() => setIsBadgesModalOpen(false)}
-                  className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white text-xs font-medium cursor-pointer"
+                  className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-black text-xs font-medium cursor-pointer"
                 >
                   ✕
                 </button>
@@ -1268,15 +1268,15 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       className={`p-3.5 rounded-2xl border transition flex items-center space-x-3.5 ${
                         isUnlocked
                           ? 'bg-white/[0.06] border-white/[0.15]'
-                          : 'bg-white/[0.02] border-white/[0.04] opacity-40'
+                          : 'bg-gray-50 border-white/[0.04] opacity-40'
                       }`}
                     >
                       <span className="text-2xl p-2 bg-white/[0.08] rounded-xl flex-shrink-0">
                         {badge.icon}
                       </span>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-xs text-white">{badge.title}</h4>
-                        <p className="text-[11px] text-[#00ffff]">{badge.description}</p>
+                        <h4 className="font-semibold text-xs text-black">{badge.title}</h4>
+                        <p className="text-[11px] text-[#007AFF]">{badge.description}</p>
                       </div>
                     </div>
                   );
@@ -1297,27 +1297,27 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-[#1c1c1e] border border-white/[0.1] rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <div className="flex items-center justify-between border-b border-black/[0.05] pb-3">
                 <div>
-                  <h3 className="font-semibold text-base text-white">Cartilha de Defesa Familiar</h3>
-                  <p className="text-xs text-[#00ffff]">Regras de ouro e termos essenciais de cibersegurança</p>
+                  <h3 className="font-semibold text-base text-black">Cartilha de Defesa Familiar</h3>
+                  <p className="text-xs text-[#007AFF]">Regras de ouro e termos essenciais de cibersegurança</p>
                 </div>
                 <button
                   onClick={() => setIsFamilyGuideOpen(false)}
-                  className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-white text-xs font-medium cursor-pointer"
+                  className="px-3 py-1 rounded-full bg-white/[0.08] hover:bg-white/[0.15] text-black text-xs font-medium cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
 
               {/* Tabs */}
-              <div className="flex p-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs">
+              <div className="flex p-1 rounded-full bg-white/[0.06] border border-black/[0.05] text-xs">
                 <button
                   onClick={() => setFamilyGuideTab('rules')}
                   className={`flex-1 py-1 rounded-full font-medium transition cursor-pointer ${
                     familyGuideTab === 'rules'
-                      ? 'bg-white/20 text-white'
-                      : 'text-[#00ffff] hover:text-white'
+                      ? 'bg-white/20 text-black'
+                      : 'text-[#007AFF] hover:text-black'
                   }`}
                 >
                   Regras de Ouro
@@ -1326,8 +1326,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   onClick={() => setFamilyGuideTab('glossary')}
                   className={`flex-1 py-1 rounded-full font-medium transition cursor-pointer ${
                     familyGuideTab === 'glossary'
-                      ? 'bg-white/20 text-white'
-                      : 'text-[#00ffff] hover:text-white'
+                      ? 'bg-white/20 text-black'
+                      : 'text-[#007AFF] hover:text-black'
                   }`}
                 >
                   Glossário
@@ -1342,12 +1342,12 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1.5"
                     >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-white">
+                        <span className="font-semibold text-black">
                           {item.icon} {item.title}
                         </span>
-                        <span className="text-[10px] text-[#00ffff]">{item.targetLabel}</span>
+                        <span className="text-[10px] text-[#007AFF]">{item.targetLabel}</span>
                       </div>
-                      <p className="text-xs text-white font-bold leading-relaxed">{item.practicalAction}</p>
+                      <p className="text-xs text-black font-bold leading-relaxed">{item.practicalAction}</p>
                     </div>
                   ))
                 ) : (
@@ -1357,7 +1357,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1 text-xs"
                     >
                       <h4 className="font-semibold text-[#2997ff]">{item.term}</h4>
-                      <p className="text-xs text-white font-bold leading-relaxed">{item.simpleMeaning}</p>
+                      <p className="text-xs text-black font-bold leading-relaxed">{item.simpleMeaning}</p>
                     </div>
                   ))
                 )}

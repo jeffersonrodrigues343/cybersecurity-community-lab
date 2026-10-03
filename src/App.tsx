@@ -39,13 +39,9 @@ export function App() {
 
   
   return (
-    <div ref={mainContainerRef} className="min-h-screen flex flex-col bg-[#050507] text-[#f5f5f7] relative overflow-x-hidden">
+    <div ref={mainContainerRef} className="min-h-screen flex flex-col bg-[#F2F2F7] text-[#1C1C1E] relative overflow-x-hidden">
       
-      {/* Apple Subtle Ambient Glow Follower */}
-      <div
-        
-        className="fixed top-20 -left-20 w-[150%] h-[200px] bg-[#ff007f] opacity-20 -rotate-12 pointer-events-none z-0"
-      />
+      
 
       {/* Barra de Navegação */}
       <Header
