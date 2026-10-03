@@ -65,7 +65,7 @@ export function App() {
       {/* Apple Subtle Ambient Glow Follower */}
       <div
         ref={cursorRef}
-        className="fixed top-0 left-0 w-[40rem] h-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-[#bf5af2]/10 to-[#2997ff]/10 blur-[100px] pointer-events-none z-0 dopamine-glow"
+        className="fixed top-20 -left-20 w-[150%] h-[200px] bg-[#ff007f] opacity-20 -rotate-12 pointer-events-none z-0"
       />
 
       {/* Barra de Navegação */}
