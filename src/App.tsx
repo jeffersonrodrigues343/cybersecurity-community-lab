@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Header } from './components/Header';
@@ -26,8 +26,7 @@ export function App() {
   });
 
   const mainContainerRef = useRef<HTMLDivElement>(null);
-  const cursorRef = useRef<HTMLDivElement>(null);
-
+  
   
 
   const handleScoreUpdate = (newXp: number, count: number, isFinished: boolean) => {
@@ -38,33 +37,13 @@ export function App() {
     }
   };
 
-  // GSAP: Ambient Glow Cursor Follower
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const cursor = cursorRef.current;
-      if (cursor && window.matchMedia('(pointer: fine)').matches) {
-        const moveCursor = (e: MouseEvent) => {
-          gsap.to(cursor, {
-            x: e.clientX,
-            y: e.clientY,
-            duration: 0.4,
-            ease: 'power2.out',
-          });
-        };
-        window.addEventListener('mousemove', moveCursor);
-        return () => window.removeEventListener('mousemove', moveCursor);
-      }
-    }, mainContainerRef);
-
-    return () => ctx.revert();
-  }, []);
-
+  
   return (
     <div ref={mainContainerRef} className="min-h-screen flex flex-col bg-[#050507] text-[#f5f5f7] relative overflow-x-hidden">
       
       {/* Apple Subtle Ambient Glow Follower */}
       <div
-        ref={cursorRef}
+        
         className="fixed top-20 -left-20 w-[150%] h-[200px] bg-[#ff007f] opacity-20 -rotate-12 pointer-events-none z-0"
       />
 
