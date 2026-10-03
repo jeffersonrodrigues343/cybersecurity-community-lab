@@ -569,7 +569,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
 
           {/* Conteúdo do Incidente */}
-          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiMwYTBhMGMiLz48Y2lyY2xlIGN4PSI0IiBjeT0iNCIgcj0iMSIgZmlsbD0iIzIyMiIvPjwvc3ZnPg==')]">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-[#1c1c1e]">
             
             {/* Cronômetro Tático do Modo Sob Pressão */}
             
@@ -677,8 +677,8 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           </div>
         </motion.div>
 
-        {/* COLUNA DIREITA: Dicas Rápidas & Decisão do Detetive (5 colunas) */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* COLUNA DIREITA: Escondida */}
+        <div className="hidden">
           
                     {/* ferramentas de investigação visual (3 pistas) */}
                     <div ref={cluesRef} className={`bg-[#161617] border-2 border-white rounded-none p-5 space-y-4 shadow-[4px_4px_0_0_#ff007f] transition-all duration-500 ${currentAnswerData?.answered ? 'opacity-40 blur-[2px] grayscale pointer-events-none' : ''}`}>
