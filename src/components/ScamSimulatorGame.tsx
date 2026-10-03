@@ -381,11 +381,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       if (currentLevel === 'basico') {
         setCurrentLevel('medio');
         setCurrentCaseIndex(0);
-    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
       } else if (currentLevel === 'medio') {
         setCurrentLevel('avancado');
         setCurrentCaseIndex(0);
-    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    setTimeout(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
       }
     }
   };
@@ -537,7 +537,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       {/* ======================================================== */}
       {/* CONSOLE PRINCIPAL DESKTOP (Split View: Inspeção + Auditoria) */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div ref={topRef} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* COLUNA ESQUERDA: Cartão Bento do Incidente sob Investigação (7 colunas) */}
         <motion.div
