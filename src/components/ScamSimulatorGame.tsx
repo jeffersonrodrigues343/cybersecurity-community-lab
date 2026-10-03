@@ -64,6 +64,15 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const cluesRef = useRef<HTMLDivElement>(null);
 
 
+  useEffect(() => {
+    // Força o scroll pro topo absoluto assim que o caso novo for montado no DOM
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+      document.body.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
+  }, [dynamicCase.id]);
+  
   // Registro de respostas e laudos periciais
   const [answers, setAnswers] = useState<{
     [caseId: string]: {
@@ -146,7 +155,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   useEffect(() => {
     
     
-  }, [currentCase.id]);
+  }, [dynamicCase.id]);
 
   // Contagem regressiva do Modo Sob Pressão
   
@@ -166,11 +175,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   };
 
   // Pistas coletadas no caso atual
-  const currentCaseDiscovered = discoveredClues[currentCase.id] || [];
+  const currentCaseDiscovered = discoveredClues[dynamicCase.id] || [];
 
   // Métricas gerais de pontuação e progresso
   const totalCases = SCAM_CASES.length;
-  const currentAnswerData = answers[currentCase.id];
+  const currentAnswerData = answers[dynamicCase.id];
   const totalFinishedCount = Object.keys(answers).length;
   const isBasicoFinished = totalFinishedCount >= 3;
 
@@ -188,7 +197,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
       const updatedClues = [...currentCaseDiscovered, clue.id];
       setDiscoveredClues((prev) => ({
         ...prev,
-        [currentCase.id]: updatedClues,
+        [dynamicCase.id]: updatedClues,
       }));
 
       unlockBadge('badge-first-clue');
@@ -203,11 +212,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
   const handleProtocolReport = () => {
     if (selectedVerdict === null) return;
     if (selectedHypothesis === null) return;
-    if (answers[currentCase.id]?.answered) return;
+    if (answers[dynamicCase.id]?.answered) return;
 
     const isCorrect = selectedVerdict === currentCase.isScam;
     const hypothesisCorrect = selectedHypothesis === currentCase.correctEvidenceIndex;
-    const cluesFoundCount = (discoveredClues[currentCase.id] || []).length;
+    const cluesFoundCount = (discoveredClues[dynamicCase.id] || []).length;
 
     // Bônus de 10 XP por cada pista investigada antes do laudo
     const bonusXp = isCorrect ? cluesFoundCount * 10 : 0;
@@ -244,13 +253,13 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         colors: ['#0071e3', '#30d158', '#2997ff', '#ff9f0a', '#ffffff'],
       });
 
-      if (currentCase.id === 'case-1-whatsapp') unlockBadge('badge-family-shield');
-      if (currentCase.id === 'case-7-vaga-tarefas' || currentCase.id === 'case-9-mao-fantasma-suporte') unlockBadge('badge-anti-ghost');
-      if (['case-1-whatsapp', 'case-4-falsa-central'].includes(currentCase.id)) {
+      if (dynamicCase.id === 'case-1-whatsapp') unlockBadge('badge-family-shield');
+      if (dynamicCase.id === 'case-7-vaga-tarefas' || dynamicCase.id === 'case-9-mao-fantasma-suporte') unlockBadge('badge-anti-ghost');
+      if (['case-1-whatsapp', 'case-4-falsa-central'].includes(dynamicCase.id)) {
         unlockBadge('badge-pix-guard');
       }
-      if (currentCase.id === 'case-4-falsa-central' || currentCase.id === 'case-8-receita-ecac') {
-        const otherCaseAnswer = answers[currentCase.id === 'case-4-falsa-central' ? 'case-8-receita-ecac' : 'case-4-falsa-central'];
+      if (dynamicCase.id === 'case-4-falsa-central' || dynamicCase.id === 'case-8-receita-ecac') {
+        const otherCaseAnswer = answers[dynamicCase.id === 'case-4-falsa-central' ? 'case-8-receita-ecac' : 'case-4-falsa-central'];
         if (otherCaseAnswer?.isCorrect) {
           unlockBadge('badge-central-bank-expert');
         }
@@ -279,11 +288,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
     const newAnswers = {
       ...answers,
-      [currentCase.id]: {
+      [dynamicCase.id]: {
         answered: true,
         isCorrect,
         userChoice: selectedVerdict,
-        cluesDiscovered: discoveredClues[currentCase.id] || [],
+        cluesDiscovered: discoveredClues[dynamicCase.id] || [],
         bonusXp,
         comboBonus,
         pressureBonus,
@@ -331,11 +340,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
           origin: { y: 0.65 },
           colors: ['#30d158', '#2997ff', '#ffffff'],
         });
-        const currentAnswer = answers[currentCase.id];
+        const currentAnswer = answers[dynamicCase.id];
         if (currentAnswer) {
           const updatedAnswers = {
             ...answers,
-            [currentCase.id]: {
+            [dynamicCase.id]: {
               ...currentAnswer,
               bonusXp: (currentAnswer.bonusXp || 0) + 15,
             },
@@ -541,11 +550,11 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
         
         {/* COLUNA ESQUERDA: Cartão Bento do Incidente sob Investigação (7 colunas) */}
         <motion.div
-          key={currentCase.id}
+          key={dynamicCase.id}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="lg:col-span-7 bg-[#161617] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl space-y-0"
+          className="lg:col-span-7 bg-gradient-to-b from-[#1c1c1e] to-[#121213] border border-white/[0.1] rounded-3xl overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.4)] space-y-0 relative"
         >
           {/* Header do Cartão Bento */}
           <div className="px-6 py-4 bg-white/[0.02] border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -588,7 +597,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
 
             {/* Cenário Animado 2D Baseado no Enunciado */}
             <ScenarioAnimation2D
-              caseId={currentCase.id}
+              caseId={dynamicCase.id}
               scenarioType={getScenarioType(currentCase)}
               isScam={currentCase.isScam}
               verdictResult={
@@ -714,7 +723,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                         ? 'border-[#2997ff]/50 bg-[#1a1a1c] shadow-xl shadow-blue-500/5'
                         : isDiscovered
                         ? 'border-white/[0.12] bg-[#161617]'
-                        : 'border-white/[0.06] bg-[#121213] hover:border-white/[0.16]'
+                        : 'border-white/[0.06] bg-[#121213] hover:border-[#2997ff]/40 hover:bg-[#1a1a1c] hover:shadow-[0_0_15px_rgba(41,151,255,0.15)]'
                     }`}
                   >
                     <button
@@ -1116,7 +1125,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                             whileTap={{ scale: 0.97 }}
                             transition={{ type: "spring", stiffness: 400, damping: 22 }}
                             onClick={handleNextCase}
-                            className="w-full py-3.5 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-semibold text-xs flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg shadow-blue-500/25"
+                            className="w-full py-4 rounded-full bg-gradient-to-r from-[#0071e3] to-[#2997ff] hover:from-[#2997ff] hover:to-[#0071e3] text-white font-bold text-sm flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(41,151,255,0.4)] hover:shadow-[0_0_30px_rgba(41,151,255,0.6)] hover:scale-[1.02]"
                           >
                             <span>
                               'Próximo Caso da Investigação'
