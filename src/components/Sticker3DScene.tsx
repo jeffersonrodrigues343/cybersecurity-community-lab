@@ -69,7 +69,7 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
 
     // 4. Iluminação Estúdio para Efeito 3D Sticker Glossy (Candy/Clay Shading)
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
@@ -805,11 +805,11 @@ export const Sticker3DScene: React.FC<Sticker3DSceneProps> = ({
 
     // 7. Loop de Animação 3D com Física de Bouncy Springs
     let animationFrameId: number;
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
+      const elapsed = (performance.now() - startTime) * 0.001;
 
       // Flutuação suave (Idle Bobbing) do Sticker 3D
       const floatY = Math.sin(elapsed * 2.2) * 0.12;
