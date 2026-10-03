@@ -4,15 +4,15 @@
 
 @layer base {
   h1, h2, h3, h4, h5, h6, .font-black {
-    font-family: "Courier New", Courier, monospace; font-style: normal; font-size: 14px; font-style: normal; font-style: italic;
+    font-family: "Teko", "Arial Black", sans-serif; font-style: normal; font-size: 16px; font-style: normal; font-size: 14px; font-style: normal; font-style: italic;
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
   
   body {
-    font-family: "Courier New", Courier, monospace; font-style: normal; font-size: 14px; font-style: normal; font-style: italic;
-    background-color: #999999;
-    color: #999999;
+    font-family: "Teko", "Arial Black", sans-serif; font-style: normal; font-size: 16px; font-style: normal; font-size: 14px; font-style: normal; font-style: italic;
+    background-color: #e0e6ed;
+    color: #e0e6ed;
     overflow-x: hidden;
     text-transform: uppercase;
     /* Basic CRT effect on the whole body */
@@ -22,16 +22,16 @@
 
 /* ULTRAKILL HUD STYLES */
 .uk-container {
-  background-color: #999999;
-  border: 8px solid #ff00ff; background-color: #999999;
-  box-shadow: 0 0 50px #ff0000;
+  background-color: #e0e6ed;
+  border: 8px solid #ff00ff; background-color: #e0e6ed;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 15px rgba(249, 115, 22, 0.2);
   image-rendering: pixelated;
 }
 
 .uk-btn-red {
-  background-color: #999999;
-  border: 8px solid #ff00ff; background-color: #999999;
-  color: #999999;
+  background-color: #e0e6ed;
+  border: 8px solid #ff00ff; background-color: #e0e6ed;
+  color: #e0e6ed;
   box-shadow: 4px 4px 0px #330000;
   transition: all 0.1s steps(2);
 }
@@ -39,14 +39,14 @@
 .uk-btn-red:active {
   transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px #330000;
-  background-color: #999999;
-  color: #999999;
+  background-color: #e0e6ed;
+  color: #e0e6ed;
 }
 
 .uk-btn-blue {
-  background-color: #999999;
-  border: 1px dashed #444444;
-  color: #999999;
+  background-color: #e0e6ed;
+  border: 1px solid #475569;
+  color: #e0e6ed;
   box-shadow: 4px 4px 0px #002244;
   transition: all 0.1s steps(2);
 }
@@ -54,14 +54,14 @@
 .uk-btn-blue:active {
   transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px #002244;
-  background-color: #999999;
-  color: #999999;
+  background-color: #e0e6ed;
+  color: #e0e6ed;
 }
 
 .uk-btn-green {
-  background-color: #999999;
-  border: 1px solid #555555;
-  color: #999999;
+  background-color: #e0e6ed;
+  border: 1px solid #38bdf8; box-shadow: 0 0 15px rgba(2, 132, 199, 0.5);
+  color: #e0e6ed;
   box-shadow: 4px 4px 0px #002200;
   transition: all 0.1s steps(2);
 }
@@ -69,13 +69,13 @@
 .uk-btn-green:active {
   transform: translate(4px, 4px);
   box-shadow: 0px 0px 0px #002200;
-  background-color: #999999;
-  color: #999999;
+  background-color: #e0e6ed;
+  color: #e0e6ed;
 }
 
 .uk-panel {
-  background-color: #999999;
+  background-color: #e0e6ed;
   border: 2px dashed #555;
-  color: #999999;
+  color: #e0e6ed;
 }
 
