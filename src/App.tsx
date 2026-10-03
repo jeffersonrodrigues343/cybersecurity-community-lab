@@ -2,8 +2,7 @@ import { useState, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Header } from './components/Header';
-import { Hero } from './components/Hero';
-import { ScamSimulatorGame } from './components/ScamSimulatorGame';
+import { CaseDesk } from './components/CaseDesk';
 import { CertificateModal } from './components/CertificateModal';
 import { ReportModal } from './components/ReportModal';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -39,7 +38,7 @@ export function App() {
 
   
   return (
-    <div ref={mainContainerRef} className="min-h-screen flex flex-col bg-[#F2F2F7] text-[#1C1C1E] relative overflow-x-hidden">
+    <div ref={mainContainerRef} className="min-h-screen flex flex-col desk-surface text-[#e8eaf2] relative overflow-x-hidden">
       
       
 
@@ -54,12 +53,12 @@ export function App() {
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Hero Section Direto e Limpo */}
-        <Hero />
+        
+        
 
         {/* Seção Principal: Simulador Gamificado de Golpes */}
-        <section className="mb-12">
-          <ScamSimulatorGame onScoreUpdate={handleScoreUpdate} />
+        <section>
+          <CaseDesk onScoreUpdate={handleScoreUpdate} />
         </section>
 
         {/* Notificação de Certificado Desbloqueado */}

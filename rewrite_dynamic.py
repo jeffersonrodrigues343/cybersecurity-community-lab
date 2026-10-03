@@ -1,0 +1,43 @@
+import re
+
+with open('src/data/dynamicScamsGenerator.ts', 'r') as f:
+    content = f.read()
+
+# Replace formal tone
+content = content.replace('O dilema ético aqui consiste em', 'O golpe tenta te enganar dizendo que')
+content = content.replace('Um atendente com o número 0800 do seu banco no visor afirma que identificou uma fraude', 'Um cara te liga, o visor mostra o 0800 do seu banco, e ele diz que rolou uma fraude')
+content = content.replace('exige que você transfira seu saldo', 'manda você transferir tudo')
+content = content.replace('procedimento proibido e inexistente nas normas bancárias', 'isso não existe no banco')
+content = content.replace('A ligação é confiável porque o visor do celular exibe exatamente o número 0800 do banco emissor', 'A ligação parece segura só porque o número 0800 é o mesmo do banco')
+content = content.replace('O número 0800 exibido no visor do celular não corresponde ao canal de suporte impresso no verso do cartão físico', 'O número 0800 da tela é diferente do número que tá no verso do seu cartão')
+content = content.replace('A notificação da suposta compra fraudulenta foi recebida fora do horário de liquidação da compensação do Banco Central', 'A notificação da compra falsa chegou num horário que o banco nem funciona direito')
+content = content.replace('Nenhuma instituição financeira solicita que o cliente realize um Pix para estornar transações ou proteger saldo.', 'Nenhum banco pede pra você fazer Pix pra devolver dinheiro ou proteger sua conta.')
+content = content.replace('Golpe da Falsa Central Telefônica com BINA Mascarada', 'Golpe da Falsa Central com BINA fake')
+content = content.replace('Criminosos simulam o 0800 do banco para aplicar terror psicológico e induzir o cliente a transferir todo o saldo da conta.', 'Os golpistas fraudam o identificador de chamadas pra aparecer o 0800 do banco, fazem terror psicológico e te fazem raspar a própria conta.')
+content = content.replace('Desligue a chamada imediatamente! Se tiver dúvida, ligue você mesmo para o número impresso atrás do seu cartão físico.', 'Desliga na cara! Se ficar na dúvida, pega o cartão e liga pro número que tá atrás dele.')
+content = content.replace('Terror Psicológico de Perda Financeira', 'Medo de perder o que tem na conta')
+content = content.replace('É como alguém na porta da sua casa dizendo que é da polícia e pedindo todo seu dinheiro para "guardar".', 'É tipo um cara bater na tua porta dizendo que é policial e pedir pra guardar teu dinheiro na casa dele.')
+content = content.replace('Combine com seus pais idosos: desligue na hora e ligue no número do verso do cartão físico.', 'Avisa os coroas: desliga na hora e liga pro número que tá impresso no cartão.')
+content = content.replace('Nunca transfira dinheiro. Se transferiu, acione o MED imediatamente no app.', 'Nunca faça Pix em ligação. Se fez, corre no app do banco e aciona o Mecanismo Especial de Devolução (MED).')
+content = content.replace('Banco nunca pede Pix para cancelar compra ou proteger dinheiro!', 'O Banco NUNCA vai te pedir Pix pra cancelar fraude!')
+content = content.replace('Uma pessoa te liga dizendo ser da segurança do seu banco e pede que você transfira seu dinheiro para uma conta de segurança. O que fazer?', 'Alguém liga dizendo ser da segurança do banco e manda transferir pra uma conta segura. O que você faz?')
+content = content.replace('A pressão psicológica e a pressa são usadas para não deixar a vítima pensar.', 'Eles fazem pressão e botam pressa pra você nem ter tempo de raciocinar.')
+content = content.replace('Desligar o telefone imediatamente, pois banco nunca pede Pix para proteger saldo.', 'Desliga na cara. Banco não pede Pix pra proteger grana.')
+content = content.replace('Fazer a transferência rápida para evitar que o dinheiro seja roubado pelo golpista.', 'Fazer o Pix correndo pra não perder o dinheiro.')
+content = content.replace('Passar a senha do cartão para o atendente fazer o cancelamento por lá.', 'Passar a senha pro atendente resolver.')
+content = content.replace('Perfeito! Desligar a chamada interrompe o golpe na raiz.', 'Boa! Desligar é a única saída.')
+content = content.replace('Perigo total! É exatamente essa transferência que rouba todo o seu saldo.', 'Caiu no golpe! É exatamente nesse Pix que você perde tudo.')
+content = content.replace('Jamais passe senhas por telefone para ninguém!', 'Tá louco? Nunca se passa senha por telefone!')
+content = content.replace('Telefonia & Roteamento Anatel', 'Registro Anatel')
+content = content.replace('Sentido do Tráfego Telefônico', 'Sentido da Chamada')
+content = content.replace('Chamada Externa Ativa (Outbound / Origem Externa)', 'Chamada Recebida')
+content = content.replace('Tarifação reversa exclusiva para recebimento (Inbound)', 'Só recebe ligação, não faz')
+content = content.replace('O número 0800 é exibido em chamada recebida (ativa), violando a arquitetura técnica regulamentar da Anatel.', 'O 0800 tá te ligando, mas pelas regras da Anatel ele só deveria receber ligações.')
+content = content.replace('Número mascarado por tecnologia de falsificação (Spoofing)!', 'Eles fraudaram o número na sua tela (Spoofing)!')
+content = content.replace('Criminosos utilizam tecnologia VoIP para fazer o visor do celular exibir o número real do banco.', 'Os golpistas usam internet (VoIP) pra fingir que estão ligando do banco.')
+content = content.replace('Linhas 0800 de bancos são configuradas apenas para RECEBER ligações de clientes.', '0800 de banco só serve pra VOCÊ ligar pra eles, não o contrário.')
+content = content.replace('A suposta "conta de segurança" é uma conta corrente pessoal de pessoa física', 'A tal "conta segura" na verdade é a conta pessoal de um CPF qualquer')
+content = content.replace('A conta de segurança é a conta de um comparsa!', 'A conta é de um laranja!')
+
+with open('src/data/dynamicScamsGenerator.ts', 'w') as f:
+    f.write(content)

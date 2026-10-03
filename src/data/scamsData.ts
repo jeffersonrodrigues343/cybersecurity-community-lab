@@ -58,7 +58,7 @@ export interface ScamCase {
   title: string;
   dilemma: string;
   sender: string;
-  channel: 'whatsapp' | 'sms' | 'call' | 'social' | 'document';
+  channel: 'whatsapp' | 'sms' | 'call' | 'social' | 'document' | 'push';
   time: string;
   preview: string;
   messageContent: string;

@@ -2,12 +2,12 @@ import { Shield } from 'lucide-react';
 
 export const Footer = () => {
   return (
-    <footer className="border-t border-white/[0.08] bg-black py-10 mt-16 text-[#86868b] text-[11px]">
+    <footer className="border-t border-desk-line py-8 mt-6 text-clip text-[11px] font-mono">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
         
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-white/[0.06] pb-4">
           <div className="flex items-center space-x-2 text-[#d2d2d7]">
-            <Shield className="w-3.5 h-3.5 text-[#2997ff]" />
+            <Shield className="w-3.5 h-3.5 text-marker" />
             <span className="font-semibold text-xs text-white">HackLearn</span>
             <span>• Simulador de Defesa Digital</span>
           </div>

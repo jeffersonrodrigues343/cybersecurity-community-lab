@@ -439,7 +439,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         title: `Notificação do Cartão: Compra em ${store}`,
         dilemma: `Você acabou de sair de ${store} e recebe um alerta no celular: "Compra aprovada de ${amount}". Você deve entrar em pânico?`,
         sender: 'Nubank / Notificação do App',
-        channel: 'whatsapp',
+        channel: 'push',
         time: `${randomInt(8, 20)}:${randomInt(10, 59)}`,
         preview: `Compra de ${amount} aprovada em ${store}...`,
         messageContent: `COMPRA APROVADA: Compra no valor de ${amount} realizada no seu Cartão de Débito em ${store}.\n\nSe você reconhece essa transação, nenhuma ação é necessária. Caso não reconheça, abra o aplicativo oficial e toque em Bloquear Cartão.`,
