@@ -117,18 +117,18 @@ const WhatsAppScreen = ({
     <div className="flex flex-col h-full">
       <div className="bg-[#008069] text-white">
         <StatusBar time={c.time} dark />
-        <div className="flex items-center gap-2 px-2 pb-2.5 pt-1">
-          <ArrowLeft className="w-5 h-5" />
+        <div className="flex items-center gap-2 px-2.5 pb-2.5 pt-1">
+          <ArrowLeft className="w-4 h-4 shrink-0 cursor-pointer" />
           <motion.div
             animate={{ scale: [1, 1.08, 1] }}
             transition={{ repeat: Infinity, duration: 2.5 }}
-            className="w-9 h-9 rounded-full bg-[#dfe5e7] flex items-center justify-center text-[#54656f] font-semibold text-sm shadow-inner"
+            className="w-8 h-8 rounded-full bg-[#dfe5e7] flex items-center justify-center text-[#54656f] font-semibold text-xs shadow-inner shrink-0"
           >
             {name.charAt(0)}
           </motion.div>
           <div className="flex-1 min-w-0 leading-tight">
-            <div className="font-semibold text-[15px] truncate">{unknown && number ? number : name}</div>
-            <div className="text-[11.5px] text-white/80 truncate">
+            <div className="font-semibold text-[14px] truncate">{unknown && number ? number : name}</div>
+            <div className="text-[11px] text-white/80 truncate">
               {isTyping ? (
                 <span className="italic font-medium text-emerald-200 animate-pulse">digitando...</span>
               ) : unknown ? (
@@ -138,9 +138,11 @@ const WhatsAppScreen = ({
               )}
             </div>
           </div>
-          <Video className="w-5 h-5 opacity-90" />
-          <Phone className="w-[18px] h-[18px] ml-3 opacity-90" />
-          <MoreVertical className="w-5 h-5 ml-1 opacity-90" />
+          <div className="flex items-center gap-2 text-white/90 shrink-0">
+            <Video className="w-4 h-4 opacity-90" />
+            <Phone className="w-4 h-4 opacity-90" />
+            <MoreVertical className="w-4 h-4 opacity-90" />
+          </div>
         </div>
       </div>
 
@@ -635,13 +637,13 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           : { x: [0, -4, 4, -4, 4, -2, 2, 0] }
       }
       transition={{ duration: stamped ? 0.4 : 0.35, ease: 'easeInOut' }}
-      className="relative mx-auto w-full max-w-[370px]"
+      className="relative mx-auto w-full max-w-[330px]"
     >
-      <div className="relative rounded-[50px] bg-[#0c0e14] p-[10px] shadow-[0_0_0_2px_#272b38,0_32px_55px_-15px_rgba(0,0,0,0.85)] border border-white/10">
-        <div className="relative h-[635px] max-h-[80vh] min-h-[520px] rounded-[40px] overflow-hidden font-phone select-none">
+      <div className="relative rounded-[46px] bg-[#0c0e14] p-[9px] shadow-[0_0_0_2px_#272b38,0_32px_55px_-15px_rgba(0,0,0,0.85)] border border-white/10">
+        <div className="relative h-[590px] max-h-[78vh] min-h-[490px] rounded-[38px] overflow-hidden font-phone select-none">
           {screen}
 
-          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-[92px] h-[25px] rounded-full bg-black flex items-center justify-between px-3 z-30 shadow-md">
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[82px] h-[22px] rounded-full bg-black flex items-center justify-between px-2.5 z-30 shadow-md">
             <span className="w-2.5 h-2.5 rounded-full bg-[#1e293b]" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] animate-pulse" />
           </div>
