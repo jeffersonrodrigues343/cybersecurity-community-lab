@@ -643,10 +643,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           : { x: [0, -4, 4, -4, 4, -2, 2, 0] }
       }
       transition={{ duration: stamped ? 0.4 : 0.35, ease: 'easeInOut' }}
-      className="relative mx-auto w-full max-w-[310px] sm:max-w-[285px]"
+      className="relative mx-auto w-full max-w-[280px] sm:max-w-[285px]"
     >
-      <div className="relative rounded-[40px] sm:rounded-[44px] bg-[#0c0e14] p-[7px] sm:p-[8px] shadow-[0_0_0_2px_#272b38,0_32px_55px_-15px_rgba(0,0,0,0.85)] border border-white/10">
-        <div className="relative h-[550px] sm:h-[610px] max-h-[76vh] sm:max-h-[82vh] min-h-[460px] rounded-[33px] sm:rounded-[36px] overflow-hidden font-phone select-none">
+      <div className="relative rounded-[36px] sm:rounded-[44px] bg-[#0c0e14] p-[6px] sm:p-[8px] shadow-[0_0_0_2px_#272b38,0_24px_45px_-12px_rgba(0,0,0,0.85)] border border-white/10">
+        <div className="relative h-[490px] sm:h-[590px] max-h-[66vh] sm:max-h-[80vh] min-h-[420px] rounded-[30px] sm:rounded-[36px] overflow-hidden font-phone select-none">
           {screen}
 
           <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-[72px] h-[18px] rounded-full bg-black flex items-center justify-between px-2 z-30 shadow-sm">
