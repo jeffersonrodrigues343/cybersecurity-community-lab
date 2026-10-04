@@ -33,12 +33,14 @@ interface PhoneScreenProps {
 }
 
 const findContactNumber = (c: ScamCase): string | null => {
-  const contact = c.clues.find((cl) => cl.inspection.type === 'contact');
-  if (contact) return contact.inspection.field1Value;
-  const anyPhone = c.clues
-    .flatMap((cl) => [cl.inspection.field1Value, cl.inspection.field2Value])
-    .find((v) => /(\+55|0800|\(\d{2}\))/.test(v));
-  return anyPhone ?? null;
+  const allValues = c.clues
+    .flatMap((cl) => [cl.inspection.field1Value, cl.inspection.field2Value, cl.inspection.field3Value])
+    .filter((v): v is string => Boolean(v));
+  for (const v of allValues) {
+    const match = v.match(/(\+55\s*\(?\d{2}\)?\s*9?\d{4}-?\d{4}|0800\s*\d{3}\s*\d{4})/);
+    if (match) return match[0];
+  }
+  return null;
 };
 
 const cleanName = (sender: string) => sender.replace(/\s*\(.*?\)\s*/g, '').trim();

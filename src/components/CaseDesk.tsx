@@ -609,12 +609,17 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             )}
           </div>
 
-          {/* SEÇÃO 2: Pistas Técnicas para Auditoria Externa */}
+          {/* SEÇÃO 2: Checagens Práticas da Vida Real */}
           <div className="mt-6">
             <div className="flex items-baseline justify-between">
-              <h3 className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft">
-                Auditorias Complementares de Sistema
-              </h3>
+              <div>
+                <h3 className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft">
+                  Checagens Práticas da Vida Real
+                </h3>
+                <span className="text-[11px] text-ink-soft block font-sans">
+                  O que qualquer pessoa pode conferir com seu próprio celular na mão:
+                </span>
+              </div>
               <span className="font-mono text-[11px] text-ink-soft">+{CLUE_XP} XP cada</span>
             </div>
 
@@ -662,7 +667,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                               ]
                                 .filter(([l, v]) => l && v)
                                 .map(([l, v]) => (
-                                  <div key={l} className="grid sm:grid-cols-[160px_1fr] gap-x-3">
+                                   <div key={l} className="grid sm:grid-cols-[160px_1fr] gap-x-3">
                                     <dt className="text-ink-soft">{l}:</dt>
                                     <dd className="text-ink font-semibold break-words">{v}</dd>
                                   </div>
@@ -670,7 +675,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                             </dl>
                             <p className="mt-3 text-[13.5px] leading-[1.6] text-ink italic bg-white/70 p-2.5 rounded border border-ink/10">
                               <span className="font-mono font-bold text-[11px] not-italic uppercase tracking-wider block text-ink-soft mb-0.5">
-                                Constatação Técnica Factual:
+                                O que isso te ensina na prática:
                               </span>
                               {clue.inspection.observation}
                             </p>
