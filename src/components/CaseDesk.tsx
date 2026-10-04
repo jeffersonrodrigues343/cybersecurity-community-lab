@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Smartphone,
   CheckCircle2,
+  HelpCircle,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -59,8 +60,11 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [collectedEvidences, setCollectedEvidences] = useState<CollectedEvidence[]>([]);
   const [mobileTab, setMobileTab] = useState<'phone' | 'dossier'>('phone');
 
-  // Veredito Direto
+  // Veredito & Questionamento do Motivo (Desafio Intelectual)
+  const [stagedVerdict, setStagedVerdict] = useState<Verdict | null>(null);
+  const [selectedHypothesis, setSelectedHypothesis] = useState<number | null>(null);
   const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
+  const [wasHypothesisCorrect, setWasHypothesisCorrect] = useState<boolean | null>(null);
 
   const [streak, setStreak] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
@@ -83,10 +87,12 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [familyGuideTab, setFamilyGuideTab] = useState<'rules' | 'glossary'>('rules');
 
   const topRef = useRef<HTMLDivElement>(null);
+  const hypothesisRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   const answered = finalVerdict !== null;
   const wasVerdictCorrect = answered ? (finalVerdict === 'scam') === current.isScam : null;
+  const isPerfectScore = answered ? wasVerdictCorrect && wasHypothesisCorrect : null;
 
   const unlockBadge = useCallback((badgeId: string) => {
     setUnlockedBadgeIds((prev) => {
@@ -146,63 +152,89 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     }
   };
 
-  // Veredito Direto em 1 Toque
-  const handleExecuteDirectVerdict = useCallback(
-    (v: Verdict) => {
-      if (answered) return;
+  // Jogador escolhe Golpe ou Seguro (Dispara o questionamento do motivo)
+  const handleStageVerdict = (v: Verdict) => {
+    sound.playBlip();
+    setStagedVerdict(v);
+    setSelectedHypothesis(null);
+    setMobileTab('dossier');
+    setTimeout(() => {
+      hypothesisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 150);
+  };
 
-      const verdictCorrect = (v === 'scam') === current.isScam;
-      setFinalVerdict(v);
-      setOpenClue(null);
+  // Confirmação final após escolher o motivo
+  const handleConfirmVerdict = useCallback(() => {
+    if (answered || stagedVerdict === null || selectedHypothesis === null) return;
 
-      let earned = 0;
-      let newStreak = streak;
+    const verdictCorrect = (stagedVerdict === 'scam') === current.isScam;
+    const hypoCorrect = selectedHypothesis === current.correctEvidenceIndex;
 
-      if (verdictCorrect) {
-        newStreak = streak + 1;
-        earned = current.xpReward + inspected.length * CLUE_XP + comboBonusFor(newStreak);
-        sound.playSuccess();
-        confetti({
-          particleCount: 65,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#ffd84a', '#1fa463', '#f4ede0', '#e23d3d'],
-        });
+    setFinalVerdict(stagedVerdict);
+    setWasHypothesisCorrect(hypoCorrect);
+    setOpenClue(null);
 
-        if (newStreak >= 3) unlockBadge('badge-streak-fire');
-        if (current.category.includes('Família') || current.category.includes('WhatsApp')) {
-          unlockBadge('badge-family-shield');
-        }
-        if (current.category.includes('Central') || current.category.includes('Banco')) {
-          unlockBadge('badge-pix-guard');
-        }
-      } else {
-        sound.playError();
-        newStreak = 0;
+    let earned = 0;
+    let newStreak = streak;
+
+    if (verdictCorrect && hypoCorrect) {
+      // Acertou Veredito e o Motivo Real (Pontuação Máxima)
+      newStreak = streak + 1;
+      earned = current.xpReward + inspected.length * CLUE_XP + comboBonusFor(newStreak);
+      sound.playSuccess();
+      confetti({
+        particleCount: 70,
+        spread: 75,
+        origin: { y: 0.6 },
+        colors: ['#ffd84a', '#1fa463', '#f4ede0', '#e23d3d'],
+      });
+
+      if (newStreak >= 3) unlockBadge('badge-streak-fire');
+      if (current.category.includes('Família') || current.category.includes('WhatsApp')) {
+        unlockBadge('badge-family-shield');
       }
-
-      const newTotal = totalXp + earned;
-      const newSolved = solved + 1;
-      setStreak(newStreak);
-      setLastEarned(earned);
-      setTotalXp(newTotal);
-      setSolved(newSolved);
-      if (verdictCorrect) setCorrectCount((n) => n + 1);
-
-      if (newSolved >= 6) {
-        unlockBadge('badge-grand-master');
+      if (current.category.includes('Central') || current.category.includes('Banco')) {
+        unlockBadge('badge-pix-guard');
       }
+    } else if (verdictCorrect && !hypoCorrect) {
+      // Acertou o Veredito mas errou o Motivo (Pontuação Parcial)
+      earned = Math.round(current.xpReward * 0.5) + inspected.length * CLUE_XP;
+      sound.playSuccess();
+    } else {
+      // Errou o Veredito
+      sound.playError();
+      newStreak = 0;
+    }
 
-      onScoreUpdate(newTotal, newSolved, newSolved >= SCAM_CASES.length);
+    const newTotal = totalXp + earned;
+    const newSolved = solved + 1;
+    setStreak(newStreak);
+    setLastEarned(earned);
+    setTotalXp(newTotal);
+    setSolved(newSolved);
+    if (verdictCorrect) setCorrectCount((n) => n + 1);
 
-      // No mobile, muda automaticamente para a aba do veredito para o jogador ver a explicação
-      setMobileTab('dossier');
-      setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 250);
-    },
-    [answered, current, inspected.length, onScoreUpdate, solved, streak, totalXp, unlockBadge]
-  );
+    if (newSolved >= 6) {
+      unlockBadge('badge-grand-master');
+    }
+
+    onScoreUpdate(newTotal, newSolved, newSolved >= SCAM_CASES.length);
+
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 250);
+  }, [
+    answered,
+    current,
+    inspected.length,
+    onScoreUpdate,
+    selectedHypothesis,
+    solved,
+    stagedVerdict,
+    streak,
+    totalXp,
+    unlockBadge,
+  ]);
 
   const nextCase = useCallback(() => {
     sound.playBlip();
@@ -211,7 +243,10 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     setExecutedActionIds([]);
     setActionHistory([]);
     setCollectedEvidences([]);
+    setStagedVerdict(null);
+    setSelectedHypothesis(null);
     setFinalVerdict(null);
+    setWasHypothesisCorrect(null);
     setOpenClue(null);
     setInspected([]);
     setLastEarned(0);
@@ -219,21 +254,35 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [streak]);
 
+  // Teclado no Desktop
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const k = e.key.toLowerCase();
       if (!answered) {
-        if (k === 'g') handleExecuteDirectVerdict('scam');
-        else if (k === 's') handleExecuteDirectVerdict('safe');
+        if (stagedVerdict === null) {
+          if (k === 'g') handleStageVerdict('scam');
+          else if (k === 's') handleStageVerdict('safe');
+        } else {
+          if (k === '1' || k === 'a') setSelectedHypothesis(0);
+          else if (k === '2' || k === 'b') setSelectedHypothesis(1);
+          else if (k === '3' || k === 'c') setSelectedHypothesis(2);
+          else if (k === '4' || k === 'd') setSelectedHypothesis(3);
+          else if (k === 'enter' && selectedHypothesis !== null) handleConfirmVerdict();
+          else if (k === 'escape') {
+            setStagedVerdict(null);
+            setSelectedHypothesis(null);
+          }
+        }
       } else if (answered && (k === 'enter' || k === ' ')) {
         nextCase();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [answered, handleExecuteDirectVerdict, nextCase]);
+  }, [answered, handleConfirmVerdict, nextCase, selectedHypothesis, stagedVerdict]);
 
+  // Auto-fechar toast de conquista
   useEffect(() => {
     if (recentBadgeUnlocked) {
       const timer = setTimeout(() => {
@@ -358,7 +407,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           }`}
         >
           <Search className="w-3.5 h-3.5" />
-          <span>2. Checagens & Veredito</span>
+          <span>2. Checagens & Decisão</span>
           {inspected.length > 0 && (
             <span className="bg-ink text-paper text-[9.5px] px-1.5 py-0.2 rounded-full font-mono font-bold">
               {inspected.length}
@@ -409,14 +458,14 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => handleExecuteDirectVerdict('scam')}
+                    onClick={() => handleStageVerdict('scam')}
                     className="py-2.5 px-2 rounded-xl bg-scam hover:bg-scam/90 text-white font-display font-extrabold text-xs sm:text-sm uppercase tracking-wide shadow-md active:scale-95 transition cursor-pointer flex items-center justify-center gap-1"
                   >
                     <ShieldAlert className="w-4 h-4" />
                     <span>É Golpe!</span>
                   </button>
                   <button
-                    onClick={() => handleExecuteDirectVerdict('safe')}
+                    onClick={() => handleStageVerdict('safe')}
                     className="py-2.5 px-2 rounded-xl bg-safe hover:bg-safe/90 text-white font-display font-extrabold text-xs sm:text-sm uppercase tracking-wide shadow-md active:scale-95 transition cursor-pointer flex items-center justify-center gap-1"
                   >
                     <ShieldCheck className="w-4 h-4" />
@@ -481,7 +530,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
               </h2>
             </header>
 
-            {/* Respostas Obtidas pelo Diálogo (se houver) */}
+            {/* Respostas Obtidas pelo Diálogo no celular (se houver) */}
             {collectedEvidences.length > 0 && (
               <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
                 <span className="font-mono text-[10px] uppercase tracking-wider text-amber-800 font-bold block mb-1">
@@ -554,31 +603,129 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
               </ul>
             </div>
 
-            {/* Botões Diretos de Veredito */}
+            {/* SEÇÃO DE DECISÃO E QUESTIONAMENTO DO MOTIVO */}
             {!answered && (
               <div className="mt-5 pt-4 border-t-2 border-dashed border-ink/20">
-                <span className="font-mono text-xs uppercase tracking-wider text-ink-soft font-bold block mb-2 text-center sm:text-left">
-                  Qual é a sua decisão?
-                </span>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    onClick={() => handleExecuteDirectVerdict('scam')}
-                    className="py-3.5 px-3 rounded-xl bg-scam hover:bg-scam/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wide shadow-md active:scale-98 transition cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <ShieldAlert className="w-5 h-5 shrink-0" />
-                    <span>É Golpe!</span>
-                    <kbd className="hidden lg:inline font-mono text-[10px] opacity-75 border border-white/30 rounded px-1 ml-1">G</kbd>
-                  </button>
+                {stagedVerdict === null ? (
+                  /* ETAPA 1: O Jogador dá a opinião inicial */
+                  <div>
+                    <span className="font-mono text-xs uppercase tracking-wider text-ink-soft font-bold block mb-2 text-center sm:text-left">
+                      Qual é a sua decisão?
+                    </span>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        onClick={() => handleStageVerdict('scam')}
+                        className="py-3.5 px-3 rounded-xl bg-scam hover:bg-scam/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wide shadow-md active:scale-98 transition cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <ShieldAlert className="w-5 h-5 shrink-0" />
+                        <span>É Golpe!</span>
+                        <kbd className="hidden lg:inline font-mono text-[10px] opacity-75 border border-white/30 rounded px-1 ml-1">G</kbd>
+                      </button>
 
-                  <button
-                    onClick={() => handleExecuteDirectVerdict('safe')}
-                    className="py-3.5 px-3 rounded-xl bg-safe hover:bg-safe/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wide shadow-md active:scale-98 transition cursor-pointer flex items-center justify-center gap-1.5"
+                      <button
+                        onClick={() => handleStageVerdict('safe')}
+                        className="py-3.5 px-3 rounded-xl bg-safe hover:bg-safe/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wide shadow-md active:scale-98 transition cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <ShieldCheck className="w-5 h-5 shrink-0" />
+                        <span>É Seguro</span>
+                        <kbd className="hidden lg:inline font-mono text-[10px] opacity-75 border border-white/30 rounded px-1 ml-1">S</kbd>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* ETAPA 2: O Jogador é QUESTIONADO sobre POR QUE acredita nisso */
+                  <motion.div
+                    ref={hypothesisRef}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-3"
                   >
-                    <ShieldCheck className="w-5 h-5 shrink-0" />
-                    <span>É Seguro</span>
-                    <kbd className="hidden lg:inline font-mono text-[10px] opacity-75 border border-white/30 rounded px-1 ml-1">S</kbd>
-                  </button>
-                </div>
+                    <div className="flex items-center justify-between pb-1 border-b border-ink/10">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] uppercase tracking-wider text-ink-soft font-bold">
+                          Sua Decisão:
+                        </span>
+                        <span className={`font-display font-extrabold text-xs px-2.5 py-0.5 rounded-full ${
+                          stagedVerdict === 'scam' ? 'bg-scam text-white' : 'bg-safe text-white'
+                        }`}>
+                          {stagedVerdict === 'scam' ? '🚨 É Golpe!' : '✅ É Seguro'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          sound.playBlip();
+                          setStagedVerdict(null);
+                          setSelectedHypothesis(null);
+                        }}
+                        className="text-[11px] font-mono text-ink-soft hover:text-ink underline cursor-pointer"
+                      >
+                        Mudar veredito
+                      </button>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <HelpCircle className="w-4 h-4 text-marker shrink-0 mt-0.5" />
+                      <p className="text-xs sm:text-sm font-display font-bold text-ink leading-snug">
+                        {stagedVerdict === 'scam'
+                          ? 'O que te fez ter certeza de que isso é um golpe? Qual foi a armadilha que você pegou?'
+                          : 'Por que você acredita que essa mensagem é 100% segura e legítima?'}
+                      </p>
+                    </div>
+
+                    {/* Alternativas de Motivo */}
+                    <div className="space-y-2">
+                      {current.evidenceHypotheses.map((hypo, idx) => {
+                        const isSelected = selectedHypothesis === idx;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              sound.playBlip();
+                              setSelectedHypothesis(idx);
+                            }}
+                            className={`w-full text-left p-3 rounded-xl border-2 text-xs sm:text-[13px] leading-relaxed transition cursor-pointer flex items-start gap-2.5 ${
+                              isSelected
+                                ? 'bg-ink text-paper border-ink shadow-md font-medium'
+                                : 'bg-white/80 border-ink/15 hover:border-ink/40 text-ink'
+                            }`}
+                          >
+                            <span
+                              className={`w-5 h-5 rounded-full flex items-center justify-center font-mono text-[11px] font-bold shrink-0 mt-0.5 ${
+                                isSelected ? 'bg-marker text-ink' : 'border border-ink/30 text-ink-soft'
+                              }`}
+                            >
+                              {String.fromCharCode(65 + idx)}
+                            </span>
+                            <span className="flex-1">{hypo}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Botão de Confirmação da Decisão com o Motivo */}
+                    <button
+                      onClick={handleConfirmVerdict}
+                      disabled={selectedHypothesis === null}
+                      className={`w-full py-3.5 px-4 rounded-xl font-display font-extrabold text-sm sm:text-base tracking-wide uppercase flex items-center justify-center gap-2 shadow-lg transition active:scale-98 cursor-pointer mt-2 ${
+                        selectedHypothesis !== null
+                          ? stagedVerdict === 'scam'
+                            ? 'bg-scam hover:bg-scam/90 text-white'
+                            : 'bg-safe hover:bg-safe/90 text-white'
+                          : 'bg-ink/10 text-ink/30 border-2 border-dashed border-ink/20 cursor-not-allowed'
+                      }`}
+                    >
+                      <span>
+                        {selectedHypothesis !== null
+                          ? `Confirmar Decisão: ${stagedVerdict === 'scam' ? 'É Golpe!' : 'É Seguro'}`
+                          : 'Selecione o motivo acima'}
+                      </span>
+                      {selectedHypothesis !== null && <ArrowRight className="w-4 h-4" />}
+                      {selectedHypothesis !== null && (
+                        <kbd className="hidden lg:inline font-mono text-[10px] opacity-75 border border-white/30 rounded px-1 ml-1">Enter</kbd>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
               </div>
             )}
 
@@ -593,25 +740,35 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 >
                   <div
                     className={`rounded-xl p-4 border-2 shadow-sm ${
-                      wasVerdictCorrect ? 'border-safe/50 bg-safe/10' : 'border-scam/50 bg-scam/10'
+                      isPerfectScore
+                        ? 'border-safe/60 bg-safe/10'
+                        : wasVerdictCorrect
+                        ? 'border-amber-500/60 bg-amber-50/70'
+                        : 'border-scam/60 bg-scam/10'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        {wasVerdictCorrect ? (
+                        {isPerfectScore ? (
                           <ShieldCheck className="w-6 h-6 text-safe shrink-0" />
+                        ) : wasVerdictCorrect ? (
+                          <span className="text-xl shrink-0">👀</span>
                         ) : (
                           <ShieldAlert className="w-6 h-6 text-scam shrink-0" />
                         )}
                         <h3
-                          className={`font-display font-extrabold text-lg sm:text-xl leading-tight ${
-                            wasVerdictCorrect ? 'text-safe' : 'text-scam'
+                          className={`font-display font-extrabold text-base sm:text-lg leading-tight ${
+                            isPerfectScore
+                              ? 'text-safe'
+                              : wasVerdictCorrect
+                              ? 'text-amber-950'
+                              : 'text-scam'
                           }`}
                         >
-                          {wasVerdictCorrect
-                            ? current.isScam
-                              ? 'Mandou bem! É Golpe mesmo.'
-                              : 'Correto! Mensagem autêntica.'
+                          {isPerfectScore
+                            ? 'Dedução Perfeita! Veredito e motivo corretos.'
+                            : wasVerdictCorrect
+                            ? 'Acertou o Veredito, mas errou o motivo real!'
                             : current.isScam
                             ? 'Cuidado! Você caiu no golpe.'
                             : 'Alarme falso! A mensagem era segura.'}
@@ -624,13 +781,22 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                       )}
                     </div>
 
-                    <div className="mt-2.5 pt-2 border-t border-ink/10">
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-ink-soft font-bold block mb-0.5">
-                        {current.isScam ? 'Onde estava a armadilha:' : 'Como saber que é seguro:'}
-                      </span>
-                      <p className="text-[13.5px] leading-relaxed text-ink font-medium">
-                        {current.keyEvidenceReason || current.explanation}
-                      </p>
+                    {/* Feedback Pedagógico do Motivo */}
+                    <div className="mt-2.5 pt-2 border-t border-ink/10 space-y-1.5">
+                      {wasVerdictCorrect && !wasHypothesisCorrect && (
+                        <div className="p-2.5 rounded-lg bg-amber-100/70 border border-amber-300 text-xs text-amber-950 leading-relaxed">
+                          ⚠️ <strong>Atenção ao raciocínio:</strong> Você acertou que era golpe, mas o motivo que você escolheu era uma pegadinha! O motivo real inquestionável deste caso é: <em>{current.keyEvidenceReason}</em>
+                        </div>
+                      )}
+
+                      <div>
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-ink-soft font-bold block mb-0.5">
+                          {current.isScam ? 'Onde estava a armadilha:' : 'Como saber que é seguro:'}
+                        </span>
+                        <p className="text-[13px] leading-relaxed text-ink font-medium">
+                          {current.keyEvidenceReason || current.explanation}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -639,7 +805,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                     <div className="font-mono text-[9.5px] uppercase tracking-[0.25em] text-marker font-bold flex items-center gap-1.5">
                       <Lightbulb className="w-3.5 h-3.5 text-marker" /> Regra de Ouro para a Vida Real
                     </div>
-                    <p className="font-display font-bold text-[15px] sm:text-base leading-snug mt-1 text-white">
+                    <p className="font-display font-bold text-[14px] sm:text-[15px] leading-snug mt-1 text-white">
                       {current.pedagogy.goldenRule}
                     </p>
                   </div>
