@@ -18,6 +18,8 @@ import {
   Pin,
   ShieldAlert,
   ShieldCheck,
+  Smartphone,
+  FileText,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -65,6 +67,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [executedActionIds, setExecutedActionIds] = useState<string[]>([]);
   const [actionHistory, setActionHistory] = useState<{ player: string; reply: string }[]>([]);
   const [collectedEvidences, setCollectedEvidences] = useState<CollectedEvidence[]>([]);
+  const [mobileTab, setMobileTab] = useState<'phone' | 'dossier'>('phone');
 
   // Fluxo Pericial
   const [stagedVerdict, setStagedVerdict] = useState<Verdict | null>(null);
@@ -294,6 +297,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     setLastEarned(0);
     setDrillSelectedOptionId(null);
     setDrillCompleted(false);
+    setMobileTab('phone');
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [streak]);
 
@@ -424,64 +428,137 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         </div>
       </div>
 
+      {/* Seletor Mobile de Abas (Celular vs Caderno de Provas) */}
+      <div className="flex lg:hidden items-center p-1 rounded-xl bg-desk-2 border border-desk-line mb-3.5 shadow-sm">
+        <button
+          onClick={() => {
+            sound.playBlip();
+            setMobileTab('phone');
+          }}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+            mobileTab === 'phone'
+              ? 'bg-[#008069] text-white shadow-md'
+              : 'text-clip hover:text-white'
+          }`}
+        >
+          <Smartphone className="w-4 h-4" />
+          <span>1. Celular do Caso</span>
+        </button>
+        <button
+          onClick={() => {
+            sound.playBlip();
+            setMobileTab('dossier');
+          }}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer relative ${
+            mobileTab === 'dossier'
+              ? 'bg-[#ffeecd] text-ink font-bold shadow-md'
+              : 'text-clip hover:text-white'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>2. Caderno & Veredito</span>
+          {collectedEvidences.length > 0 && (
+            <span className="bg-scam text-white text-[9.5px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+              {collectedEvidences.length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Grid: Celular Funcional (Interativo) + Caderno de Coleta de Provas */}
-      <div className="grid gap-8 lg:grid-cols-[290px_minmax(0,1fr)] xl:grid-cols-[295px_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-6 lg:gap-8 lg:grid-cols-[290px_minmax(0,1fr)] xl:grid-cols-[295px_minmax(0,1fr)] lg:items-start">
         {/* Celular Funcional Conduzido pelo Jogador */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current.id}
-            initial={{ y: 30, opacity: 0, rotate: -1.5 }}
-            animate={{ y: 0, opacity: 1, rotate: 0 }}
-            exit={{ y: -20, opacity: 0, rotate: 1.5 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-            className="lg:sticky lg:top-18"
-          >
-            <PhoneScreen
-              scamCase={current}
-              stamped={finalVerdict}
-              wasCorrect={wasVerdictCorrect}
-              onPerformAction={handlePerformPhoneAction}
-              executedActionIds={executedActionIds}
-              actionHistory={actionHistory}
-            />
-          </motion.div>
-        </AnimatePresence>
+        <div className={`${mobileTab === 'phone' ? 'block' : 'hidden'} lg:block lg:sticky lg:top-18`}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current.id}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+            >
+              <PhoneScreen
+                scamCase={current}
+                stamped={finalVerdict}
+                wasCorrect={wasVerdictCorrect}
+                onPerformAction={handlePerformPhoneAction}
+                executedActionIds={executedActionIds}
+                actionHistory={actionHistory}
+              />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Botão de Atalho Mobile para ir ao Caderno de Provas */}
+          <div className="mt-3.5 lg:hidden max-w-[310px] mx-auto">
+            <button
+              onClick={() => {
+                sound.playBlip();
+                setMobileTab('dossier');
+              }}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-100 to-amber-200 text-ink font-bold text-xs sm:text-sm flex items-center justify-between shadow-lg border border-amber-300 active:scale-98 transition cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-ink-soft" />
+                <span>Abrir Caderno de Provas & Veredito</span>
+              </div>
+              <span className="font-mono text-xs bg-ink text-paper px-2 py-0.5 rounded-full font-bold">
+                {collectedEvidences.length} {collectedEvidences.length === 1 ? 'prova' : 'provas'} →
+              </span>
+            </button>
+          </div>
+        </div>
 
         {/* Caderno de Coleta de Provas & Dossiê Pericial */}
-        <motion.section
-          key={`ficha-${current.id}`}
-          initial={{ x: 25, opacity: 0, rotate: 1 }}
-          animate={{ x: 0, opacity: 1, rotate: 0.3 }}
-          transition={{ type: 'spring', stiffness: 220, damping: 24, delay: 0.08 }}
-          className="paper relative rounded-md px-5 sm:px-8 pt-8 pb-7 shadow-2xl"
-        >
-          <Paperclip className="absolute -top-4 left-8 w-8 h-8 text-clip rotate-[-20deg]" aria-hidden />
+        <div className={`${mobileTab === 'dossier' ? 'block' : 'hidden'} lg:block min-w-0`}>
+          {/* Botão de Atalho Mobile para voltar ao Celular */}
+          <div className="mb-3 lg:hidden flex items-center justify-between">
+            <button
+              onClick={() => {
+                sound.playBlip();
+                setMobileTab('phone');
+              }}
+              className="py-1.5 px-3 rounded-lg bg-desk-2 border border-desk-line text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+              <span>← Voltar para o Celular</span>
+            </button>
+            <span className="font-mono text-[11px] text-clip">
+              Caso #{String(caseNumber).padStart(3, '0')}
+            </span>
+          </div>
 
-          <header className="flex items-start justify-between gap-4 border-b-2 border-dashed border-ink/20 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft">
-                  Caderno de Coleta de Provas
-                </span>
-                <span className="font-mono text-[10px] bg-ink text-paper px-2 py-0.5 rounded-full font-bold">
-                  {collectedEvidences.length} {collectedEvidences.length === 1 ? 'Prova Fixada' : 'Provas Fixadas'}
-                </span>
+          <motion.section
+            key={`ficha-${current.id}`}
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 24, delay: 0.08 }}
+            className="paper relative rounded-md px-3.5 sm:px-8 pt-6 sm:pt-8 pb-6 sm:pb-7 shadow-2xl"
+          >
+            <Paperclip className="absolute -top-3 sm:-top-4 left-4 sm:left-8 w-6 sm:w-8 h-6 sm:h-8 text-clip rotate-[-20deg]" aria-hidden />
+
+            <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-1.5 sm:gap-4 border-b-2 border-dashed border-ink/20 pb-3 sm:pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] sm:text-[11px] tracking-[0.25em] uppercase text-ink-soft">
+                    Caderno de Coleta de Provas
+                  </span>
+                  <span className="font-mono text-[10px] bg-ink text-paper px-2 py-0.5 rounded-full font-bold">
+                    {collectedEvidences.length} {collectedEvidences.length === 1 ? 'Prova Fixada' : 'Provas Fixadas'}
+                  </span>
+                </div>
+                <h2 className="font-display font-extrabold text-[22px] sm:text-[30px] leading-[1.05] tracking-tight mt-1">
+                  {current.category}
+                </h2>
               </div>
-              <h2 className="font-display font-extrabold text-[26px] sm:text-[30px] leading-[1.05] tracking-tight mt-1">
-                {current.category}
-              </h2>
-            </div>
-            <div className="font-mono text-[11px] text-ink-soft text-right leading-5 shrink-0">
-              Recebido às {current.time}
-              <br />
-              Canal:{' '}
-              {current.channel === 'push'
-                ? 'Notificação'
-                : current.channel === 'call'
-                ? 'Ligação'
-                : current.channel.toUpperCase()}
-            </div>
-          </header>
+              <div className="font-mono text-[10.5px] sm:text-[11px] text-ink-soft sm:text-right leading-relaxed shrink-0">
+                Recebido às {current.time} • Canal:{' '}
+                {current.channel === 'push'
+                  ? 'Notificação'
+                  : current.channel === 'call'
+                  ? 'Ligação'
+                  : current.channel.toUpperCase()}
+              </div>
+            </header>
 
           {/* Dilema do Alvo */}
           <div className="mt-4 p-3.5 rounded bg-white/50 border border-ink/10">
@@ -996,7 +1073,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.section>
+          </motion.section>
+        </div>
       </div>
 
       {/* MODAL 1: Sala de Conquistas */}

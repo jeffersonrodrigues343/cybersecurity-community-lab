@@ -46,7 +46,7 @@ export function App() {
         onOpenInstructions={() => setIsOnboardingOpen(true)}
       />
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10 space-y-3 sm:space-y-6">
         {/* Hero Section Adaptada ao Novo Visual */}
         <Hero />
 
