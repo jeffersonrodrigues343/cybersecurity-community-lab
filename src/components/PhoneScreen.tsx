@@ -188,12 +188,12 @@ const WhatsAppScreen = ({
               <span className="absolute right-2 bottom-1 text-[10px] text-[#667781] font-mono">✓✓</span>
             </motion.div>
 
-            {/* Resposta do golpista */}
+            {/* Resposta do contato */}
             <motion.div
               initial={{ opacity: 0, y: 6, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 0.15 }}
-              className="mr-auto bg-white text-[#111b21] text-[14.2px] leading-[19px] rounded-lg rounded-tl-none px-3 pt-2 pb-4 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.15)] relative border-l-4 border-scam"
+              className="mr-auto bg-white text-[#111b21] text-[14.2px] leading-[19px] rounded-lg rounded-tl-none px-3 pt-2 pb-4 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.15)] relative"
             >
               <div>{item.reply}</div>
               <span className="absolute right-2 bottom-1 text-[10px] text-[#667781] font-mono">
@@ -404,8 +404,8 @@ const CallScreen = ({
               <span className="font-mono text-[9px] opacity-75 block">Você disse:</span>
               {item.player}
             </div>
-            <div className="p-2 rounded-xl bg-red-950/60 border border-red-500/30 text-red-200 text-xs mr-4 shadow-sm">
-              <span className="font-mono text-[9px] opacity-75 block">Atendente respondeu:</span>
+            <div className="p-2 rounded-xl bg-white/10 border border-white/15 text-white/90 text-xs mr-4 shadow-sm">
+              <span className="font-mono text-[9px] opacity-75 block text-sky-300">Atendente respondeu:</span>
               {item.reply}
             </div>
           </motion.div>
@@ -510,12 +510,12 @@ const PushScreen = ({
             key={idx}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="p-3 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs space-y-1 shadow-lg"
+            className="p-3 rounded-2xl bg-white/15 border border-white/20 text-white text-xs space-y-1 shadow-lg"
           >
-            <div className="font-semibold flex items-center gap-1.5 text-emerald-400">
+            <div className="font-semibold flex items-center gap-1.5 text-purple-300">
               <ShieldCheck className="w-4 h-4" /> {item.player}
             </div>
-            <div className="text-[12px] leading-relaxed text-emerald-100">{item.reply}</div>
+            <div className="text-[12px] leading-relaxed text-white/90">{item.reply}</div>
           </motion.div>
         ))}
       </div>

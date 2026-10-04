@@ -50,8 +50,9 @@ interface CollectedEvidence {
   id: string;
   title: string;
   description: string;
-  status: 'suspicious' | 'clean';
+  status: 'suspicious' | 'clean' | 'neutral' | 'risk_taken';
   source: 'phone_dialogue' | 'clue_audit';
+  forensicFact?: string;
 }
 
 export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
@@ -143,6 +144,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             description: ev.description,
             status: ev.status,
             source: 'phone_dialogue',
+            forensicFact: ev.forensicFact,
           },
         ];
       });
@@ -170,6 +172,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           description: clue.inspection.observation,
           status: clue.evidenceResult.status === 'suspicious' ? 'suspicious' : 'clean',
           source: 'clue_audit',
+          forensicFact: clue.evidenceResult.fato,
         },
       ]);
     }
@@ -316,6 +319,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const threat = threatLevel(streak);
   const suspiciousCount = collectedEvidences.filter((e) => e.status === 'suspicious').length;
   const cleanCount = collectedEvidences.filter((e) => e.status === 'clean').length;
+  const riskCount = collectedEvidences.filter((e) => e.status === 'risk_taken').length;
 
   return (
     <div ref={topRef} className="scroll-mt-16 pb-28 lg:pb-10">
@@ -460,7 +464,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   Caderno de Coleta de Provas
                 </span>
                 <span className="font-mono text-[10px] bg-ink text-paper px-2 py-0.5 rounded-full font-bold">
-                  {collectedEvidences.length} Provas Fixadas
+                  {collectedEvidences.length} {collectedEvidences.length === 1 ? 'Prova Fixada' : 'Provas Fixadas'}
                 </span>
               </div>
               <h2 className="font-display font-extrabold text-[26px] sm:text-[30px] leading-[1.05] tracking-tight mt-1">
@@ -493,18 +497,31 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           <div className="mt-6">
             <div className="flex items-center justify-between">
               <h3 className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft flex items-center gap-1.5">
-                <Pin className="w-3.5 h-3.5 text-marker" /> Evidências Fixadas pelo Detetive
+                <Pin className="w-3.5 h-3.5 text-marker" /> Dossiê de Provas Coletadas
               </h3>
               <div className="flex gap-2 text-[11px] font-mono font-bold">
-                {suspiciousCount > 0 && (
-                  <span className="text-scam bg-scam/10 px-2 py-0.5 rounded border border-scam/20">
-                    {suspiciousCount} Indícios Suspeitos
+                {!answered ? (
+                  <span className="text-ink-soft bg-ink/5 px-2.5 py-0.5 rounded border border-ink/15 font-mono text-[11px]">
+                    {collectedEvidences.length} {collectedEvidences.length === 1 ? 'dado registrado' : 'dados registrados'}
                   </span>
-                )}
-                {cleanCount > 0 && (
-                  <span className="text-safe bg-safe/10 px-2 py-0.5 rounded border border-safe/20">
-                    {cleanCount} Fatores Seguros
-                  </span>
+                ) : (
+                  <>
+                    {suspiciousCount > 0 && (
+                      <span className="text-scam bg-scam/10 px-2 py-0.5 rounded border border-scam/20">
+                        {suspiciousCount} {suspiciousCount === 1 ? 'Indício de Fraude' : 'Indícios de Fraude'}
+                      </span>
+                    )}
+                    {cleanCount > 0 && (
+                      <span className="text-safe bg-safe/10 px-2 py-0.5 rounded border border-safe/20">
+                        {cleanCount} {cleanCount === 1 ? 'Fator Autêntico' : 'Fatores Autênticos'}
+                      </span>
+                    )}
+                    {riskCount > 0 && (
+                      <span className="text-amber-800 bg-amber-400/20 px-2 py-0.5 rounded border border-amber-500/30">
+                        {riskCount} {riskCount === 1 ? 'Conduta de Risco' : 'Condutas de Risco'}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -512,44 +529,82 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             {collectedEvidences.length === 0 ? (
               <div className="mt-3 p-4 rounded-md border-2 border-dashed border-ink/20 text-center bg-white/40">
                 <p className="text-xs text-ink-soft font-mono">
-                  👉 Nenhuma prova fixada ainda. Conduza o diálogo no celular ao lado ou audite as pistas técnicas abaixo para registrar evidências no dossiê!
+                  👉 Nenhuma prova coletada ainda. Conduza o diálogo no celular ao lado ou audite os registros do sistema abaixo para registrar dados periciais no dossiê!
                 </p>
               </div>
             ) : (
               <motion.ul layout className="mt-3 space-y-2">
-                {collectedEvidences.map((ev) => (
-                  <motion.li
-                    key={ev.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className={`p-3.5 rounded-md border-2 bg-white/90 shadow-sm flex items-start gap-3 ${
-                      ev.status === 'suspicious' ? 'border-scam/40' : 'border-safe/40'
-                    }`}
-                  >
-                    <div className="mt-0.5">
-                      {ev.status === 'suspicious' ? (
-                        <ShieldAlert className="w-4 h-4 text-scam shrink-0" />
-                      ) : (
-                        <ShieldCheck className="w-4 h-4 text-safe shrink-0" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="font-display font-bold text-[14px] text-ink">{ev.title}</h4>
-                        <span
-                          className={`font-mono text-[9px] uppercase px-1.5 py-0.5 rounded font-bold ${
-                            ev.status === 'suspicious'
-                              ? 'bg-scam/15 text-scam'
-                              : 'bg-safe/15 text-safe'
-                          }`}
-                        >
-                          {ev.status === 'suspicious' ? 'indício de fraude' : 'autêntico'}
-                        </span>
+                {collectedEvidences.map((ev, idx) => {
+                  const isRisk = ev.status === 'risk_taken';
+                  return (
+                    <motion.li
+                      key={ev.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className={`p-3.5 rounded-md border-2 bg-white/90 shadow-sm flex items-start gap-3 transition-colors ${
+                        answered
+                          ? ev.status === 'suspicious'
+                            ? 'border-scam/50 bg-scam/5'
+                            : ev.status === 'clean'
+                            ? 'border-safe/50 bg-safe/5'
+                            : 'border-amber-400/60 bg-amber-50/50'
+                          : isRisk
+                          ? 'border-amber-400/80 bg-amber-50/40'
+                          : 'border-ink/20'
+                      }`}
+                    >
+                      <div className="mt-0.5">
+                        {answered ? (
+                          ev.status === 'suspicious' ? (
+                            <ShieldAlert className="w-4 h-4 text-scam shrink-0" />
+                          ) : ev.status === 'clean' ? (
+                            <ShieldCheck className="w-4 h-4 text-safe shrink-0" />
+                          ) : (
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                          )
+                        ) : isRisk ? (
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        ) : (
+                          <Search className="w-4 h-4 text-ink-soft shrink-0" />
+                        )}
                       </div>
-                      <p className="text-xs text-ink-soft mt-0.5 leading-relaxed">{ev.description}</p>
-                    </div>
-                  </motion.li>
-                ))}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="font-display font-bold text-[14px] text-ink">{ev.title}</h4>
+                          <span
+                            className={`font-mono text-[9px] uppercase px-1.5 py-0.5 rounded font-bold ${
+                              answered
+                                ? ev.status === 'suspicious'
+                                  ? 'bg-scam/15 text-scam'
+                                  : ev.status === 'clean'
+                                  ? 'bg-safe/15 text-safe'
+                                  : 'bg-amber-100 text-amber-800'
+                                : isRisk
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-ink/10 text-ink'
+                            }`}
+                          >
+                            {answered
+                              ? ev.status === 'suspicious'
+                                ? 'indício de fraude'
+                                : ev.status === 'clean'
+                                ? 'autêntico'
+                                : 'conduta de risco'
+                              : isRisk
+                              ? 'ação de risco'
+                              : `registro técnico #${idx + 1}`}
+                          </span>
+                        </div>
+                        <p className="text-xs text-ink-soft mt-0.5 leading-relaxed">{ev.description}</p>
+                        {answered && ev.forensicFact && (
+                          <p className="text-[11.5px] font-mono text-ink mt-1.5 pt-1.5 border-t border-dashed border-ink/15 italic">
+                            💡 Parecer Pericial: {ev.forensicFact}
+                          </p>
+                        )}
+                      </div>
+                    </motion.li>
+                  );
+                })}
               </motion.ul>
             )}
           </div>
@@ -613,8 +668,11 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                                   </div>
                                 ))}
                             </dl>
-                            <p className="mt-3 text-[14px] leading-[1.6] text-ink-soft italic">
-                              Nota do Perito: {clue.inspection.observation}
+                            <p className="mt-3 text-[13.5px] leading-[1.6] text-ink italic bg-white/70 p-2.5 rounded border border-ink/10">
+                              <span className="font-mono font-bold text-[11px] not-italic uppercase tracking-wider block text-ink-soft mb-0.5">
+                                Constatação Técnica Factual:
+                              </span>
+                              {clue.inspection.observation}
                             </p>
                           </div>
                         </motion.div>

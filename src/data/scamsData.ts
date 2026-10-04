@@ -52,13 +52,15 @@ export interface ReinforcementDrill {
 export interface InteractiveAction {
   id: string;
   label: string;
+  actionType?: 'investigation' | 'risk_decision' | 'verification';
   playerMessage: string;
   replyMessage: string;
   evidenceDiscovered: {
     id: string;
     title: string;
     description: string;
-    status: 'suspicious' | 'clean';
+    status: 'suspicious' | 'clean' | 'neutral' | 'risk_taken';
+    forensicFact?: string;
   };
 }
 
