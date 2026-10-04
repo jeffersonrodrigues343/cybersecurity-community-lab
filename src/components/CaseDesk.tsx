@@ -15,6 +15,9 @@ import {
   Lightbulb,
   AlertTriangle,
   Scale,
+  Pin,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -25,6 +28,7 @@ import {
   type InvestigativeClue,
   type Badge,
   type ReinforcementOption,
+  type InteractiveAction,
 } from '../data/scamsData';
 import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 import { sound } from '../utils/audio';
@@ -42,13 +46,26 @@ const DRILL_XP = 20;
 const comboBonusFor = (streak: number) => (streak >= 3 ? 30 : streak === 2 ? 10 : 0);
 const threatLevel = (streak: number) => Math.min(5, 1 + Math.floor(streak / 2));
 
+interface CollectedEvidence {
+  id: string;
+  title: string;
+  description: string;
+  status: 'suspicious' | 'clean';
+  source: 'phone_dialogue' | 'clue_audit';
+}
+
 export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [caseNumber, setCaseNumber] = useState(1);
   const [current, setCurrent] = useState<ScamCase>(() => generateDynamicScamCase(0));
   const [openClue, setOpenClue] = useState<string | null>(null);
   const [inspected, setInspected] = useState<string[]>([]);
 
-  // Fluxo de Investigação Desafiador (Etapa 1: Veredito -> Etapa 2: Hipótese -> Etapa 3: Carimbo)
+  // Condução Interativa no Celular & Coleta de Provas
+  const [executedActionIds, setExecutedActionIds] = useState<string[]>([]);
+  const [actionHistory, setActionHistory] = useState<{ player: string; reply: string }[]>([]);
+  const [collectedEvidences, setCollectedEvidences] = useState<CollectedEvidence[]>([]);
+
+  // Fluxo Pericial
   const [stagedVerdict, setStagedVerdict] = useState<Verdict | null>(null);
   const [selectedHypothesis, setSelectedHypothesis] = useState<number | null>(null);
   const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
@@ -60,7 +77,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [correctCount, setCorrectCount] = useState(0);
   const [lastEarned, setLastEarned] = useState(0);
 
-  // Sistema de Badges / Conquistas
+  // Badges e Modais
   const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('hacklearn_unlocked_badges');
@@ -71,16 +88,12 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   });
   const [recentBadgeUnlocked, setRecentBadgeUnlocked] = useState<Badge | null>(null);
   const [isBadgesModalOpen, setIsBadgesModalOpen] = useState(false);
-
-  // Cartilha da Família
   const [isFamilyGuideOpen, setIsFamilyGuideOpen] = useState(false);
   const [familyGuideTab, setFamilyGuideTab] = useState<'rules' | 'glossary'>('rules');
 
-  // Treino de Reforço (Drill quando erra)
+  // Treino de Reforço e Abas Pedagógicas
   const [drillSelectedOptionId, setDrillSelectedOptionId] = useState<string | null>(null);
   const [drillCompleted, setDrillCompleted] = useState(false);
-
-  // Aba pedagógica ativa na resolução
   const [activePedagogyTab, setActivePedagogyTab] = useState<'parents' | 'kids' | 'remedy'>('parents');
 
   const hypothesisSectionRef = useRef<HTMLDivElement>(null);
@@ -110,6 +123,34 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     });
   }, []);
 
+  // O jogador interage diretamente no celular e gera evidência no Dossiê da Mesa
+  const handlePerformPhoneAction = (action: InteractiveAction) => {
+    setExecutedActionIds((prev) => [...prev, action.id]);
+    setActionHistory((prev) => [
+      ...prev,
+      { player: action.playerMessage, reply: action.replyMessage },
+    ]);
+
+    if (action.evidenceDiscovered) {
+      const ev = action.evidenceDiscovered;
+      setCollectedEvidences((prev) => {
+        if (prev.some((e) => e.id === ev.id)) return prev;
+        return [
+          ...prev,
+          {
+            id: ev.id,
+            title: ev.title,
+            description: ev.description,
+            status: ev.status,
+            source: 'phone_dialogue',
+          },
+        ];
+      });
+      unlockBadge('badge-first-clue');
+    }
+  };
+
+  // Inspecionar pistas técnicas (auditoria externa)
   const inspect = (clue: InvestigativeClue) => {
     sound.playBlip();
     setOpenClue((prev) => (prev === clue.id ? null : clue.id));
@@ -119,10 +160,21 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
       if (clue.category === 'whois' && clue.evidenceResult.status === 'suspicious') {
         unlockBadge('badge-whois-master');
       }
+
+      // Adiciona ao caderno de provas
+      setCollectedEvidences((prev) => [
+        ...prev,
+        {
+          id: `clue-${clue.id}`,
+          title: `Auditoria: ${clue.buttonLabel}`,
+          description: clue.inspection.observation,
+          status: clue.evidenceResult.status === 'suspicious' ? 'suspicious' : 'clean',
+          source: 'clue_audit',
+        },
+      ]);
     }
   };
 
-  // Etapa 1: Usuário escolhe a intenção (Golpe ou Seguro)
   const handleStageVerdict = (v: Verdict) => {
     sound.playBlip();
     setStagedVerdict(v);
@@ -132,13 +184,11 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     }, 150);
   };
 
-  // Etapa 2: Usuário seleciona a hipótese fundamentada
   const handleSelectHypothesis = (idx: number) => {
     sound.playBlip();
     setSelectedHypothesis(idx);
   };
 
-  // Etapa 3: Bate o carimbo oficial com som físico e calcula o resultado
   const handleExecuteStamp = useCallback(() => {
     if (answered || stagedVerdict === null || selectedHypothesis === null) return;
 
@@ -153,9 +203,12 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     let newStreak = streak;
 
     if (verdictCorrect && hypoCorrect) {
-      // Acerto Total: Veredito Certo + Prova Técnica Certa
       newStreak = streak + 1;
-      earned = current.xpReward + inspected.length * CLUE_XP + comboBonusFor(newStreak);
+      earned =
+        current.xpReward +
+        inspected.length * CLUE_XP +
+        collectedEvidences.length * 5 +
+        comboBonusFor(newStreak);
       sound.playSuccess();
       confetti({
         particleCount: 75,
@@ -172,11 +225,9 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         unlockBadge('badge-pix-guard');
       }
     } else if (verdictCorrect && !hypoCorrect) {
-      // Acerto no Chute: Veredito certo, mas justificativa errada (penalidade pedagógica)
       earned = Math.round(current.xpReward * 0.45) + inspected.length * CLUE_XP;
       sound.playSuccess();
     } else {
-      // Erro Total
       sound.playError();
       newStreak = 0;
     }
@@ -200,6 +251,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     }, 450);
   }, [
     answered,
+    collectedEvidences.length,
     current,
     inspected.length,
     onScoreUpdate,
@@ -227,6 +279,9 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     sound.playBlip();
     setCurrent(generateDynamicScamCase(streak));
     setCaseNumber((n) => n + 1);
+    setExecutedActionIds([]);
+    setActionHistory([]);
+    setCollectedEvidences([]);
     setStagedVerdict(null);
     setSelectedHypothesis(null);
     setFinalVerdict(null);
@@ -239,7 +294,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [streak]);
 
-  // Teclas de atalho
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -260,10 +314,12 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
 
   const accuracy = solved ? Math.round((correctCount / solved) * 100) : null;
   const threat = threatLevel(streak);
+  const suspiciousCount = collectedEvidences.filter((e) => e.status === 'suspicious').length;
+  const cleanCount = collectedEvidences.filter((e) => e.status === 'clean').length;
 
   return (
     <div ref={topRef} className="scroll-mt-16 pb-28 lg:pb-10">
-      {/* Toast de Conquista Desbloqueada */}
+      {/* Toast de Conquista */}
       <AnimatePresence>
         {recentBadgeUnlocked && (
           <motion.div
@@ -292,7 +348,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         )}
       </AnimatePresence>
 
-      {/* HUD Superior do Detetive */}
+      {/* HUD Superior */}
       <div className="flex flex-wrap items-center justify-between gap-3 py-4 border-b border-desk-line/70 mb-4">
         <div className="flex items-center gap-3">
           <div className="font-mono text-[12px] tracking-[0.2em] text-clip uppercase">
@@ -364,9 +420,9 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         </div>
       </div>
 
-      {/* Grid: Celular com Sons/Animações + Ficha Desafiadora */}
+      {/* Grid: Celular Funcional (Interativo) + Caderno de Coleta de Provas */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start">
-        {/* Celular Realista com Efeitos */}
+        {/* Celular Funcional Conduzido pelo Jogador */}
         <AnimatePresence mode="wait">
           <motion.div
             key={current.id}
@@ -380,11 +436,14 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
               scamCase={current}
               stamped={finalVerdict}
               wasCorrect={wasVerdictCorrect}
+              onPerformAction={handlePerformPhoneAction}
+              executedActionIds={executedActionIds}
+              actionHistory={actionHistory}
             />
           </motion.div>
         </AnimatePresence>
 
-        {/* Ficha Pericial (Paper) */}
+        {/* Caderno de Coleta de Provas & Dossiê Pericial */}
         <motion.section
           key={`ficha-${current.id}`}
           initial={{ x: 25, opacity: 0, rotate: 1 }}
@@ -396,8 +455,13 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
 
           <header className="flex items-start justify-between gap-4 border-b-2 border-dashed border-ink/20 pb-4">
             <div>
-              <div className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft">
-                Ficha de Investigação Pericial
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft">
+                  Caderno de Coleta de Provas
+                </span>
+                <span className="font-mono text-[10px] bg-ink text-paper px-2 py-0.5 rounded-full font-bold">
+                  {collectedEvidences.length} Provas Fixadas
+                </span>
               </div>
               <h2 className="font-display font-extrabold text-[26px] sm:text-[30px] leading-[1.05] tracking-tight mt-1">
                 {current.category}
@@ -415,21 +479,86 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             </div>
           </header>
 
-          {/* Dilema Real do Cidadão */}
+          {/* Dilema do Alvo */}
           <div className="mt-4 p-3.5 rounded bg-white/50 border border-ink/10">
             <span className="font-mono text-[10px] uppercase tracking-wider text-ink-soft block font-bold">
-              Dilema do Alvo:
+              Situação sob Investigação:
             </span>
             <p className="mt-0.5 text-[15px] sm:text-[16px] leading-[1.5] text-ink font-medium">
               {current.dilemma}
             </p>
           </div>
 
-          {/* Pistas Técnicas para Auditar */}
+          {/* SEÇÃO 1: Provas Coletadas Conduzidas no Celular (Dossiê em Tempo Real) */}
+          <div className="mt-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft flex items-center gap-1.5">
+                <Pin className="w-3.5 h-3.5 text-marker" /> Evidências Fixadas pelo Detetive
+              </h3>
+              <div className="flex gap-2 text-[11px] font-mono font-bold">
+                {suspiciousCount > 0 && (
+                  <span className="text-scam bg-scam/10 px-2 py-0.5 rounded border border-scam/20">
+                    {suspiciousCount} Indícios Suspeitos
+                  </span>
+                )}
+                {cleanCount > 0 && (
+                  <span className="text-safe bg-safe/10 px-2 py-0.5 rounded border border-safe/20">
+                    {cleanCount} Fatores Seguros
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {collectedEvidences.length === 0 ? (
+              <div className="mt-3 p-4 rounded-md border-2 border-dashed border-ink/20 text-center bg-white/40">
+                <p className="text-xs text-ink-soft font-mono">
+                  👉 Nenhuma prova fixada ainda. Conduza o diálogo no celular ao lado ou audite as pistas técnicas abaixo para registrar evidências no dossiê!
+                </p>
+              </div>
+            ) : (
+              <motion.ul layout className="mt-3 space-y-2">
+                {collectedEvidences.map((ev) => (
+                  <motion.li
+                    key={ev.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className={`p-3.5 rounded-md border-2 bg-white/90 shadow-sm flex items-start gap-3 ${
+                      ev.status === 'suspicious' ? 'border-scam/40' : 'border-safe/40'
+                    }`}
+                  >
+                    <div className="mt-0.5">
+                      {ev.status === 'suspicious' ? (
+                        <ShieldAlert className="w-4 h-4 text-scam shrink-0" />
+                      ) : (
+                        <ShieldCheck className="w-4 h-4 text-safe shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-display font-bold text-[14px] text-ink">{ev.title}</h4>
+                        <span
+                          className={`font-mono text-[9px] uppercase px-1.5 py-0.5 rounded font-bold ${
+                            ev.status === 'suspicious'
+                              ? 'bg-scam/15 text-scam'
+                              : 'bg-safe/15 text-safe'
+                          }`}
+                        >
+                          {ev.status === 'suspicious' ? 'indício de fraude' : 'autêntico'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-ink-soft mt-0.5 leading-relaxed">{ev.description}</p>
+                    </div>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            )}
+          </div>
+
+          {/* SEÇÃO 2: Pistas Técnicas para Auditoria Externa */}
           <div className="mt-6">
             <div className="flex items-baseline justify-between">
               <h3 className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft">
-                Pistas Técnicas para Auditar
+                Auditorias Complementares de Sistema
               </h3>
               <span className="font-mono text-[11px] text-ink-soft">+{CLUE_XP} XP cada</span>
             </div>
@@ -532,7 +661,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 </div>
               </div>
 
-              {/* Etapa 2: A Prova Técnica / Hipótese (Desafio Real) */}
+              {/* Etapa 2: A Prova Técnica / Hipótese Fundamentada */}
               <AnimatePresence>
                 {stagedVerdict !== null && (
                   <motion.div
@@ -545,14 +674,14 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                     <div className="flex items-center gap-1.5 text-ink">
                       <Scale className="w-4 h-4 text-marker" />
                       <span className="font-mono text-[11px] uppercase tracking-wider font-bold">
-                        Passo 2: Fundamentação Pericial Obrigatória
+                        Passo 2: Qual Prova do Dossiê Fundamenta o Veredito?
                       </span>
                     </div>
 
                     <p className="text-sm font-display font-bold text-ink">
                       {stagedVerdict === 'scam'
-                        ? 'Qual é a evidência técnica determinante que prova a tentativa de golpe?'
-                        : 'Qual fator técnico comprova que esta mensagem é 100% legítima?'}
+                        ? 'Identifique a evidência técnica determinante que comprova a tentativa de golpe:'
+                        : 'Identifique o fator técnico que comprova que esta mensagem é 100% legítima:'}
                     </p>
 
                     <div className="space-y-2">
@@ -597,7 +726,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                         <span>
                           {selectedHypothesis !== null
                             ? `Bater Carimbo Oficial: ${stagedVerdict === 'scam' ? 'GOLPE!' : 'SEGURO'}`
-                            : 'Selecione uma justificativa pericial acima'}
+                            : 'Selecione uma prova técnica acima'}
                         </span>
                         {selectedHypothesis !== null && (
                           <kbd className="font-mono text-xs font-normal border border-white/40 rounded px-1.5 py-0.5">
@@ -612,7 +741,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             </div>
           )}
 
-          {/* Resultado Pós-Veredito com Análise de Fundamentação */}
+          {/* Resultado Pós-Veredito */}
           <AnimatePresence>
             {answered && (
               <motion.div
@@ -622,7 +751,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 transition={{ delay: 0.25 }}
                 className="mt-7 scroll-mb-28"
               >
-                {/* Cartão de Resolução Pericial */}
                 <div
                   className={`rounded-md p-5 border-2 ${
                     isPerfectScore
@@ -660,7 +788,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
 
                   <p className="mt-2 text-[15px] leading-[1.6] text-ink">{current.explanation}</p>
 
-                  {/* Alerta de Hipótese Incorreta (quando o usuário chuta a prova errada) */}
                   {wasVerdictCorrect && !wasHypothesisCorrect && (
                     <div className="mt-3 p-3.5 rounded bg-white/70 border border-marker/60 text-ink space-y-1">
                       <div className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase text-amber-800">
@@ -674,7 +801,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                     </div>
                   )}
 
-                  {/* Sinais de Alerta */}
                   {current.redFlags.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-ink/10">
                       <span className="font-mono text-[11px] uppercase tracking-wider text-ink-soft font-bold block mb-1.5">
@@ -699,7 +825,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   )}
                 </div>
 
-                {/* Drill de Reforço: se errou o veredito, ativa o quiz para fixar */}
+                {/* Drill de Reforço se errou */}
                 {!wasVerdictCorrect && current.reinforcementDrill && (
                   <div className="mt-4 p-5 rounded-md bg-white/70 border-2 border-ink/20">
                     <div className="flex items-center gap-2 mb-2 text-ink">
@@ -758,7 +884,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   </p>
                 </div>
 
-                {/* Guias Pedagógicos Adaptados */}
+                {/* Abas Pedagógicas */}
                 <div className="mt-4 p-4 rounded-md bg-white/60 border border-ink/15">
                   <div className="flex gap-2 border-b border-ink/10 pb-2 mb-3 text-xs font-mono">
                     <button
@@ -794,7 +920,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   </p>
                 </div>
 
-                {/* Botão Próximo Caso */}
+                {/* Próximo Caso */}
                 <button
                   onClick={nextCase}
                   className="mt-5 w-full flex items-center justify-center gap-2 rounded-md bg-marker text-ink font-display font-extrabold text-[18px] py-4 stamp-btn cursor-pointer shadow-lg"

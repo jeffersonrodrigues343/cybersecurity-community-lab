@@ -49,6 +49,19 @@ export interface ReinforcementDrill {
   options: ReinforcementOption[];
 }
 
+export interface InteractiveAction {
+  id: string;
+  label: string;
+  playerMessage: string;
+  replyMessage: string;
+  evidenceDiscovered: {
+    id: string;
+    title: string;
+    description: string;
+    status: 'suspicious' | 'clean';
+  };
+}
+
 export interface ScamCase {
   id: string;
   level: ScamLevel;
@@ -72,6 +85,7 @@ export interface ScamCase {
   realWorldTip: string;
   pedagogy: CasePedagogy;
   reinforcementDrill: ReinforcementDrill;
+  interactiveActions?: InteractiveAction[];
 }
 
 export interface Badge {
