@@ -425,7 +425,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
       </div>
 
       {/* Grid: Celular Funcional (Interativo) + Caderno de Coleta de Provas */}
-      <div className="grid gap-8 lg:grid-cols-[330px_minmax(0,1fr)] xl:grid-cols-[335px_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-8 lg:grid-cols-[290px_minmax(0,1fr)] xl:grid-cols-[295px_minmax(0,1fr)] lg:items-start">
         {/* Celular Funcional Conduzido pelo Jogador */}
         <AnimatePresence mode="wait">
           <motion.div
