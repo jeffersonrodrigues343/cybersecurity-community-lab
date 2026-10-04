@@ -13,6 +13,8 @@ import {
   Trophy,
   BookOpen,
   Lightbulb,
+  AlertTriangle,
+  Scale,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -45,7 +47,13 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [current, setCurrent] = useState<ScamCase>(() => generateDynamicScamCase(0));
   const [openClue, setOpenClue] = useState<string | null>(null);
   const [inspected, setInspected] = useState<string[]>([]);
-  const [verdict, setVerdict] = useState<Verdict | null>(null);
+
+  // Fluxo de Investigação Desafiador (Etapa 1: Veredito -> Etapa 2: Hipótese -> Etapa 3: Carimbo)
+  const [stagedVerdict, setStagedVerdict] = useState<Verdict | null>(null);
+  const [selectedHypothesis, setSelectedHypothesis] = useState<number | null>(null);
+  const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
+  const [wasHypothesisCorrect, setWasHypothesisCorrect] = useState<boolean | null>(null);
+
   const [streak, setStreak] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
   const [solved, setSolved] = useState(0);
@@ -75,11 +83,13 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   // Aba pedagógica ativa na resolução
   const [activePedagogyTab, setActivePedagogyTab] = useState<'parents' | 'kids' | 'remedy'>('parents');
 
+  const hypothesisSectionRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
-  const answered = verdict !== null;
-  const wasCorrect = answered ? (verdict === 'scam') === current.isScam : null;
+  const answered = finalVerdict !== null;
+  const wasVerdictCorrect = answered ? (finalVerdict === 'scam') === current.isScam : null;
+  const isPerfectScore = wasVerdictCorrect && wasHypothesisCorrect;
 
   const unlockBadge = useCallback((badgeId: string) => {
     setUnlockedBadgeIds((prev) => {
@@ -112,57 +122,94 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     }
   };
 
-  const decide = useCallback(
-    (v: Verdict) => {
-      if (answered) return;
-      const correct = (v === 'scam') === current.isScam;
-      setVerdict(v);
-      setOpenClue(null);
+  // Etapa 1: Usuário escolhe a intenção (Golpe ou Seguro)
+  const handleStageVerdict = (v: Verdict) => {
+    sound.playBlip();
+    setStagedVerdict(v);
+    setSelectedHypothesis(null);
+    setTimeout(() => {
+      hypothesisSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 150);
+  };
 
-      let earned = 0;
-      let newStreak = 0;
-      if (correct) {
-        newStreak = streak + 1;
-        earned = current.xpReward + inspected.length * CLUE_XP + comboBonusFor(newStreak);
-        sound.playSuccess();
-        confetti({
-          particleCount: 65,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#ffd84a', '#1fa463', '#f4ede0', '#e23d3d'],
-        });
+  // Etapa 2: Usuário seleciona a hipótese fundamentada
+  const handleSelectHypothesis = (idx: number) => {
+    sound.playBlip();
+    setSelectedHypothesis(idx);
+  };
 
-        if (newStreak >= 3) {
-          unlockBadge('badge-streak-fire');
-        }
-        if (current.category.includes('Família') || current.category.includes('WhatsApp')) {
-          unlockBadge('badge-family-shield');
-        }
-        if (current.category.includes('Central') || current.category.includes('Banco')) {
-          unlockBadge('badge-pix-guard');
-        }
-      } else {
-        sound.playError();
+  // Etapa 3: Bate o carimbo oficial com som físico e calcula o resultado
+  const handleExecuteStamp = useCallback(() => {
+    if (answered || stagedVerdict === null || selectedHypothesis === null) return;
+
+    const verdictCorrect = (stagedVerdict === 'scam') === current.isScam;
+    const hypoCorrect = selectedHypothesis === current.correctEvidenceIndex;
+
+    setFinalVerdict(stagedVerdict);
+    setWasHypothesisCorrect(hypoCorrect);
+    setOpenClue(null);
+
+    let earned = 0;
+    let newStreak = streak;
+
+    if (verdictCorrect && hypoCorrect) {
+      // Acerto Total: Veredito Certo + Prova Técnica Certa
+      newStreak = streak + 1;
+      earned = current.xpReward + inspected.length * CLUE_XP + comboBonusFor(newStreak);
+      sound.playSuccess();
+      confetti({
+        particleCount: 75,
+        spread: 75,
+        origin: { y: 0.6 },
+        colors: ['#ffd84a', '#1fa463', '#f4ede0', '#e23d3d'],
+      });
+
+      if (newStreak >= 3) unlockBadge('badge-streak-fire');
+      if (current.category.includes('Família') || current.category.includes('WhatsApp')) {
+        unlockBadge('badge-family-shield');
       }
-
-      const newTotal = totalXp + earned;
-      const newSolved = solved + 1;
-      setStreak(newStreak);
-      setLastEarned(earned);
-      setTotalXp(newTotal);
-      setSolved(newSolved);
-      if (correct) setCorrectCount((n) => n + 1);
-
-      if (newSolved >= 6) {
-        unlockBadge('badge-grand-master');
+      if (current.category.includes('Central') || current.category.includes('Banco')) {
+        unlockBadge('badge-pix-guard');
       }
+    } else if (verdictCorrect && !hypoCorrect) {
+      // Acerto no Chute: Veredito certo, mas justificativa errada (penalidade pedagógica)
+      earned = Math.round(current.xpReward * 0.45) + inspected.length * CLUE_XP;
+      sound.playSuccess();
+    } else {
+      // Erro Total
+      sound.playError();
+      newStreak = 0;
+    }
 
-      onScoreUpdate(newTotal, newSolved, newSolved >= SCAM_CASES.length);
+    const newTotal = totalXp + earned;
+    const newSolved = solved + 1;
+    setStreak(newStreak);
+    setLastEarned(earned);
+    setTotalXp(newTotal);
+    setSolved(newSolved);
+    if (verdictCorrect) setCorrectCount((n) => n + 1);
 
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 450);
-    },
-    [answered, current, inspected.length, onScoreUpdate, solved, streak, totalXp, unlockBadge],
-  );
+    if (newSolved >= 6) {
+      unlockBadge('badge-grand-master');
+    }
+
+    onScoreUpdate(newTotal, newSolved, newSolved >= SCAM_CASES.length);
+
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 450);
+  }, [
+    answered,
+    current,
+    inspected.length,
+    onScoreUpdate,
+    selectedHypothesis,
+    solved,
+    stagedVerdict,
+    streak,
+    totalXp,
+    unlockBadge,
+  ]);
 
   const handleDrillSelect = (option: ReinforcementOption) => {
     sound.playBlip();
@@ -180,7 +227,10 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     sound.playBlip();
     setCurrent(generateDynamicScamCase(streak));
     setCaseNumber((n) => n + 1);
-    setVerdict(null);
+    setStagedVerdict(null);
+    setSelectedHypothesis(null);
+    setFinalVerdict(null);
+    setWasHypothesisCorrect(null);
     setOpenClue(null);
     setInspected([]);
     setLastEarned(0);
@@ -189,17 +239,24 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [streak]);
 
+  // Teclas de atalho
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const k = e.key.toLowerCase();
-      if (!answered && k === 'g') decide('scam');
-      else if (!answered && k === 's') decide('safe');
-      else if (answered && k === 'enter') nextCase();
+      if (!answered) {
+        if (k === 'g') handleStageVerdict('scam');
+        else if (k === 's') handleStageVerdict('safe');
+        else if (k === 'enter' && stagedVerdict && selectedHypothesis !== null) {
+          handleExecuteStamp();
+        }
+      } else if (answered && k === 'enter') {
+        nextCase();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [answered, decide, nextCase]);
+  }, [answered, handleExecuteStamp, nextCase, selectedHypothesis, stagedVerdict]);
 
   const accuracy = solved ? Math.round((correctCount / solved) * 100) : null;
   const threat = threatLevel(streak);
@@ -235,14 +292,13 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         )}
       </AnimatePresence>
 
-      {/* HUD do Detetive */}
+      {/* HUD Superior do Detetive */}
       <div className="flex flex-wrap items-center justify-between gap-3 py-4 border-b border-desk-line/70 mb-4">
         <div className="flex items-center gap-3">
           <div className="font-mono text-[12px] tracking-[0.2em] text-clip uppercase">
             Caso <span className="text-white font-bold">#{String(caseNumber).padStart(3, '0')}</span>
           </div>
 
-          {/* Botão de Conquistas */}
           <button
             onClick={() => {
               sound.playBlip();
@@ -256,7 +312,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             <span className="text-[10px] text-clip">({unlockedBadgeIds.length}/{BADGES.length})</span>
           </button>
 
-          {/* Botão da Cartilha */}
           <button
             onClick={() => {
               sound.playBlip();
@@ -270,7 +325,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           </button>
         </div>
 
-        {/* Status de Ameaça, Combo e Precisão */}
         <div className="flex items-center gap-2 text-[13px]">
           <div
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-desk-2 border border-desk-line"
@@ -310,9 +364,9 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         </div>
       </div>
 
-      {/* Grid Principal: Celular Realista + Ficha do Caso */}
+      {/* Grid: Celular com Sons/Animações + Ficha Desafiadora */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start">
-        {/* Celular Realista */}
+        {/* Celular Realista com Efeitos */}
         <AnimatePresence mode="wait">
           <motion.div
             key={current.id}
@@ -322,11 +376,15 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             transition={{ type: 'spring', stiffness: 260, damping: 26 }}
             className="lg:sticky lg:top-18"
           >
-            <PhoneScreen scamCase={current} stamped={verdict} wasCorrect={wasCorrect} />
+            <PhoneScreen
+              scamCase={current}
+              stamped={finalVerdict}
+              wasCorrect={wasVerdictCorrect}
+            />
           </motion.div>
         </AnimatePresence>
 
-        {/* Ficha do Caso (Paper) */}
+        {/* Ficha Pericial (Paper) */}
         <motion.section
           key={`ficha-${current.id}`}
           initial={{ x: 25, opacity: 0, rotate: 1 }}
@@ -339,7 +397,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           <header className="flex items-start justify-between gap-4 border-b-2 border-dashed border-ink/20 pb-4">
             <div>
               <div className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft">
-                Ficha de Investigação
+                Ficha de Investigação Pericial
               </div>
               <h2 className="font-display font-extrabold text-[26px] sm:text-[30px] leading-[1.05] tracking-tight mt-1">
                 {current.category}
@@ -367,7 +425,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             </p>
           </div>
 
-          {/* Ferramentas de Investigação Técnica */}
+          {/* Pistas Técnicas para Auditar */}
           <div className="mt-6">
             <div className="flex items-baseline justify-between">
               <h3 className="font-mono text-[11px] tracking-[0.25em] uppercase text-ink-soft">
@@ -380,7 +438,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
               {current.clues.map((clue, idx) => {
                 const isOpen = openClue === clue.id;
                 const seen = inspected.includes(clue.id);
-                const suspicious = clue.evidenceResult.status === 'suspicious';
                 return (
                   <li key={clue.id} className="rounded-md border-2 border-ink/15 bg-white/60 overflow-hidden">
                     <button
@@ -396,15 +453,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                         {seen ? <Search className="w-3.5 h-3.5" /> : idx + 1}
                       </span>
                       <span className="flex-1 font-semibold text-[15px] text-ink">{clue.buttonLabel}</span>
-                      {answered && (
-                        <span
-                          className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-semibold ${
-                            suspicious ? 'bg-scam/15 text-scam' : 'bg-safe/15 text-safe'
-                          }`}
-                        >
-                          {suspicious ? 'suspeito' : 'legítimo'}
-                        </span>
-                      )}
                       <ChevronDown
                         className={`w-4 h-4 text-ink-soft transition-transform ${isOpen ? 'rotate-180' : ''}`}
                       />
@@ -436,8 +484,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                                   </div>
                                 ))}
                             </dl>
-                            <p className="mt-3 text-[14.5px] leading-[1.6]">
-                              <span className="marker">{clue.inspection.observation}</span>
+                            <p className="mt-3 text-[14px] leading-[1.6] text-ink-soft italic">
+                              Nota do Perito: {clue.inspection.observation}
                             </p>
                           </div>
                         </motion.div>
@@ -449,7 +497,122 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             </ul>
           </div>
 
-          {/* Resultado Pós-Veredito */}
+          {/* ETAPA 1 & ETAPA 2: O Desafio Intelectual antes de Carimbar */}
+          {!answered && (
+            <div className="mt-8 pt-6 border-t-2 border-dashed border-ink/20 space-y-6">
+              {/* Etapa 1: Veredito Preliminar */}
+              <div>
+                <span className="font-mono text-[11px] uppercase tracking-wider text-ink-soft font-bold block mb-2">
+                  Passo 1: Qual é o seu Veredito Preliminar?
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleStageVerdict('scam')}
+                    className={`py-3.5 px-4 rounded-md font-display font-extrabold text-lg uppercase tracking-wide border-2 transition cursor-pointer flex items-center justify-center gap-2 ${
+                      stagedVerdict === 'scam'
+                        ? 'bg-scam text-white border-scam shadow-md'
+                        : 'bg-white/70 text-scam border-scam/30 hover:border-scam'
+                    }`}
+                  >
+                    <span>É Golpe!</span>
+                    <span className="font-mono text-[11px] opacity-70">G</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleStageVerdict('safe')}
+                    className={`py-3.5 px-4 rounded-md font-display font-extrabold text-lg uppercase tracking-wide border-2 transition cursor-pointer flex items-center justify-center gap-2 ${
+                      stagedVerdict === 'safe'
+                        ? 'bg-safe text-white border-safe shadow-md'
+                        : 'bg-white/70 text-safe border-safe/30 hover:border-safe'
+                    }`}
+                  >
+                    <span>É Seguro</span>
+                    <span className="font-mono text-[11px] opacity-70">S</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Etapa 2: A Prova Técnica / Hipótese (Desafio Real) */}
+              <AnimatePresence>
+                {stagedVerdict !== null && (
+                  <motion.div
+                    ref={hypothesisSectionRef}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden space-y-3 pt-2"
+                  >
+                    <div className="flex items-center gap-1.5 text-ink">
+                      <Scale className="w-4 h-4 text-marker" />
+                      <span className="font-mono text-[11px] uppercase tracking-wider font-bold">
+                        Passo 2: Fundamentação Pericial Obrigatória
+                      </span>
+                    </div>
+
+                    <p className="text-sm font-display font-bold text-ink">
+                      {stagedVerdict === 'scam'
+                        ? 'Qual é a evidência técnica determinante que prova a tentativa de golpe?'
+                        : 'Qual fator técnico comprova que esta mensagem é 100% legítima?'}
+                    </p>
+
+                    <div className="space-y-2">
+                      {current.evidenceHypotheses.map((hypo, idx) => {
+                        const isSelected = selectedHypothesis === idx;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => handleSelectHypothesis(idx)}
+                            className={`w-full text-left p-3.5 rounded-md border-2 text-[14px] leading-snug transition cursor-pointer flex items-start gap-3 ${
+                              isSelected
+                                ? 'bg-ink text-paper border-ink shadow-md font-medium'
+                                : 'bg-white/80 border-ink/15 hover:border-ink/40 text-ink'
+                            }`}
+                          >
+                            <span
+                              className={`w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0 ${
+                                isSelected ? 'bg-marker text-ink' : 'border border-ink/30 text-ink-soft'
+                              }`}
+                            >
+                              {String.fromCharCode(65 + idx)}
+                            </span>
+                            <span className="flex-1">{hypo}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Etapa 3: Botão de Carimbo Final */}
+                    <div className="pt-3">
+                      <button
+                        onClick={handleExecuteStamp}
+                        disabled={selectedHypothesis === null}
+                        className={`w-full py-4 rounded-md font-display font-extrabold text-xl tracking-wider uppercase flex items-center justify-center gap-2 stamp-btn transition ${
+                          selectedHypothesis !== null
+                            ? stagedVerdict === 'scam'
+                              ? 'bg-scam text-white cursor-pointer shadow-xl'
+                              : 'bg-safe text-white cursor-pointer shadow-xl'
+                            : 'bg-ink/10 text-ink/40 border-2 border-dashed border-ink/20 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>
+                          {selectedHypothesis !== null
+                            ? `Bater Carimbo Oficial: ${stagedVerdict === 'scam' ? 'GOLPE!' : 'SEGURO'}`
+                            : 'Selecione uma justificativa pericial acima'}
+                        </span>
+                        {selectedHypothesis !== null && (
+                          <kbd className="font-mono text-xs font-normal border border-white/40 rounded px-1.5 py-0.5">
+                            Enter
+                          </kbd>
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Resultado Pós-Veredito com Análise de Fundamentação */}
           <AnimatePresence>
             {answered && (
               <motion.div
@@ -459,31 +622,57 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 transition={{ delay: 0.25 }}
                 className="mt-7 scroll-mb-28"
               >
-                {/* Cartão de Resolução */}
+                {/* Cartão de Resolução Pericial */}
                 <div
                   className={`rounded-md p-5 border-2 ${
-                    wasCorrect ? 'border-safe bg-safe/10' : 'border-scam bg-scam/10'
+                    isPerfectScore
+                      ? 'border-safe bg-safe/10'
+                      : wasVerdictCorrect
+                      ? 'border-marker bg-marker/15'
+                      : 'border-scam bg-scam/10'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <h3
-                      className={`font-display font-extrabold text-[24px] leading-tight ${
-                        wasCorrect ? 'text-safe' : 'text-scam'
+                      className={`font-display font-extrabold text-[22px] sm:text-[24px] leading-tight ${
+                        isPerfectScore
+                          ? 'text-safe'
+                          : wasVerdictCorrect
+                          ? 'text-ink'
+                          : 'text-scam'
                       }`}
                     >
-                      {wasCorrect
-                        ? 'Mandou muito bem, detetive!'
+                      {isPerfectScore
+                        ? 'Dedução Perfeita! Veredito e Prova Corretos.'
+                        : wasVerdictCorrect
+                        ? 'Acertou o Veredito, mas Errou a Evidência Real!'
                         : current.isScam
-                        ? 'Você caiu no conto do vigário!'
-                        : 'Alarme falso! A mensagem era legítima.'}
+                        ? 'Você caiu no golpe! O prejuízo foi consumado.'
+                        : 'Alarme falso! A mensagem não oferecia risco.'}
                     </h3>
-                    {wasCorrect && (
+
+                    {wasVerdictCorrect && (
                       <span className="font-mono font-bold text-[16px] text-safe shrink-0">
                         +{lastEarned} XP
                       </span>
                     )}
                   </div>
+
                   <p className="mt-2 text-[15px] leading-[1.6] text-ink">{current.explanation}</p>
+
+                  {/* Alerta de Hipótese Incorreta (quando o usuário chuta a prova errada) */}
+                  {wasVerdictCorrect && !wasHypothesisCorrect && (
+                    <div className="mt-3 p-3.5 rounded bg-white/70 border border-marker/60 text-ink space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase text-amber-800">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span>Atenção Pedagógica:</span>
+                      </div>
+                      <p className="text-xs text-ink leading-relaxed">
+                        Você acertou o resultado final, mas selecionou uma justificativa falsa ou distratora.
+                        A prova real inquestionável deste caso é: <strong>{current.keyEvidenceReason}</strong>
+                      </p>
+                    </div>
+                  )}
 
                   {/* Sinais de Alerta */}
                   {current.redFlags.length > 0 && (
@@ -505,13 +694,13 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   {!current.isScam && (
                     <div className="mt-3 flex gap-2 text-[14.5px] text-safe font-medium">
                       <Check className="w-4 h-4 text-safe mt-0.5 shrink-0" strokeWidth={3} />
-                      Sem solicitações urgentes de dinheiro, sem links mascarados e canal oficial.
+                      {current.keyEvidenceReason}
                     </div>
                   )}
                 </div>
 
-                {/* Drill de Reforço: se errou, ganha chance de responder para aprender */}
-                {!wasCorrect && current.reinforcementDrill && (
+                {/* Drill de Reforço: se errou o veredito, ativa o quiz para fixar */}
+                {!wasVerdictCorrect && current.reinforcementDrill && (
                   <div className="mt-4 p-5 rounded-md bg-white/70 border-2 border-ink/20">
                     <div className="flex items-center gap-2 mb-2 text-ink">
                       <Lightbulb className="w-4 h-4 text-marker" />
@@ -569,7 +758,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   </p>
                 </div>
 
-                {/* Guias Pedagógicos Adaptados (Família / Pais / Analogia) */}
+                {/* Guias Pedagógicos Adaptados */}
                 <div className="mt-4 p-4 rounded-md bg-white/60 border border-ink/15">
                   <div className="flex gap-2 border-b border-ink/10 pb-2 mb-3 text-xs font-mono">
                     <button
@@ -618,26 +807,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Carimbos de Decisão (Desktop) */}
-          {!answered && (
-            <div className="hidden lg:grid grid-cols-2 gap-4 mt-8">
-              <StampButton kind="scam" onClick={() => decide('scam')} hotkey="G" />
-              <StampButton kind="safe" onClick={() => decide('safe')} hotkey="S" />
-            </div>
-          )}
         </motion.section>
       </div>
-
-      {/* Carimbos Fixos (Mobile / Polegar) */}
-      {!answered && (
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] bg-gradient-to-t from-desk via-desk/95 to-transparent">
-          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-            <StampButton kind="scam" onClick={() => decide('scam')} />
-            <StampButton kind="safe" onClick={() => decide('safe')} />
-          </div>
-        </div>
-      )}
 
       {/* MODAL 1: Sala de Conquistas */}
       <AnimatePresence>
@@ -724,7 +895,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 </button>
               </div>
 
-              {/* Abas */}
               <div className="flex p-1 rounded bg-ink/10 text-xs font-mono">
                 <button
                   onClick={() => setFamilyGuideTab('rules')}
@@ -781,27 +951,3 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     </div>
   );
 };
-
-const StampButton = ({
-  kind,
-  onClick,
-  hotkey,
-}: {
-  kind: Verdict;
-  onClick: () => void;
-  hotkey?: string;
-}) => (
-  <button
-    onClick={onClick}
-    className={`stamp-btn cursor-pointer rounded-md py-4 lg:py-5 font-display font-extrabold text-[20px] lg:text-[24px] tracking-wide uppercase text-white flex items-center justify-center gap-2 ${
-      kind === 'scam' ? 'bg-scam' : 'bg-safe'
-    }`}
-  >
-    {kind === 'scam' ? 'É Golpe!' : 'É Seguro'}
-    {hotkey && (
-      <kbd className="font-mono text-[11px] font-normal opacity-75 border border-white/40 rounded px-1.5 py-0.5">
-        {hotkey}
-      </kbd>
-    )}
-  </button>
-);
