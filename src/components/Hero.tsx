@@ -2,14 +2,16 @@ import React from 'react';
 
 export const Hero: React.FC = () => {
   return (
-    <section className="pt-6 pb-6 text-center max-w-xl mx-auto -skew-x-3">
-      <div className="inline-block bg-[#00ffff] px-4 py-1 border-4 border-black shadow-[4px_4px_0_0_#ff007f] mb-2 transform -rotate-2">
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-black uppercase">
-          Simulador de Golpes
-        </h1>
+    <section className="pt-6 pb-2 text-center max-w-2xl mx-auto">
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-desk-2 border border-desk-line text-clip text-xs font-mono tracking-wider uppercase mb-3">
+        <span className="w-2 h-2 rounded-full bg-safe animate-pulse" />
+        Treinamento Prático de Defesa Digital
       </div>
-      <p className="text-xs sm:text-sm font-bold text-white bg-black inline-block px-3 py-1 border-2 border-[#00ffff] transform rotate-1">
-        Analise a mensagem. Ache a farsa. Dê o Veredito.
+      <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-white tracking-tight leading-tight">
+        Simulador de Golpes
+      </h1>
+      <p className="mt-2 text-sm sm:text-base text-clip max-w-lg mx-auto">
+        Analise a mensagem real. Inspecione as pistas. <span className="marker text-ink font-semibold">Dê o seu veredito.</span>
       </p>
     </section>
   );
