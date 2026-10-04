@@ -635,15 +635,15 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           : { x: [0, -4, 4, -4, 4, -2, 2, 0] }
       }
       transition={{ duration: stamped ? 0.4 : 0.35, ease: 'easeInOut' }}
-      className="relative mx-auto w-full max-w-[305px]"
+      className="relative mx-auto w-full max-w-[370px]"
     >
-      <div className="relative rounded-[44px] bg-[#0c0e14] p-[8px] shadow-[0_0_0_2px_#272b38,0_30px_50px_-15px_rgba(0,0,0,0.85)] border border-white/10">
-        <div className="relative h-[565px] max-h-[72vh] min-h-[460px] rounded-[36px] overflow-hidden font-phone select-none">
+      <div className="relative rounded-[50px] bg-[#0c0e14] p-[10px] shadow-[0_0_0_2px_#272b38,0_32px_55px_-15px_rgba(0,0,0,0.85)] border border-white/10">
+        <div className="relative h-[635px] max-h-[80vh] min-h-[520px] rounded-[40px] overflow-hidden font-phone select-none">
           {screen}
 
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[82px] h-[22px] rounded-full bg-black flex items-center justify-between px-2.5 z-30 shadow-md">
-            <span className="w-2 h-2 rounded-full bg-[#1e293b]" />
-            <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-[92px] h-[25px] rounded-full bg-black flex items-center justify-between px-3 z-30 shadow-md">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#1e293b]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] animate-pulse" />
           </div>
         </div>
       </div>
