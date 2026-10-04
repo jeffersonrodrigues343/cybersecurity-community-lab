@@ -225,9 +225,9 @@ const WhatsAppScreen = ({
                 onClick={() => handleActionClick(act)}
                 className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-200 text-[#008069] rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition cursor-pointer flex items-center justify-between gap-2"
               >
-                <span className="truncate">{act.label}</span>
-                <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded shrink-0">
-                  +Prova
+                <span className="text-[11px] leading-[1.3] font-medium line-clamp-2">{act.label}</span>
+                <span className="text-[9.5px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded shrink-0">
+                  +Ação
                 </span>
               </button>
             ))}
@@ -328,9 +328,9 @@ const SmsScreen = ({
                 sound.playBlip();
                 onPerformAction(act);
               }}
-              className="w-full text-left bg-white hover:bg-blue-50 border border-blue-200 text-[#007aff] rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition cursor-pointer flex items-center justify-between"
+              className="w-full text-left bg-white hover:bg-blue-50 border border-blue-200 text-[#007aff] rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition cursor-pointer flex items-center justify-between gap-2"
             >
-              <span className="truncate">{act.label}</span>
+              <span className="text-[11px] leading-[1.3] font-medium line-clamp-2">{act.label}</span>
               <span className="text-[9px] font-mono bg-blue-100 text-blue-800 px-1 rounded shrink-0">
                 +Auditoria
               </span>
@@ -425,9 +425,9 @@ const CallScreen = ({
                 sound.playBlip();
                 onPerformAction(act);
               }}
-              className="w-full text-left bg-white/15 hover:bg-white/25 border border-white/20 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center justify-between"
+              className="w-full text-left bg-white/15 hover:bg-white/25 border border-white/20 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center justify-between gap-2"
             >
-              <span className="truncate">{act.label}</span>
+              <span className="text-[11px] leading-[1.3] font-medium line-clamp-2">{act.label}</span>
               <span className="text-[9px] font-mono bg-sky-500/30 text-sky-300 px-1 rounded shrink-0">
                 Falar
               </span>
@@ -533,9 +533,9 @@ const PushScreen = ({
                 sound.playBlip();
                 onPerformAction(act);
               }}
-              className="w-full text-left bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-xl px-3 py-2 text-xs font-semibold transition cursor-pointer flex items-center justify-between"
+              className="w-full text-left bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-xl px-3 py-2 text-xs font-semibold transition cursor-pointer flex items-center justify-between gap-2"
             >
-              <span className="truncate">{act.label}</span>
+              <span className="text-[11px] leading-[1.3] font-medium line-clamp-2">{act.label}</span>
               <span className="text-[9px] font-mono bg-purple-500 text-white px-1.5 py-0.5 rounded shrink-0">
                 Checar
               </span>
@@ -633,15 +633,15 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           : { x: [0, -4, 4, -4, 4, -2, 2, 0] }
       }
       transition={{ duration: stamped ? 0.4 : 0.35, ease: 'easeInOut' }}
-      className="relative mx-auto w-full max-w-[340px]"
+      className="relative mx-auto w-full max-w-[305px]"
     >
-      <div className="relative rounded-[48px] bg-[#0b0d12] p-[10px] shadow-[0_0_0_2px_#2c3142,0_40px_60px_-20px_rgba(0,0,0,0.8)] border border-white/5">
-        <div className="relative h-[610px] max-h-[74vh] min-h-[490px] rounded-[38px] overflow-hidden font-phone select-none">
+      <div className="relative rounded-[44px] bg-[#0c0e14] p-[8px] shadow-[0_0_0_2px_#272b38,0_30px_50px_-15px_rgba(0,0,0,0.85)] border border-white/10">
+        <div className="relative h-[565px] max-h-[72vh] min-h-[460px] rounded-[36px] overflow-hidden font-phone select-none">
           {screen}
 
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[96px] h-[26px] rounded-full bg-black flex items-center justify-between px-3 z-30 shadow-md">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#1e293b]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] animate-pulse" />
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[82px] h-[22px] rounded-full bg-black flex items-center justify-between px-2.5 z-30 shadow-md">
+            <span className="w-2 h-2 rounded-full bg-[#1e293b]" />
+            <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
           </div>
         </div>
       </div>
