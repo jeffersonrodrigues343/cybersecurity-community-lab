@@ -680,7 +680,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                   <span>
                     {currentCaseDiscovered.includes(currentCase.clues[0].id)
                       ? currentCase.clues[0].inspection.observation 
-                      : 'SCAN FOR WEAKNESS'}
+                      : 'INVESTIGAR DICA'}
                   </span>
                 </button>
 
@@ -694,7 +694,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     className="uk-btn-red flex flex-col items-center justify-center space-y-2 py-6"
                   >
                     <ShieldAlert className="w-12 h-12" />
-                    <span className="font-bold text-3xl tracking-widest">SCAM!</span>
+                    <span className="font-bold text-3xl tracking-widest">É GOLPE!</span>
                   </button>
                   
                   <button
@@ -706,7 +706,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     className="uk-btn-green flex flex-col items-center justify-center space-y-2 py-6"
                   >
                     <ShieldCheck className="w-12 h-12" />
-                    <span className="font-bold text-3xl tracking-widest">SAFE!</span>
+                    <span className="font-bold text-3xl tracking-widest">É SEGURO!</span>
                   </button>
                   <button id="hidden-submit" onClick={handleProtocolReport} className="hidden">Submit</button>
                 </div>
@@ -717,14 +717,14 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                       currentAnswerData.isCorrect ? 'uk-panel border-[#00ff00]' : 'uk-panel border-[#ff2a2a]'
                     }`}>
                       <h2 className={`font-bold text-4xl mb-2 flex items-center gap-2 ${currentAnswerData.isCorrect ? 'text-[#00ff00]' : 'text-[#ff2a2a]'}`}>
-                        {currentAnswerData.isCorrect ? 'BLOOD GAINED!' : 'FATAL ERROR!'}
+                        {currentAnswerData.isCorrect ? 'MANDOU BEM! VOCÊ ACERTOU!' : 'CAIU NO GOLPE!'}
                       </h2>
                       <p className="font-medium text-xl mb-4 text-[#ccc]">
                         {currentCase.explanation}
                       </p>
                       
                       <div className="bg-[#111] p-4 border-2 border-dashed border-[#ff2a2a]">
-                        <p className="font-bold text-sm mb-1 text-[#ff2a2a]">TERMINAL DATA:</p>
+                        <p className="font-bold text-sm mb-1 text-[#ff2a2a]">REGRA DE OURO DE SEGURANÇA:</p>
                         <p className="font-bold text-xl text-[#ccc]">{currentCase.pedagogy.goldenRule}</p>
                       </div>
                   </div>
@@ -733,7 +733,7 @@ export const ScamSimulatorGame: React.FC<ScamSimulatorGameProps> = ({ onScoreUpd
                     onClick={handleNextCase}
                     className="w-full py-4 uk-btn-red text-white flex items-center justify-center space-x-2 font-bold text-3xl"
                   >
-                    <span>NEXT TARGET</span>
+                    <span>PRÓXIMO CASO</span>
                     <ChevronRight className="w-8 h-8" />
                   </button>
               </div>
