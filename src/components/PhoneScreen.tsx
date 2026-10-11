@@ -202,8 +202,36 @@ const LockScreen = ({
 };
 
 // ============================================================================
-// BLOCO DE NOTAS DO CELULAR (APP NATIVO COM AS DÚVIDAS E QUESTIONAMENTOS)
 // ============================================================================
+// BLOCO DE NOTAS DO CELULAR: ORIENTAÇÕES DO LUCAS (FILHO) & INVESTIGAÇÃO
+// ============================================================================
+const isBankClue = (clue: InvestigativeClue) => {
+  const text = `${clue.question} ${clue.inspection.observation} ${clue.evidenceResult.fato} ${clue.evidenceResult.details}`.toLowerCase();
+  return (
+    clue.category === 'pix' ||
+    clue.inspection.type === 'pix' ||
+    text.includes('banco') ||
+    text.includes('saldo') ||
+    text.includes('pix') ||
+    text.includes('extrato') ||
+    text.includes('transferência') ||
+    text.includes('transferir')
+  );
+};
+
+const isBrowserClue = (clue: InvestigativeClue) => {
+  const text = `${clue.question} ${clue.inspection.observation} ${clue.evidenceResult.fato} ${clue.evidenceResult.details}`.toLowerCase();
+  return (
+    clue.category === 'whois' ||
+    clue.inspection.type === 'link' ||
+    text.includes('link') ||
+    text.includes('site') ||
+    text.includes('domínio') ||
+    text.includes('url') ||
+    text.includes('http')
+  );
+};
+
 const NotesScreen = ({
   c,
   inspectedClueIds = [],
@@ -211,6 +239,8 @@ const NotesScreen = ({
   onBack,
   onVerdict,
   stamped,
+  onOpenBank,
+  onOpenBrowser,
 }: {
   c: ScamCase;
   inspectedClueIds: string[];
@@ -218,8 +248,10 @@ const NotesScreen = ({
   onBack: () => void;
   onVerdict?: (v: 'scam' | 'safe') => void;
   stamped: Verdict;
+  onOpenBank?: () => void;
+  onOpenBrowser?: (url?: string) => void;
 }) => {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(() => c.clues[0]?.id ?? null);
 
   const toggleClue = (clue: InvestigativeClue) => {
     sound.playBlip();
@@ -231,7 +263,7 @@ const NotesScreen = ({
     <div className="flex flex-col h-full bg-[#18181b] text-white select-none">
       <StatusBar time={c.time} dark />
 
-      {/* Header do Bloco de Notas */}
+      {/* Header do Bloco de Notas: Notas do Lucas */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-[#27272a]/90 backdrop-blur-md">
         <button
           type="button"
@@ -241,36 +273,48 @@ const NotesScreen = ({
           <ChevronLeft className="w-4 h-4" />
           <span>Voltar</span>
         </button>
-        <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-200">
-          <FileText className="w-3.5 h-3.5 text-amber-400" />
-          <span>Bloco de Notas</span>
+        <div className="flex flex-col items-center leading-tight">
+          <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-100">
+            <FileText className="w-3.5 h-3.5 text-amber-400" />
+            <span>Notas do Lucas (Filho) 📌</span>
+          </div>
+          <span className="text-[9.5px] text-amber-300/80 font-medium">Lembretes pra não cair em golpe</span>
         </div>
         <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
-          {inspectedClueIds.length}/{c.clues.length} tiradas a limpo
+          {inspectedClueIds.length}/{c.clues.length}
         </span>
       </div>
 
-      {/* Conteúdo com anotações e dúvidas lógicas */}
+      {/* Conteúdo com a nota fixada do Lucas e os passos investigativos */}
       <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-2.5">
-        <div className="bg-amber-400/10 border border-amber-400/25 rounded-2xl p-2.5">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1">
-            <Lightbulb className="w-3.5 h-3.5" /> Questionamentos que Fazem Sentido
+        {/* Recado Carinhoso Fixado do Filho */}
+        <div className="bg-gradient-to-br from-amber-500/15 via-amber-600/10 to-yellow-500/5 border border-amber-400/30 rounded-2xl p-3 shadow-md space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wide">
+              <span>📌</span> Recado Salvo do Lucas
+            </span>
+            <span className="text-[9px] font-mono text-amber-300 bg-amber-400/15 border border-amber-400/25 px-2 py-0.5 rounded-full font-bold">
+              Guia no Celular
+            </span>
           </div>
-          <p className="text-[11.5px] text-neutral-300 mt-1 leading-snug font-medium">
-            Dúvidas que surgem naturalmente. Toque para checar a prova real no aparelho:
+          <p className="text-[11.5px] text-amber-100/90 leading-relaxed font-medium">
+            <em>&quot;Oi mãe/pai! Deixei essas dicas anotadas aqui no seu celular caso alguém tente passar um golpe em você. Não faça nada por impulso. Dá uma conferida nestes pontos nos aplicativos do seu celular antes de transferir qualquer valor ou passar códigos:&quot;</em>
           </p>
         </div>
 
+        {/* Lista de Orientações Práticas do Lucas */}
         {c.clues.map((clue, idx) => {
           const isInspected = inspectedClueIds.includes(clue.id);
           const isExpanded = expandedId === clue.id;
+          const hasBank = isBankClue(clue);
+          const hasBrowser = isBrowserClue(clue);
 
           return (
             <div
               key={clue.id}
               className={`rounded-2xl border transition-all overflow-hidden ${
                 isExpanded
-                  ? 'bg-black/60 border-amber-400/50 shadow-md'
+                  ? 'bg-black/70 border-amber-400/50 shadow-lg'
                   : isInspected
                   ? 'bg-white/5 border-emerald-500/30'
                   : 'bg-white/5 border-white/10 hover:border-white/20'
@@ -294,11 +338,11 @@ const NotesScreen = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[9.5px] font-mono text-amber-400 font-bold uppercase">
-                      Dúvida #{idx + 1}
+                      Dica #{idx + 1}
                     </span>
                     {isInspected && (
                       <span className="text-[8.5px] font-mono text-emerald-400 bg-emerald-400/15 px-1.5 py-0.2 rounded font-bold">
-                        Checado +10 XP
+                        ✓ Conferido (+10 XP)
                       </span>
                     )}
                   </div>
@@ -314,20 +358,76 @@ const NotesScreen = ({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="px-3 pb-3 pt-1 border-t border-white/10 space-y-2 bg-black/40 text-[11px]"
+                    className="px-3 pb-3 pt-1 border-t border-white/10 space-y-2.5 bg-black/40 text-[11px]"
                   >
-                    <div className="space-y-0.5">
-                      <span className="text-[9.5px] font-mono uppercase text-emerald-400 font-bold block">
-                        🔎 Prova Real no Aparelho:
+                    {/* O que o Lucas orienta checar */}
+                    <div className="space-y-1 bg-white/5 p-2 rounded-xl border border-white/10">
+                      <span className="text-[9.5px] font-mono uppercase text-amber-300 font-bold flex items-center gap-1">
+                        <Lightbulb className="w-3 h-3 text-amber-400" /> O que o Lucas recomenda checar:
                       </span>
                       <p className="text-neutral-200 leading-relaxed font-medium">
+                        {clue.evidenceResult.headline}
+                      </p>
+                    </div>
+
+                    {/* Prova Real no Aparelho */}
+                    <div className="space-y-1 bg-black/60 p-2 rounded-xl border border-white/10">
+                      <span className="text-[9.5px] font-mono uppercase text-emerald-400 font-bold block">
+                        🔎 O que você encontra no aparelho (Prova Real):
+                      </span>
+                      <p className="text-white leading-relaxed font-semibold">
                         {clue.inspection.observation}
                       </p>
                     </div>
 
-                    <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-neutral-300 text-[10.5px]">
-                      <span className="text-amber-400 font-bold">💡 Fato: </span>
+                    {/* Conclusão Forense / Fato */}
+                    <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/20 text-neutral-200 text-[10.5px]">
+                      <span className="text-amber-400 font-bold">💡 Fato comprovado: </span>
                       {clue.evidenceResult.fato}
+                    </div>
+
+                    {/* Atalhos de Investigação no Aparelho */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[9px] font-mono uppercase text-white/50 font-bold block">
+                        🛠️ Investigar no próprio celular:
+                      </span>
+                      {hasBank && onOpenBank && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onInspectClue?.(clue);
+                            onOpenBank();
+                          }}
+                          className="w-full py-2 px-3 rounded-xl bg-purple-600/40 hover:bg-purple-600/60 border border-purple-500/40 text-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-sm"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 text-purple-300" />
+                          <span>🏦 Abrir Meu Banco no Celular e Checar Saldo</span>
+                        </button>
+                      )}
+                      {hasBrowser && onOpenBrowser && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onInspectClue?.(clue);
+                            onOpenBrowser();
+                          }}
+                          className="w-full py-2 px-3 rounded-xl bg-sky-600/40 hover:bg-sky-600/60 border border-sky-500/40 text-sky-200 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-sm"
+                        >
+                          <Globe className="w-3.5 h-3.5 text-sky-300" />
+                          <span>🌐 Abrir Navegador e Conferir o Link</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onInspectClue?.(clue);
+                          onBack();
+                        }}
+                        className="w-full py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                      >
+                        <MessageSquare className="w-3 h-3 text-emerald-400" />
+                        <span>💬 Voltar para a conversa / chamada</span>
+                      </button>
                     </div>
                   </motion.div>
                 )}
@@ -337,11 +437,11 @@ const NotesScreen = ({
         })}
       </div>
 
-      {/* Decisão direta no Bloco de Notas */}
+      {/* Veredito Direto nas Notas */}
       {!stamped && onVerdict && (
         <div className="p-2.5 bg-[#27272a] border-t border-white/10 space-y-1.5">
-          <div className="text-[9px] font-mono text-center text-neutral-400 uppercase font-bold tracking-wider">
-            Com base nessas notas, qual o seu veredito?
+          <div className="text-[9.5px] font-mono text-center text-neutral-300 uppercase font-bold tracking-wider">
+            Após conferir as notas do Lucas e os apps, qual é a sua conclusão?
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -732,10 +832,10 @@ const WhatsAppScreen = ({
                   onOpenNotes();
                 }}
                 className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold px-2 py-1 rounded-full border border-white/25 cursor-pointer active:scale-95 transition shadow-sm"
-                title="Abrir Bloco de Notas do celular com dúvidas lógicas"
+                title="Abrir Notas do Lucas no celular"
               >
                 <FileText className="w-3 h-3 text-amber-300" />
-                <span>Dúvidas ({inspectedClueCount}/{c.clues.length})</span>
+                <span>Notas do Lucas ({inspectedClueCount}/{c.clues.length})</span>
               </motion.button>
             )}
 
@@ -1103,10 +1203,10 @@ const SmsScreen = ({
               onOpenNotes();
             }}
             className="flex items-center gap-1 bg-neutral-100 hover:bg-neutral-200 text-[#007aff] text-[10px] font-bold px-2 py-1 rounded-full border border-neutral-300 cursor-pointer active:scale-95 transition shadow-sm"
-            title="Abrir Bloco de Notas com dúvidas lógicas"
+            title="Abrir Notas do Lucas no celular"
           >
             <FileText className="w-3 h-3 text-amber-500" />
-            <span>Dúvidas ({inspectedClueCount}/{c.clues.length})</span>
+            <span>Notas do Lucas ({inspectedClueCount}/{c.clues.length})</span>
           </motion.button>
         )}
       </div>
@@ -1606,7 +1706,7 @@ const CallScreen = ({
                 className="w-full py-1.5 px-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-xl text-amber-300 text-[10.5px] font-bold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition"
               >
                 <FileText className="w-3.5 h-3.5 text-amber-400" />
-                <span>Consultar Dúvidas Forenses no Bloco de Notas ({inspectedClueCount}/{c.clues.length})</span>
+                <span>Ver Dicas do Lucas no Bloco de Notas ({inspectedClueCount}/{c.clues.length})</span>
               </button>
             )}
           </motion.div>
@@ -1989,7 +2089,7 @@ const HomeScreen = ({
                 {inspectedClueCount}/{c.clues.length}
               </span>
             </div>
-            <span className="text-[9.5px] text-white/80 font-medium">Notas</span>
+            <span className="text-[9.5px] text-white/80 font-medium">Notas do Lucas</span>
           </div>
 
           {/* 5. Música */}
@@ -2083,6 +2183,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   onStoryDeliveredChange,
 }) => {
   const [activeApp, setActiveApp] = useState<'home' | 'messaging' | 'notes' | 'bank' | 'browser'>('home');
+  const [previousApp, setPreviousApp] = useState<'home' | 'messaging' | 'notes'>('home');
   const [isLocked, setIsLocked] = useState(true);
   const [isScreenOff, setIsScreenOff] = useState(true);
   const [notificationArrived, setNotificationArrived] = useState(false);
@@ -2104,6 +2205,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setActiveModal(null);
     setIsLocked(true);
     setActiveApp('home');
+    setPreviousApp('home');
     setNotificationArrived(false);
     onAppOpenChangeRef.current?.(false);
     onStoryDeliveredChangeRef.current?.(false);
@@ -2155,21 +2257,31 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     sound.playKeypress();
     setIsLocked(false);
     setActiveApp('messaging');
+    setPreviousApp('home');
     onAppOpenChange?.(true);
   };
 
   const handleOpenNotes = () => {
     sound.playBlip();
+    if (activeApp === 'home' || activeApp === 'messaging') {
+      setPreviousApp(activeApp);
+    }
     setActiveApp('notes');
   };
 
   const handleOpenBank = () => {
     sound.playBlip();
+    if (activeApp === 'home' || activeApp === 'messaging' || activeApp === 'notes') {
+      setPreviousApp(activeApp);
+    }
     setActiveApp('bank');
   };
 
   const handleOpenBrowser = (url?: string) => {
     sound.playBlip();
+    if (activeApp === 'home' || activeApp === 'messaging' || activeApp === 'notes') {
+      setPreviousApp(activeApp);
+    }
     setBrowserUrl(url || 'https://pesquisa-segura.com.br');
     setActiveApp('browser');
   };
@@ -2365,9 +2477,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   c={scamCase}
                   inspectedClueIds={inspectedClueIds}
                   onInspectClue={onInspectClue}
-                  onBack={() => setActiveApp('messaging')}
+                  onBack={() => setActiveApp(previousApp === 'notes' ? 'home' : previousApp)}
                   onVerdict={onVerdict}
                   stamped={stamped}
+                  onOpenBank={handleOpenBank}
+                  onOpenBrowser={handleOpenBrowser}
                 />
               </motion.div>
             ) : activeApp === 'bank' ? (
@@ -2381,7 +2495,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               >
                 <BankScreen
                   c={scamCase}
-                  onBack={() => setActiveApp('home')}
+                  onBack={() => setActiveApp(previousApp)}
                 />
               </motion.div>
             ) : (
@@ -2396,7 +2510,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 <BrowserScreen
                   c={scamCase}
                   url={browserUrl}
-                  onBack={() => setActiveApp('messaging')}
+                  onBack={() => setActiveApp(previousApp)}
                 />
               </motion.div>
             )}

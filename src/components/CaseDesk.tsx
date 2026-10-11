@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import {
-  ChevronDown,
   Flame,
   ArrowRight,
   X,
@@ -11,7 +10,6 @@ import {
   Lightbulb,
   ShieldAlert,
   ShieldCheck,
-  CheckCircle2,
   Sparkles,
 } from 'lucide-react';
 import {
@@ -40,18 +38,14 @@ const comboBonusFor = (streak: number) => (streak >= 3 ? 30 : streak === 2 ? 10 
 export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [caseNumber, setCaseNumber] = useState(1);
   const [current, setCurrent] = useState<ScamCase>(() => generateDynamicScamCase(0));
-  const [isAppOpened, setIsAppOpened] = useState(false);
-  const [openClue, setOpenClue] = useState<string | null>(null);
   const [inspected, setInspected] = useState<string[]>([]);
 
   // Condução Interativa no Celular & Coleta de Provas
   const [executedActionIds, setExecutedActionIds] = useState<string[]>([]);
   const [actionHistory, setActionHistory] = useState<{ player: string; reply: string }[]>([]);
-  
 
   // Veredito Direto e Intuitivo
   const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
-  const [isStoryDelivered, setIsStoryDelivered] = useState(false);
 
   const [streak, setStreak] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
@@ -95,17 +89,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     });
   }, []);
 
-  const handleAppOpenChange = useCallback((opened: boolean) => {
-    setIsAppOpened(opened);
-  }, []);
-
-  const handleStoryDeliveredChange = useCallback((delivered: boolean) => {
-    setIsStoryDelivered(delivered);
-  }, []);
-
   // Executar ação de diálogo no celular
   const handlePerformPhoneAction = (action: InteractiveAction) => {
-    setIsAppOpened(true);
     if (executedActionIds.includes(action.id)) return;
 
     setExecutedActionIds((prev) => [...prev, action.id]);
@@ -119,7 +104,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   // Inspecionar pistas práticas
   const inspect = (clue: InvestigativeClue) => {
     sound.playBlip();
-    setOpenClue((prev) => (prev === clue.id ? null : clue.id));
     if (!inspected.includes(clue.id)) {
       setInspected((prev) => [...prev, clue.id]);
       unlockBadge('badge-first-clue');
@@ -135,7 +119,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
 
     const verdictCorrect = (v === 'scam') === current.isScam;
     setFinalVerdict(v);
-    setOpenClue(null);
 
     let earned = 0;
     let newStreak = streak;
@@ -199,9 +182,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     setActionHistory([]);
     
     setFinalVerdict(null);
-    setIsAppOpened(false);
-    setIsStoryDelivered(false);
-    setOpenClue(null);
     setLastEarned(0);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [streak]);
@@ -310,288 +290,103 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           </div>
         </div>
 
-        {/* GRID PRINCIPAL: CELULAR À ESQUERDA + HISTÓRIA E QUESTIONAMENTOS À DIREITA */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          {/* COLUNA ESQUERDA: O CELULAR REALISTA (lg:col-span-6) */}
-          <div className="lg:col-span-6 flex flex-col items-center">
-            <div className="w-full max-w-[370px]">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={current.id}
-                  initial={{ scale: 0.96, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.96, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 280, damping: 24 }}
-                >
-                  <PhoneScreen
-                    scamCase={current}
-                    stamped={finalVerdict}
-                    wasCorrect={wasVerdictCorrect}
-                    onPerformAction={handlePerformPhoneAction}
-                    executedActionIds={executedActionIds}
-                    actionHistory={actionHistory}
-                    onAppOpenChange={handleAppOpenChange}
-                    onVerdict={handleDirectVerdict}
-                    onNextCase={nextCase}
-                    inspectedClueIds={inspected}
-                    onInspectClue={inspect}
-                    onStoryDeliveredChange={handleStoryDeliveredChange}
-                  />
-                </motion.div>
-              </AnimatePresence>
-            </div>
-            <p className="text-[11px] text-white/50 text-center mt-2.5 flex items-center justify-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-marker" />
-              <span>Mexa no celular: abra apps, consulte o Bloco de Notas ou decida direto no aparelho</span>
-            </p>
+        {/* CELULAR CENTRALIZADO (FOCO TOTAL NA EXPERIÊNCIA DO APARELHO) */}
+        <div className="flex flex-col items-center max-w-[420px] mx-auto">
+          <div className="w-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current.id}
+                initial={{ scale: 0.96, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.96, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+              >
+                <PhoneScreen
+                  scamCase={current}
+                  stamped={finalVerdict}
+                  wasCorrect={wasVerdictCorrect}
+                  onPerformAction={handlePerformPhoneAction}
+                  executedActionIds={executedActionIds}
+                  actionHistory={actionHistory}
+                  onVerdict={handleDirectVerdict}
+                  onNextCase={nextCase}
+                  inspectedClueIds={inspected}
+                  onInspectClue={inspect}
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
+          <p className="text-[11px] text-white/50 text-center mt-2.5 flex items-center justify-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-marker" />
+            <span>O celular é o foco: abra o Bloco de Notas para ver dicas e investigue nos apps</span>
+          </p>
 
-          {/* COLUNA DIREITA: HISTÓRIA & QUESTIONAMENTOS QUE FAZEM SENTIDO (lg:col-span-6) */}
-          <div className="lg:col-span-6 space-y-4">
-            {/* CARD 1: O Cenário & A História do Momento */}
-            <div className="rounded-2xl bg-desk-2 border border-desk-line p-4 sm:p-5 shadow-lg relative overflow-hidden">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-marker font-bold flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>História em Andamento</span>
-                </span>
-                <span className="text-[11px] font-mono text-white/50">
-                  {current.time}
-                </span>
-              </div>
-
-              <h2 className="text-base sm:text-lg font-display font-extrabold text-white">
-                {current.title}
-              </h2>
-
-              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed mt-2 font-medium">
-                {!isAppOpened
-                  ? "Você estava mexendo no celular tranquilamente em seu dia a dia quando, de repente, o aparelho vibra com uma mensagem inesperada... Olhe para a tela do celular e toque na notificação para conferir quem mandou."
-                  : current.dilemma}
-              </p>
-            </div>
-
-            {/* CARD 2: 🤔 Pensando Bem... Questionamentos que Fazem Sentido */}
-            <div className="rounded-2xl bg-desk-2 border border-desk-line p-4 sm:p-5 shadow-lg space-y-3">
-              <div className="flex items-center justify-between gap-2 border-b border-desk-line/70 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🤔</span>
-                  <div>
-                    <h3 className="font-display font-bold text-sm sm:text-base text-white">
-                      Questionamentos que Fazem Sentido
-                    </h3>
-                    <p className="text-[11px] text-clip">
-                      Dúvidas lógicas que surgem ao ler essa mensagem:
-                    </p>
-                  </div>
-                </div>
-                <span className="font-mono text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-400/20 shrink-0">
-                  {inspected.length}/{current.clues.length} tirados a limpo
-                </span>
-              </div>
-
-              {/* Lista de questionamentos lógicos - revelada após o remetente concluir o envio no celular */}
-              {!isStoryDelivered ? (
-                <div className="rounded-xl border border-desk-line bg-desk/70 p-4 text-center space-y-2">
-                  <div className="flex items-center justify-center gap-2 text-xs text-marker font-mono uppercase font-bold">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                    <span>
-                      {current.channel === 'call'
-                        ? 'Acompanhe o celular: chamada telefônica em andamento...'
-                        : 'Acompanhe o celular: remetente digitando...'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-300 font-medium">
-                    {current.channel === 'call'
-                      ? 'Atenda a ligação no aparelho e ouça a exigência do atendente. As dúvidas investigativas serão liberadas assim que o roteiro do suspeito terminar.'
-                      : 'Foque na tela do aparelho e acompanhe a mensagem conforme ela chega. As dúvidas investigativas serão liberadas logo a seguir.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2.5 pt-1">
-                  {current.clues.map((clue, idx) => {
-                    const isOpen = openClue === clue.id;
-                    const seen = inspected.includes(clue.id);
-                    return (
-                      <div
-                        key={clue.id}
-                        className={`rounded-xl border transition-all overflow-hidden ${
-                          isOpen
-                            ? 'border-marker/50 bg-black/40'
-                            : seen
-                            ? 'border-emerald-500/30 bg-desk'
-                            : 'border-desk-line bg-desk hover:border-desk-line/80'
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => inspect(clue)}
-                          className="w-full flex items-start gap-3 p-3 text-left hover:bg-white/5 transition cursor-pointer"
-                        >
-                          <span
-                            className={`w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold shrink-0 mt-0.5 ${
-                              seen
-                                ? 'bg-emerald-500 text-white'
-                                : 'border border-desk-line text-clip'
-                            }`}
-                          >
-                            {seen ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
-                          </span>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono uppercase tracking-wider text-marker font-semibold">
-                                Dúvida #{idx + 1}
-                              </span>
-                              {seen && (
-                                <span className="text-[9px] font-mono text-emerald-400 font-bold bg-emerald-400/15 px-1.5 rounded">
-                                  Checado +{CLUE_XP} XP
-                                </span>
-                              )}
-                            </div>
-                            <p className="font-semibold text-xs sm:text-[13px] text-white mt-0.5 leading-snug">
-                              {clue.question}
-                            </p>
-                          </div>
-
-                          <ChevronDown
-                            className={`w-4 h-4 text-clip transition-transform shrink-0 mt-1 ${
-                              isOpen ? 'rotate-180' : ''
-                            }`}
-                          />
-                        </button>
-
-                        <AnimatePresence>
-                          {isOpen && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="px-3 pb-3 pt-1 border-t border-desk-line/50 space-y-2 bg-black/30"
-                            >
-                              <div className="space-y-1">
-                                <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold block">
-                                  🔎 Prova Real no Aparelho:
-                                </span>
-                                <p className="text-xs text-neutral-200 leading-relaxed font-medium">
-                                  {clue.inspection.observation}
-                                </p>
-                              </div>
-
-                              <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-[11px] text-neutral-300">
-                                <span className="text-marker font-bold">💡 Fato: </span>
-                                {clue.evidenceResult.fato}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* CARD 3: Veredito Limpo e Direto */}
-            {!answered ? (
-              isStoryDelivered ? (
-                <div className="pt-1 space-y-2">
-                  <div className="text-center font-mono text-[10px] uppercase text-clip font-bold tracking-wider">
-                    Com base no que você investigou, qual é o seu veredito?
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleDirectVerdict('scam')}
-                      className="py-4 px-3 rounded-2xl bg-scam hover:bg-scam/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_20px_rgba(226,61,61,0.35)] active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/20"
-                    >
-                      <ShieldAlert className="w-6 h-6" />
-                      <span>É Golpe!</span>
-                      <span className="text-[10px] opacity-75 font-mono font-normal">tecla G</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDirectVerdict('safe')}
-                      className="py-4 px-3 rounded-2xl bg-safe hover:bg-safe/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_20px_rgba(31,164,99,0.35)] active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/20"
-                    >
-                      <ShieldCheck className="w-6 h-6" />
-                      <span>É Seguro</span>
-                      <span className="text-[10px] opacity-75 font-mono font-normal">tecla S</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center font-mono text-[10px] uppercase text-clip/60 font-semibold tracking-wider py-2">
-                  Leia a mensagem no celular para liberar as opções de veredito.
-                </div>
-              )
-            ) : (
-              /* CARD DE RESULTADO / FEEDBACK PÓS-VEREDITO */
-              <AnimatePresence>
-                <motion.div
-                  ref={resultRef}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-3 pt-1"
+          {/* CARD DE RESULTADO / FEEDBACK PÓS-VEREDITO (SURGE QUANDO O JOGADOR DECIDE) */}
+          <AnimatePresence>
+            {answered && (
+              <motion.div
+                ref={resultRef}
+                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 15 }}
+                className="w-full space-y-3 pt-4"
+              >
+                <div
+                  className={`rounded-2xl p-4 sm:p-5 border-2 shadow-2xl ${
+                    wasVerdictCorrect
+                      ? 'border-safe/60 bg-safe/15 text-white'
+                      : 'border-scam/60 bg-scam/15 text-white'
+                  }`}
                 >
-                  <div
-                    className={`rounded-2xl p-4 sm:p-5 border-2 shadow-2xl ${
-                      wasVerdictCorrect
-                        ? 'border-safe/60 bg-safe/15 text-white'
-                        : 'border-scam/60 bg-scam/15 text-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        {wasVerdictCorrect ? (
-                          <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
-                        ) : (
-                          <ShieldAlert className="w-6 h-6 text-red-400 shrink-0" />
-                        )}
-                        <h3 className="font-display font-extrabold text-base sm:text-lg">
-                          {wasVerdictCorrect
-                            ? 'Mandou Bem! Você Acertou!'
-                            : current.isScam
-                            ? 'Cuidado! Você Caiu no Golpe!'
-                            : 'Alarme Falso! A Mensagem Era Segura.'}
-                        </h3>
-                      </div>
-                      {wasVerdictCorrect && (
-                        <span className="font-mono font-bold text-xs bg-emerald-500/30 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-400/40">
-                          +{lastEarned} XP
-                        </span>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      {wasVerdictCorrect ? (
+                        <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
+                      ) : (
+                        <ShieldAlert className="w-6 h-6 text-red-400 shrink-0" />
                       )}
+                      <h3 className="font-display font-extrabold text-base sm:text-lg">
+                        {wasVerdictCorrect
+                          ? 'Mandou Bem! Você Acertou!'
+                          : current.isScam
+                          ? 'Cuidado! Você Caiu no Golpe!'
+                          : 'Alarme Falso! A Mensagem Era Segura.'}
+                      </h3>
                     </div>
-
-                    <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed font-medium mt-1">
-                      {current.keyEvidenceReason || current.explanation}
-                    </p>
-
-                    {/* Regra de Ouro Educativa */}
-                    <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                      <div className="font-mono text-[9px] uppercase tracking-wider text-marker font-bold flex items-center gap-1">
-                        <Lightbulb className="w-3.5 h-3.5 text-marker" /> Regra de Ouro de Segurança:
-                      </div>
-                      <p className="font-semibold text-xs sm:text-[13px] text-white leading-snug">
-                        {current.pedagogy.goldenRule}
-                      </p>
-                    </div>
+                    {wasVerdictCorrect && (
+                      <span className="font-mono font-bold text-xs bg-emerald-500/30 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-400/40">
+                        +{lastEarned} XP
+                      </span>
+                    )}
                   </div>
 
-                  {/* Botão de Avançar com Destaque */}
-                  <button
-                    type="button"
-                    onClick={nextCase}
-                    className="w-full py-4 px-4 rounded-2xl bg-marker hover:bg-[#ffc91f] text-ink font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_25px_rgba(255,216,74,0.4)] active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>Bora pro Próximo Caso</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </motion.div>
-              </AnimatePresence>
+                  <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed font-medium mt-1">
+                    {current.keyEvidenceReason || current.explanation}
+                  </p>
+
+                  {/* Regra de Ouro Educativa */}
+                  <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                    <div className="font-mono text-[9px] uppercase tracking-wider text-marker font-bold flex items-center gap-1">
+                      <Lightbulb className="w-3.5 h-3.5 text-marker" /> Regra de Ouro da Família:
+                    </div>
+                    <p className="font-semibold text-xs sm:text-[13px] text-white leading-snug">
+                      {current.pedagogy.goldenRule}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Botão de Avançar com Destaque */}
+                <button
+                  type="button"
+                  onClick={nextCase}
+                  className="w-full py-4 px-4 rounded-2xl bg-marker hover:bg-[#ffc91f] text-ink font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_25px_rgba(255,216,74,0.4)] active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Bora pro Próximo Caso</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </div>
       </div>
 
