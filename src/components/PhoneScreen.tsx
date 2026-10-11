@@ -30,7 +30,6 @@ import {
   CreditCard,
   FileText,
   Check,
-  ArrowUp,
 } from 'lucide-react';
 import type { ScamCase, InteractiveAction, InvestigativeClue } from '../data/scamsData';
 import { sound } from '../utils/audio';
@@ -132,14 +131,18 @@ const StatusBar = ({
 const LockScreen = ({
   c,
   notificationArrived,
+  lucasNotificationArrived,
   onUnlock,
   onOpenAppDirectly,
+  onOpenLucasNotes,
   levelText,
 }: {
   c: ScamCase;
   notificationArrived: boolean;
+  lucasNotificationArrived?: boolean;
   onUnlock: () => void;
   onOpenAppDirectly: () => void;
+  onOpenLucasNotes?: () => void;
   levelText?: string;
 }) => {
   const name = cleanName(c.sender);
@@ -165,12 +168,46 @@ const LockScreen = ({
         </div>
       </div>
 
-      {/* Centro: Notificação que Chega com Som de Sino iOS */}
-      <div className="flex-1 flex flex-col justify-center my-auto z-10 max-h-[300px]">
+      {/* Centro: Notificações (Lucas primeiro, e depois Caso de Golpe) */}
+      <div className="flex-1 flex flex-col justify-center my-auto z-10 max-h-[340px] space-y-2.5 overflow-y-auto no-scrollbar py-2">
         <AnimatePresence>
+          {/* Notificação Inicial do Lucas alertando sobre as notas contra os vagabundos */}
+          {lucasNotificationArrived && (
+            <motion.div
+              key="lucas-lock-notif"
+              initial={{ y: -25, opacity: 0, scale: 0.94 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              onClick={onOpenLucasNotes}
+              className="bg-slate-900/90 hover:bg-slate-850/95 border border-amber-400/40 rounded-2xl p-3 backdrop-blur-2xl shadow-[0_12px_32px_rgba(0,0,0,0.85)] cursor-pointer active:scale-98 transition group ring-1 ring-amber-400/20"
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-5 h-5 rounded-md flex items-center justify-center bg-[#25D366] text-white text-[10px] font-bold shadow">
+                  <MessageSquare className="w-3 h-3" />
+                </div>
+                <span className="font-semibold text-xs text-white truncate">Lucas (Filho) 🛡️</span>
+                <span className="text-[9px] text-amber-300 font-mono ml-auto">agora</span>
+              </div>
+
+              <p className="text-[12px] text-white/90 leading-tight">
+                Bênção, pai/mãe! Deixei anotado no seu Bloco de Notas orientações pra quando você for vítima desses vagabundos da internet. Dá uma olhada lá!
+              </p>
+
+              <div className="mt-2.5 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-amber-300 font-semibold">
+                <span className="animate-pulse">
+                  📝 Toque para abrir as Notas do Lucas
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 text-white/60 group-hover:translate-x-0.5 transition" />
+              </div>
+            </motion.div>
+          )}
+
+          {/* Notificação que Chega do Caso */}
           {notificationArrived && (
             <motion.div
-              initial={{ y: -30, opacity: 0, scale: 0.92 }}
+              key="case-lock-notif"
+              initial={{ y: -25, opacity: 0, scale: 0.94 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
@@ -318,10 +355,10 @@ const NotesScreen = ({
         <div className="bg-amber-500/10 border border-amber-400/25 rounded-2xl p-3 shadow-sm">
           <div className="text-[10px] font-mono uppercase tracking-wider text-amber-300 font-bold mb-1 flex items-center gap-1.5">
             <span>📝</span>
-            <span>Checklist Pericial do Lucas</span>
+            <span>Checklist do Lucas contra Golpistas</span>
           </div>
           <p className="text-[11.5px] text-amber-100/90 leading-relaxed">
-            &quot;Mãe/pai, antes de tomar qualquer decisão ou enviar Pix, confira os 3 passos de auditoria abaixo com calma:&quot;
+            &quot;Bênção, mãe/pai! Salvei estas orientações pra quando esses vagabundos da internet tentarem te dar golpe. Antes de responder ou mandar qualquer Pix, confira os 3 passos de auditoria abaixo com calma:&quot;
           </p>
         </div>
 
@@ -903,6 +940,7 @@ const WhatsAppScreen = ({
   onBlockContact,
   onCallClick,
   onBackToHome,
+  onOpenNotes,
   onStoryDeliveredChange,
 }: {
   c: ScamCase;
@@ -917,6 +955,7 @@ const WhatsAppScreen = ({
   onBlockContact: () => void;
   onCallClick: () => void;
   onBackToHome: () => void;
+  onOpenNotes?: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
 }) => {
   const [isTypingPlayer, setIsTypingPlayer] = useState(false);
@@ -1098,6 +1137,28 @@ const WhatsAppScreen = ({
         </div>
       </div>
 
+      {/* Banner Diegético: Lucas (Filho) avisando sobre o Bloco de Notas */}
+      {onOpenNotes && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenNotes();
+          }}
+          className="bg-amber-100/95 hover:bg-amber-200 border-b border-amber-300 px-3 py-1.5 flex items-center justify-between cursor-pointer transition text-amber-950 active:scale-99 shadow-xs"
+          title="Toque para abrir o Bloco de Notas do Lucas"
+        >
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold truncate">
+            <span>🛡️</span>
+            <span className="truncate">
+              <strong>Lucas (Filho):</strong> &quot;Olha o Bloco de Notas antes de responder!&quot;
+            </span>
+          </div>
+          <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-900 px-2 py-0.5 rounded-full shrink-0 ml-1">
+            Ver Notas ➔
+          </span>
+        </div>
+      )}
+
       {/* Área da Conversa com Balões Chegando em Tempo Real */}
       <div className="flex-1 wa-wallpaper overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2">
         <div className="mx-auto w-fit bg-[#ffeecd] text-[#54656f] text-[10px] px-2.5 py-1 rounded-md text-center max-w-[94%] flex items-center gap-1 shadow-sm leading-tight">
@@ -1201,7 +1262,7 @@ const WhatsAppScreen = ({
         )}
       </div>
 
-      {/* Rodapé interativo do WhatsApp (sem atalhos artificiais; respostas e veredito naturais) */}
+      {/* Rodapé do WhatsApp (sem barra falsa de escrita; mensagens e opções reais) */}
       {!hasFinishedTyping ? (
         <div className="bg-[#f0f2f5] px-3 py-2 border-t border-black/5 text-center">
           <span className="text-[10px] text-neutral-500 font-medium italic animate-pulse">
@@ -1236,14 +1297,17 @@ const WhatsAppScreen = ({
             ))}
           </div>
         </motion.div>
+      ) : isBlocked ? (
+        <div className="bg-[#f0f2f5] px-3 py-2.5 border-t border-red-200 text-center">
+          <span className="text-xs text-red-600 font-semibold flex items-center justify-center gap-1.5">
+            <UserX className="w-3.5 h-3.5" /> Você bloqueou este contato
+          </span>
+        </div>
       ) : (
-        <div className="bg-[#f0f2f5] px-2 py-2 flex items-center gap-2 border-t border-black/5">
-          <div className="flex-1 bg-white rounded-full px-4 py-2 text-[13px] text-[#8696a0] shadow-sm flex items-center justify-between">
-            <span>{isBlocked ? 'Contato bloqueado' : 'Mensagem'}</span>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-[#00a884] flex items-center justify-center text-white shadow-sm cursor-pointer active:scale-90 transition">
-            <Mic className="w-4 h-4" />
-          </div>
+        <div className="bg-[#f0f2f5] px-3 py-2 border-t border-black/5 text-center">
+          <span className="text-[10.5px] text-[#54656f] font-medium">
+            Fim das mensagens • Confira o Bloco de Notas para auditar o caso
+          </span>
         </div>
       )}
     </div>
@@ -1251,6 +1315,7 @@ const WhatsAppScreen = ({
 };
 
 // ============================================================================
+// SMS INTERATIVO COM ENTREGA GRADUAL DE MENSAGENS EM TEMPO REAL
 // SMS INTERATIVO COM ENTREGA GRADUAL DE MENSAGENS EM TEMPO REAL
 // ============================================================================
 const SmsScreen = ({
@@ -1263,6 +1328,7 @@ const SmsScreen = ({
   onLinkClick,
   onContactClick,
   onBackToHome,
+  onOpenNotes,
   onStoryDeliveredChange,
 }: {
   c: ScamCase;
@@ -1274,6 +1340,7 @@ const SmsScreen = ({
   onLinkClick: (url: string) => void;
   onContactClick: () => void;
   onBackToHome: () => void;
+  onOpenNotes?: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
 }) => {
   const number = findContactNumber(c);
@@ -1389,6 +1456,28 @@ const SmsScreen = ({
         </button>
       </div>
 
+      {/* Banner Diegético: Lucas (Filho) avisando sobre o Bloco de Notas */}
+      {onOpenNotes && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenNotes();
+          }}
+          className="bg-amber-100/95 hover:bg-amber-200 border-b border-amber-300 px-3 py-1.5 flex items-center justify-between cursor-pointer transition text-amber-950 active:scale-99 shadow-xs"
+          title="Toque para abrir o Bloco de Notas do Lucas"
+        >
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold truncate">
+            <span>🛡️</span>
+            <span className="truncate">
+              <strong>Lucas (Filho):</strong> &quot;Olha o Bloco de Notas antes de responder!&quot;
+            </span>
+          </div>
+          <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-900 px-2 py-0.5 rounded-full shrink-0 ml-1">
+            Ver Notas ➔
+          </span>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2">
         <div className="text-center text-[10px] text-[#8e8e93] font-mono">
           Mensagem de Texto • SMS
@@ -1428,7 +1517,7 @@ const SmsScreen = ({
         </div>
       </div>
 
-      {/* Rodapé interativo do SMS */}
+      {/* Rodapé do SMS (sem barra de digitação falsa; foco na leitura) */}
       {!hasFinishedTyping ? (
         <div className="p-2 bg-neutral-50 border-t border-black/10 text-center">
           <span className="text-[10px] text-neutral-500 font-medium italic animate-pulse">
@@ -1465,13 +1554,10 @@ const SmsScreen = ({
           </div>
         </motion.div>
       ) : (
-        <div className="p-2 bg-neutral-100 border-t border-black/10 flex items-center gap-2">
-          <div className="flex-1 bg-white rounded-full px-4 py-2 text-[13px] text-neutral-400 border border-neutral-300 shadow-sm flex items-center justify-between">
-            <span>Mensagem de Texto (SMS)</span>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-[#007aff] flex items-center justify-center text-white shadow-sm">
-            <ArrowUp className="w-4 h-4" />
-          </div>
+        <div className="p-2 bg-neutral-50 border-t border-black/10 text-center">
+          <span className="text-[10.5px] text-neutral-500 font-medium">
+            Fim do SMS • Confira o Bloco de Notas para auditar o caso
+          </span>
         </div>
       )}
     </div>
@@ -1996,11 +2082,10 @@ const PushScreen = ({
 // ============================================================================
 // TELA INICIAL REALISTA DO CELULAR (HOME SCREEN COM APP EM DESTAQUE)
 // ============================================================================
-// TELA INICIAL REALISTA DO CELULAR (HOME SCREEN COM APP EM DESTAQUE)
-// ============================================================================
 const HomeScreen = ({
   c,
   notificationArrived = false,
+  lucasNotificationArrived = false,
   onOpenMessaging,
   onOpenNotes,
   onOpenBank,
@@ -2011,6 +2096,7 @@ const HomeScreen = ({
 }: {
   c: ScamCase;
   notificationArrived?: boolean;
+  lucasNotificationArrived?: boolean;
   onOpenMessaging: () => void;
   onOpenNotes: () => void;
   onOpenBank: () => void;
@@ -2033,11 +2119,12 @@ const HomeScreen = ({
 
       <StatusBar time={c.time} dark levelText={levelText} />
 
-      {/* Banner de Notificação no Topo da HomeScreen (Só surge após o suspense de calma) */}
+      {/* Banner de Notificação no Topo da HomeScreen (Lucas ou Caso) */}
       <div className="min-h-[58px] flex items-center justify-center">
         <AnimatePresence>
-          {notificationArrived && (
+          {notificationArrived ? (
             <motion.div
+              key="case-home-banner"
               initial={{ y: -50, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: -40, opacity: 0, scale: 0.95 }}
@@ -2077,7 +2164,33 @@ const HomeScreen = ({
               </div>
               <ChevronRight className="w-4 h-4 text-white/60 group-hover:translate-x-0.5 transition" />
             </motion.div>
-          )}
+          ) : lucasNotificationArrived ? (
+            <motion.div
+              key="lucas-home-banner"
+              initial={{ y: -50, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -40, opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              onClick={onOpenNotes}
+              className="w-full mx-3 bg-slate-900/95 border border-amber-400/50 rounded-2xl p-2.5 backdrop-blur-xl shadow-lg cursor-pointer active:scale-98 transition flex items-center gap-2 group ring-1 ring-amber-400/30"
+            >
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-[#25D366] text-white text-[11px] font-bold shadow">
+                <MessageSquare className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-white truncate flex items-center gap-1.5">
+                  <span>Lucas (Filho) 🛡️</span>
+                  <span className="text-[10px] text-amber-400 font-semibold animate-pulse">
+                    • Orientações no Bloco de Notas
+                  </span>
+                </div>
+                <div className="text-[11px] text-white/70 truncate">
+                  &quot;Deixei no Bloco de Notas orientações pra quando for vítima dos vagabundos...&quot;
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-white/60 group-hover:translate-x-0.5 transition" />
+            </motion.div>
+          ) : null}
         </AnimatePresence>
       </div>
 
@@ -2278,14 +2391,6 @@ const HomeScreen = ({
 // ============================================================================
 // COMPONENTE PRINCIPAL DO CELULAR (PHONE SCREEN HUB COM APP SWITCHER)
 // ============================================================================
-const HELLO_LANGUAGES = [
-  { text: 'Olá', lang: 'Português' },
-  { text: 'Hello', lang: 'English' },
-  { text: 'Bonjour', lang: 'Français' },
-  { text: 'Hola', lang: 'Español' },
-  { text: 'Ciao', lang: 'Italiano' },
-];
-
 export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   scamCase,
   stamped,
@@ -2311,10 +2416,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [previousApp, setPreviousApp] = useState<'home' | 'messaging' | 'notes'>('home');
   const [isLocked, setIsLocked] = useState(true);
   const [isScreenOff, setIsScreenOff] = useState(true);
-  const [bootStage, setBootStage] = useState<'hello' | 'welcome' | 'ready'>(() => {
+  const [bootStage, setBootStage] = useState<'hello' | 'welcome' | 'about' | 'ready'>(() => {
     return initialBootDone ? 'ready' : 'hello';
   });
-  const [langIndex, setLangIndex] = useState(0);
+  const [lucasNotificationArrived, setLucasNotificationArrived] = useState(false);
   const [notificationArrived, setNotificationArrived] = useState(false);
   const [vibrateKey, setVibrateKey] = useState(0);
   const [activeModal, setActiveModal] = useState<'contact' | 'toast' | null>(null);
@@ -2325,14 +2430,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
 
   const levelText = levelIndex ? `Nível ${levelIndex} / ${totalLevels || 9}` : undefined;
 
-  // Alternância suave de idiomas no boot inicial estilo iPhone
+  // Som harmônico no primeiro boot
   useEffect(() => {
-    if (bootStage !== 'hello') return;
-    sound.playBootHelloChord();
-    const timer = setInterval(() => {
-      setLangIndex((prev) => (prev + 1) % HELLO_LANGUAGES.length);
-    }, 2400);
-    return () => clearInterval(timer);
+    if (bootStage === 'hello') {
+      sound.playBootHelloChord();
+    }
   }, [bootStage]);
 
   const handleFinishSetup = () => {
@@ -2388,6 +2490,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setIsLocked(true);
     setActiveApp('home');
     setPreviousApp('home');
+    setLucasNotificationArrived(false);
     setNotificationArrived(false);
     onAppOpenChangeRef.current?.(false);
     onStoryDeliveredChangeRef.current?.(false);
@@ -2408,7 +2511,19 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     };
   }, [scamCase.id]);
 
-  // Chegada da notificação sonora
+  // Chegada da notificação inicial do Lucas (alertando sobre o Bloco de Notas)
+  useEffect(() => {
+    if (bootStage !== 'ready' || lucasNotificationArrived) return;
+    const lucasTimer = setTimeout(() => {
+      setLucasNotificationArrived(true);
+      sound.playMessagePing();
+      sound.playPhoneVibrate();
+    }, 1200);
+
+    return () => clearTimeout(lucasTimer);
+  }, [bootStage, lucasNotificationArrived]);
+
+  // Chegada da notificação do caso de golpe (com calma após o aviso do Lucas)
   useEffect(() => {
     if (bootStage !== 'ready' || notificationArrived) return;
     // Quando o usuário desbloquear para a HomeScreen: notificação chega em 2.2s com som
@@ -2444,6 +2559,14 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     }
     setIsLocked(false);
     setActiveApp('messaging');
+    setPreviousApp('home');
+    onAppOpenChange?.(true);
+  };
+
+  const handleOpenLucasNotes = () => {
+    sound.playKeypress();
+    setIsLocked(false);
+    setActiveApp('notes');
     setPreviousApp('home');
     onAppOpenChange?.(true);
   };
@@ -2516,6 +2639,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onBlockContact={handleBlockContact}
             onCallClick={handleCallClick}
             onBackToHome={() => setActiveApp('home')}
+            onOpenNotes={handleOpenNotes}
             onStoryDeliveredChange={onStoryDeliveredChange}
           />
         );
@@ -2554,6 +2678,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onLinkClick={handleOpenBrowser}
             onContactClick={() => setActiveModal('contact')}
             onBackToHome={() => setActiveApp('home')}
+            onOpenNotes={handleOpenNotes}
             onStoryDeliveredChange={onStoryDeliveredChange}
           />
         );
@@ -2611,6 +2736,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
 
         <div className="relative flex-1 h-full w-full rounded-none sm:rounded-[40px] overflow-hidden font-phone select-none bg-black flex flex-col shadow-none">
           {/* EFEITO DE PRIMEIRO BOOT ESTILO IPHONE (OOBE SETUP) */}
+          {/* EFEITO DE PRIMEIRO BOOT (3 TOQUES EM PORTUGUÊS: OLÁ -> SEJA BEM-VINDO -> COMO FUNCIONA) */}
           <AnimatePresence>
             {bootStage !== 'ready' && !initialBootDone && (
               <motion.div
@@ -2621,6 +2747,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 transition={{ duration: 0.8, ease: 'easeInOut' }}
                 className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-between p-6 text-center select-none"
               >
+                {/* Botão Pular discreto no topo */}
                 <div className="w-full flex justify-end pt-2">
                   <button
                     type="button"
@@ -2632,32 +2759,62 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 </div>
 
                 <AnimatePresence mode="wait">
+                  {/* TOQUE 1: OLÁ */}
                   {bootStage === 'hello' && (
                     <motion.div
-                      key={`boot-hello-${langIndex}`}
+                      key="boot-stage-hello"
                       initial={{ opacity: 0, scale: 0.94, y: 14 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 1.04, y: -14 }}
-                      transition={{ duration: 0.65, ease: 'easeOut' }}
-                      onClick={() => setBootStage('welcome')}
-                      className="flex flex-col items-center gap-3 cursor-pointer my-auto"
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
+                      onClick={() => {
+                        sound.playKeypress();
+                        setBootStage('welcome');
+                      }}
+                      className="flex flex-col items-center gap-4 cursor-pointer my-auto"
                     >
-                      <span className="text-6xl sm:text-7xl font-extralight tracking-tight text-white/95 font-display drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]">
-                        {HELLO_LANGUAGES[langIndex].text}
+                      <span className="text-6xl sm:text-7xl font-extralight tracking-tight text-white/95 font-display drop-shadow-[0_0_35px_rgba(255,255,255,0.45)]">
+                        Olá
                       </span>
-                      <span className="text-[11px] text-white/40 font-mono tracking-widest uppercase">
-                        {HELLO_LANGUAGES[langIndex].lang} • HackLearn OS
-                      </span>
+                      <div className="flex items-center gap-1.5 text-xs text-white/50 font-mono tracking-widest uppercase">
+                        <span>Toque para continuar</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </div>
                     </motion.div>
                   )}
 
+                  {/* TOQUE 2: SEJA BEM-VINDO */}
                   {bootStage === 'welcome' && (
                     <motion.div
-                      key="boot-welcome"
+                      key="boot-stage-welcome"
                       initial={{ opacity: 0, scale: 0.94, y: 14 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 1.04, y: -14 }}
-                      transition={{ duration: 0.65, ease: 'easeOut' }}
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
+                      onClick={() => {
+                        sound.playKeypress();
+                        setBootStage('about');
+                      }}
+                      className="flex flex-col items-center gap-4 cursor-pointer my-auto"
+                    >
+                      <span className="text-5xl sm:text-6xl font-light tracking-tight text-white font-display drop-shadow-[0_0_30px_rgba(255,255,255,0.35)]">
+                        Seja Bem-Vindo
+                      </span>
+                      <div className="flex items-center gap-1.5 text-xs text-white/50 font-mono tracking-widest uppercase">
+                        <span>Toque para ver o aviso</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* TOQUE 3: AVISO SIMPLES QUE ATÉ UMA CRIANÇA ENTENDE (SEM CITAR IPHONE) */}
+                  {bootStage === 'about' && (
+                    <motion.div
+                      key="boot-stage-about"
+                      initial={{ opacity: 0, scale: 0.94, y: 14 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 1.04, y: -14 }}
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
                       className="flex flex-col items-center gap-4 my-auto max-w-xs"
                     >
                       <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-lg shadow-white/5">
@@ -2666,49 +2823,66 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
 
                       <div className="space-y-1">
                         <span className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-display block">
-                          Bem-Vindo ao seu iPhone
+                          Como Funciona
                         </span>
                         <p className="text-[12px] text-white/60 leading-relaxed">
-                          HackLearn OS preparado para simulação investigativa.
+                          Aprenda a reconhecer golpes reais da internet.
                         </p>
                       </div>
 
-                      <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-3 text-left space-y-2 text-[11px] text-white/80">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">💬</span>
-                          <span><strong>Mensagens Reais:</strong> Analise conversas e remetentes com atenção.</span>
+                      <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 text-left space-y-2.5 text-[11.5px] text-white/85">
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-base leading-none">⚠️</span>
+                          <span><strong>Mensagens com Pressa:</strong> Golpistas vão mandar mensagens fingindo urgência para pedir Pix.</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">🏦</span>
-                          <span><strong>Extrato no Meu Banco:</strong> Não confie em avisos sem conferir a conta oficial.</span>
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-base leading-none">📝</span>
+                          <span><strong>Orientações do Lucas:</strong> O Lucas (seu filho) anotou dicas de ouro no seu Bloco de Notas para te defender desses vagabundos.</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">📝</span>
-                          <span><strong>Bloco de Notas:</strong> Audite o checklist de 3 passos antes de decidir.</span>
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-base leading-none">🔍</span>
+                          <span><strong>Investigue com Calma:</strong> Abra os aplicativos e confira tudo com calma antes de tomar qualquer decisão.</span>
                         </div>
                       </div>
 
                       <button
                         type="button"
                         onClick={handleFinishSetup}
-                        className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-neutral-200 text-black font-bold text-xs shadow-lg transition active:scale-95 cursor-pointer mt-1"
+                        className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-neutral-200 text-black font-bold text-xs shadow-lg transition active:scale-95 cursor-pointer mt-1 flex items-center justify-center gap-1.5"
                       >
-                        Iniciar HackLearn OS ➔
+                        <span>Entrar no Celular</span>
+                        <ChevronRight className="w-4 h-4" />
                       </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
+                {/* Indicador de 3 passos na base */}
                 <div
                   onClick={() => {
-                    if (bootStage === 'hello') setBootStage('welcome');
-                    else handleFinishSetup();
+                    if (bootStage === 'hello') {
+                      sound.playKeypress();
+                      setBootStage('welcome');
+                    } else if (bootStage === 'welcome') {
+                      sound.playKeypress();
+                      setBootStage('about');
+                    } else {
+                      handleFinishSetup();
+                    }
                   }}
                   className="w-full flex flex-col items-center gap-2 pb-2 cursor-pointer"
                 >
-                  <div className="w-16 h-1 rounded-full bg-white/30 animate-pulse" />
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full transition-all ${bootStage === 'hello' ? 'w-6 bg-white' : 'bg-white/30'}`} />
+                    <span className={`w-2 h-2 rounded-full transition-all ${bootStage === 'welcome' ? 'w-6 bg-white' : 'bg-white/30'}`} />
+                    <span className={`w-2 h-2 rounded-full transition-all ${bootStage === 'about' ? 'w-6 bg-white' : 'bg-white/30'}`} />
+                  </div>
                   <span className="text-[10px] text-white/40 font-mono">
-                    {bootStage === 'hello' ? 'Toque na tela para configurar' : 'Toque no botão para começar'}
+                    {bootStage === 'hello'
+                      ? 'Passo 1 de 3 • Toque para continuar'
+                      : bootStage === 'welcome'
+                      ? 'Passo 2 de 3 • Toque para avançar'
+                      : 'Passo 3 de 3 • Toque para entrar no celular'}
                   </span>
                 </div>
               </motion.div>
@@ -2754,8 +2928,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 <LockScreen
                   c={scamCase}
                   notificationArrived={notificationArrived}
+                  lucasNotificationArrived={lucasNotificationArrived}
                   onUnlock={handleUnlockToHome}
                   onOpenAppDirectly={handleOpenAppDirectly}
+                  onOpenLucasNotes={handleOpenLucasNotes}
                   levelText={levelText}
                 />
               </motion.div>
@@ -2771,6 +2947,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 <HomeScreen
                   c={scamCase}
                   notificationArrived={notificationArrived}
+                  lucasNotificationArrived={lucasNotificationArrived}
                   onOpenMessaging={handleOpenAppDirectly}
                   onOpenNotes={handleOpenNotes}
                   onOpenBank={() => handleOpenBank()}
