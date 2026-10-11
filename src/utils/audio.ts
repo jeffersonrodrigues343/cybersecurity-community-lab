@@ -652,6 +652,94 @@ class SoundEngine {
       });
     } catch {}
   }
+
+  // Pulso Cardíaco de Suspense Cotidiano (Sub-bass lub-dub a 52Hz/44Hz)
+  public playTensionPulse() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Batimento 1 (Lub)
+      const osc1 = this.ctx.createOscillator();
+      const gain1 = this.ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(54, now);
+      osc1.frequency.exponentialRampToValueAtTime(38, now + 0.12);
+      gain1.gain.setValueAtTime(0.12, now);
+      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      osc1.connect(gain1);
+      gain1.connect(this.ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.14);
+
+      // Batimento 2 (Dub - 0.13s depois)
+      const osc2 = this.ctx.createOscillator();
+      const gain2 = this.ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(46, now + 0.13);
+      osc2.frequency.exponentialRampToValueAtTime(32, now + 0.28);
+      gain2.gain.setValueAtTime(0.09, now + 0.13);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.29);
+      osc2.connect(gain2);
+      gain2.connect(this.ctx.destination);
+      osc2.start(now + 0.13);
+      osc2.stop(now + 0.29);
+    } catch {}
+  }
+
+  // Chime misterioso de descoberta de evidência forense (estilo Her Story / Papers, Please)
+  public playClueInspect() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const harmonics = [
+        { freq: 1046.5, delay: 0.0, gain: 0.05, dur: 0.4 },  // C6
+        { freq: 1318.51, delay: 0.06, gain: 0.04, dur: 0.5 }, // E6
+        { freq: 1567.98, delay: 0.11, gain: 0.03, dur: 0.6 }, // G6
+      ];
+      harmonics.forEach(({ freq, delay, gain: maxGain, dur }) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + delay);
+        gain.gain.setValueAtTime(0.001, now + delay);
+        gain.gain.exponentialRampToValueAtTime(maxGain, now + delay + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + dur);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + delay);
+        osc.stop(now + delay + dur);
+      });
+    } catch {}
+  }
+
+  // Clique de botão físico lateral de hardware (Power / Volume)
+  public playHardwareButtonClick() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(620, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.02);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.02);
+    } catch {}
+  }
 }
 
 export const sound = new SoundEngine();

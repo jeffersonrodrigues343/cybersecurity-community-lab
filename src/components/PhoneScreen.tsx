@@ -1066,11 +1066,12 @@ const WhatsAppScreen = ({
   );
 
   const handleActionClick = (action: InteractiveAction) => {
-    sound.playKeypress();
+    sound.playKeyboardClick();
     setIsTypingPlayer(true);
     setTimeout(() => {
       setIsTypingPlayer(false);
       sound.playMessagePing();
+      sound.playTensionPulse();
       onPerformAction(action);
     }, 650);
   };
@@ -1770,6 +1771,7 @@ const CallScreen = ({
   // Atender chamada com ritmo de conversa viva (sem voz TTS)
   const handleAnswerCall = () => {
     sound.playCallPickup();
+    sound.playTensionPulse();
     setCallState('connected');
     setCallSeconds(1);
     setTranscriptLines([]);
@@ -1811,8 +1813,9 @@ const CallScreen = ({
   );
 
   const handlePlayerReply = (act: InteractiveAction) => {
-    sound.playKeypress();
+    sound.playKeyboardClick();
     setTranscriptLines((prev) => [...prev, { sender: 'player', text: act.label }]);
+    sound.playTensionPulse();
     onPerformAction(act);
 
     // O atendente processa a resposta e replica com o golpe
@@ -1821,6 +1824,7 @@ const CallScreen = ({
       const reply = act.replyMessage.replace(/^[A-Za-z\s()]+:\s*"?/, '').replace(/"?$/, '').trim();
       setTranscriptLines((prev) => [...prev, { sender: 'caller', text: reply }]);
       sound.playDialogueBlip();
+      sound.playTensionPulse();
       setIsCallerTalking(false);
 
       // Armadilha entregue!
@@ -2623,6 +2627,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   // Ler/conferir uma dica ensina habilidades novas (persistem entre casos)
   const handleInspectClue = (clue: InvestigativeClue) => {
     onInspectClue?.(clue);
+    sound.playClueInspect();
     const gained: Skill[] = ['question', 'verdict'];
     if (isBankClue(clue)) gained.push('bank');
     if (isBrowserClue(clue)) gained.push('browser');
@@ -2672,6 +2677,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     const notifTimer = setTimeout(() => {
       setNotificationArrived(true);
       sound.playPhoneVibrate();
+      sound.playTensionPulse();
       if (scamCase.channel === 'call') {
         sound.playPhoneRingtone();
       } else {
@@ -2868,6 +2874,39 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     >
       {/* Moldura: Apenas no desktop (sm:). No celular real, a tela é nativa sem bordas artificiais */}
       <div className="relative w-full h-full sm:rounded-[50px] sm:bg-[#0c0e14] sm:p-[12px] sm:shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] sm:border sm:border-white/20 flex flex-col">
+        {/* Botão de Energia Físico Lateral (Lock/Power) */}
+        <button
+          type="button"
+          onClick={() => {
+            sound.playHardwareButtonClick();
+            setIsLocked((prev) => !prev);
+          }}
+          className="hidden sm:block absolute -right-[6px] top-[110px] w-[5px] h-[46px] rounded-r-md bg-[#2d3345] hover:bg-[#3b4259] active:translate-x-[-1px] transition cursor-pointer border-r border-white/20"
+          title="Botão físico de bloqueio / energia"
+        />
+
+        {/* Botões Físicos de Volume */}
+        <div className="hidden sm:flex flex-col gap-2.5 absolute -left-[6px] top-[95px]">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playHardwareButtonClick();
+              showToast('🔊 Volume: 85%');
+            }}
+            className="w-[5px] h-[34px] rounded-l-md bg-[#2d3345] hover:bg-[#3b4259] active:translate-x-[1px] transition cursor-pointer border-l border-white/20"
+            title="Aumentar Volume"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              sound.playHardwareButtonClick();
+              showToast('🔉 Volume: 70%');
+            }}
+            className="w-[5px] h-[34px] rounded-l-md bg-[#2d3345] hover:bg-[#3b4259] active:translate-x-[1px] transition cursor-pointer border-l border-white/20"
+            title="Diminuir Volume"
+          />
+        </div>
+
         <div className="relative flex-1 h-full w-full rounded-2xl sm:rounded-[40px] overflow-hidden font-phone select-none bg-black flex flex-col shadow-md sm:shadow-none">
           {/* EFEITO DE BOOT SUAVE ESTILO SMARTPHONE / INDIE GAME ("Olá" -> "Seja Bem-Vindo") */}
           <AnimatePresence>
@@ -2947,6 +2986,16 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* VINHETA DE SUSPENSE COTIDIANO (PULSAÇÃO CINEMATOGRÁFICA NAS BORDAS SOB AMEAÇA) */}
+          {notificationArrived && !stamped && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.12, 0.32, 0.12] }}
+              transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
+              className="absolute inset-0 pointer-events-none z-20 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(15,23,42,0.85)_100%)] mix-blend-multiply"
+            />
+          )}
 
           {/* Roteador de Apps Dentro do Sistema Operacional do Celular */}
           <AnimatePresence mode="wait">
