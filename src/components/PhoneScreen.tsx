@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
@@ -576,11 +576,14 @@ const WhatsAppScreen = ({
   const [isSuspectTyping, setIsSuspectTyping] = useState(true);
   const [hasFinishedTyping, setHasFinishedTyping] = useState(false);
 
+  const onStoryDeliveredChangeRef = useRef(onStoryDeliveredChange);
+  onStoryDeliveredChangeRef.current = onStoryDeliveredChange;
+
   useEffect(() => {
     setRevealedCount(0);
     setIsSuspectTyping(true);
     setHasFinishedTyping(false);
-    onStoryDeliveredChange?.(false);
+    onStoryDeliveredChangeRef.current?.(false);
 
     let count = 0;
     let activeTimer: ReturnType<typeof setTimeout>;
@@ -597,7 +600,7 @@ const WhatsAppScreen = ({
           activeTimer = setTimeout(deliverNext, 600);
         } else {
           setHasFinishedTyping(true);
-          onStoryDeliveredChange?.(true);
+          onStoryDeliveredChangeRef.current?.(true);
         }
       }, 1100);
     };
@@ -608,7 +611,7 @@ const WhatsAppScreen = ({
       clearTimeout(startTimer);
       clearTimeout(activeTimer);
     };
-  }, [c.id, messageParagraphs.length, onStoryDeliveredChange]);
+  }, [c.id, messageParagraphs.length]);
 
   // Toque para acelerar a leitura caso o jogador não queira esperar
   const handleFastForward = () => {
@@ -616,7 +619,7 @@ const WhatsAppScreen = ({
       setRevealedCount(messageParagraphs.length);
       setIsSuspectTyping(false);
       setHasFinishedTyping(true);
-      onStoryDeliveredChange?.(true);
+      onStoryDeliveredChangeRef.current?.(true);
     }
   };
 
@@ -979,10 +982,13 @@ const SmsScreen = ({
   const [revealedCount, setRevealedCount] = useState(0);
   const [hasFinishedTyping, setHasFinishedTyping] = useState(false);
 
+  const onStoryDeliveredChangeRef = useRef(onStoryDeliveredChange);
+  onStoryDeliveredChangeRef.current = onStoryDeliveredChange;
+
   useEffect(() => {
     setRevealedCount(0);
     setHasFinishedTyping(false);
-    onStoryDeliveredChange?.(false);
+    onStoryDeliveredChangeRef.current?.(false);
 
     let count = 0;
     let activeTimer: ReturnType<typeof setTimeout>;
@@ -997,7 +1003,7 @@ const SmsScreen = ({
           activeTimer = setTimeout(deliverNext, 600);
         } else {
           setHasFinishedTyping(true);
-          onStoryDeliveredChange?.(true);
+          onStoryDeliveredChangeRef.current?.(true);
         }
       }, 1000);
     };
@@ -1008,13 +1014,13 @@ const SmsScreen = ({
       clearTimeout(startTimer);
       clearTimeout(activeTimer);
     };
-  }, [c.id, messageParagraphs.length, onStoryDeliveredChange]);
+  }, [c.id, messageParagraphs.length]);
 
   const handleFastForward = () => {
     if (!hasFinishedTyping) {
       setRevealedCount(messageParagraphs.length);
       setHasFinishedTyping(true);
-      onStoryDeliveredChange?.(true);
+      onStoryDeliveredChangeRef.current?.(true);
     }
   };
 
@@ -1721,6 +1727,12 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [toastMessage, setToastMessage] = useState<string>('');
   const [isBlocked, setIsBlocked] = useState(false);
 
+  const onAppOpenChangeRef = useRef(onAppOpenChange);
+  onAppOpenChangeRef.current = onAppOpenChange;
+
+  const onStoryDeliveredChangeRef = useRef(onStoryDeliveredChange);
+  onStoryDeliveredChangeRef.current = onStoryDeliveredChange;
+
   // Ciclo de Vida: toda vez que muda de caso, tela escurece e acende
   useEffect(() => {
     setIsBlocked(false);
@@ -1728,8 +1740,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setIsLocked(true);
     setActiveApp('home');
     setNotificationArrived(false);
-    onAppOpenChange?.(false);
-    onStoryDeliveredChange?.(false);
+    onAppOpenChangeRef.current?.(false);
+    onStoryDeliveredChangeRef.current?.(false);
     setVibrateKey((k) => k + 1);
 
     // 1. Tela apaga em preto absoluto
@@ -1757,16 +1769,16 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       clearTimeout(wakeTimer);
       clearTimeout(notifTimer);
     };
-  }, [scamCase.id, scamCase.channel, onAppOpenChange, onStoryDeliveredChange]);
+  }, [scamCase.id, scamCase.channel]);
 
   useEffect(() => {
     if (stamped) {
       sound.playStampThud();
       setIsLocked(false);
       setActiveApp('messaging');
-      onAppOpenChange?.(true);
+      onAppOpenChangeRef.current?.(true);
     }
-  }, [stamped, onAppOpenChange]);
+  }, [stamped]);
 
   const handleUnlockToHome = () => {
     sound.playBlip();

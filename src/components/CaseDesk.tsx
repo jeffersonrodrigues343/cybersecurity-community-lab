@@ -95,6 +95,14 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     });
   }, []);
 
+  const handleAppOpenChange = useCallback((opened: boolean) => {
+    setIsAppOpened(opened);
+  }, []);
+
+  const handleStoryDeliveredChange = useCallback((delivered: boolean) => {
+    setIsStoryDelivered(delivered);
+  }, []);
+
   // Executar ação de diálogo no celular
   const handlePerformPhoneAction = (action: InteractiveAction) => {
     setIsAppOpened(true);
@@ -322,12 +330,12 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                     onPerformAction={handlePerformPhoneAction}
                     executedActionIds={executedActionIds}
                     actionHistory={actionHistory}
-                    onAppOpenChange={(opened) => setIsAppOpened(opened)}
+                    onAppOpenChange={handleAppOpenChange}
                     onVerdict={handleDirectVerdict}
                     onNextCase={nextCase}
                     inspectedClueIds={inspected}
                     onInspectClue={inspect}
-                    onStoryDeliveredChange={(delivered) => setIsStoryDelivered(delivered)}
+                    onStoryDeliveredChange={handleStoryDeliveredChange}
                   />
                 </motion.div>
               </AnimatePresence>
