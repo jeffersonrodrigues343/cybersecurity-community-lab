@@ -23,13 +23,14 @@ import {
   Bell,
   ChevronRight,
   Camera,
-  Music,
   Search,
   Sun,
   MessageCircle,
   CreditCard,
   FileText,
   Check,
+  Lightbulb,
+  AlertTriangle,
 } from 'lucide-react';
 import type { ScamCase, InteractiveAction, InvestigativeClue } from '../data/scamsData';
 import { sound } from '../utils/audio';
@@ -403,16 +404,261 @@ const LucasChatScreen = ({
 // ============================================================================
 // BLOCO DE NOTAS LIMPO: APENAS CHECKLIST DE PROCEDIMENTOS DO CASO
 // ============================================================================
+// ============================================================================
+// DICAS DO CELULAR (TIPS NATIVO - GUIA FORENSE DE NAVEGAÇÃO)
+// ============================================================================
+const TipsModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  c?: ScamCase;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/85 backdrop-blur-md animate-fadeIn">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 15 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+        className="w-full max-w-sm max-h-[92vh] overflow-y-auto no-scrollbar bg-slate-900 border-2 border-amber-400/50 rounded-3xl p-4 shadow-2xl text-white space-y-3 ring-1 ring-amber-400/20"
+      >
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center text-sm font-bold">
+              💡
+            </div>
+            <div>
+              <h3 className="font-bold text-xs text-white">Dicas do Celular (Tips)</h3>
+              <p className="text-[10px] text-white/50">Onde encontrar cada prova no aparelho</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-full hover:bg-white/10 text-white/60 hover:text-white cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-2 text-xs">
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-xs">
+              <span>👤</span>
+              <span>1. Ficha do Contato (DDD e Chip)</span>
+            </div>
+            <p className="text-[11px] text-white/80 leading-relaxed">
+              Toque no nome do contato no topo do chat para abrir o perfil. Confira o prefixo DDD e a data de ativação do chip. Golpistas compram chips descartáveis de outros estados.
+            </p>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-xs">
+              <span>💸</span>
+              <span>2. Chave Pix e Titular no Banco Central</span>
+            </div>
+            <p className="text-[11px] text-white/80 leading-relaxed">
+              Ao simular o Pix, o Banco Central sempre exibe o nome de quem vai receber. Verifique se o nome bate com o seu familiar ou se é uma conta &quot;laranja&quot; em nome de um desconhecido.
+            </p>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-xs">
+              <span>🏦</span>
+              <span>3. App &quot;Meu Banco&quot; (Extrato Oficial)</span>
+            </div>
+            <p className="text-[11px] text-white/80 leading-relaxed">
+              Recebeu SMS de compra aprovada? Não ligue para o 0800 do SMS! Abra o app do banco na tela inicial e audite o extrato oficial com a data e hora exatas da sua última transação.
+            </p>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-xs">
+              <span>🎙️</span>
+              <span>4. Regra de Ouro: Prova de Voz / Áudio</span>
+            </div>
+            <p className="text-[11px] text-white/80 leading-relaxed">
+              Se alguém pedir dinheiro de número novo alegando urgência, exija um áudio de 5 segundos chamando você pelo nome. Golpistas nunca enviam áudio e sempre dizem que o microfone quebrou.
+            </p>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-xs">
+              <span>🌐</span>
+              <span>5. Pesquisa Web e Domínios</span>
+            </div>
+            <p className="text-[11px] text-white/80 leading-relaxed">
+              Use o navegador para pesquisar o suposto golpe no Google e inspecionar se a terminação do link pertence a um órgão oficial (como .gov.br ou .com.br).
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition cursor-pointer"
+        >
+          Entendido, voltar ao celular
+        </button>
+      </motion.div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MODAL DE DÚVIDA PERICIAL NA TRANSFERÊNCIA PIX
+// ============================================================================
+const PixDoubtModal = ({
+  isOpen,
+  onClose,
+  c,
+  onConfrontInChat,
+  onMarkClue,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  c: ScamCase;
+  onConfrontInChat: (pixClue: InvestigativeClue) => void;
+  onMarkClue: (pixClue: InvestigativeClue) => void;
+}) => {
+  if (!isOpen) return null;
+
+  const pixClue = c.clues.find((cl) => cl.category === 'pix') || c.clues[1] || c.clues[0];
+  const titular = pixClue?.inspection.field2Value || 'Valdir dos Santos';
+  const chave = pixClue?.inspection.field1Value || '489.120.392-80';
+  const banco = pixClue?.inspection.field3Value || 'Nu Pagamentos S.A.';
+  const valor = 'R$ 480,00';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/85 backdrop-blur-md animate-fadeIn">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 15 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+        className="w-full max-w-sm max-h-[92vh] overflow-y-auto no-scrollbar bg-slate-900 border-2 border-amber-400/50 rounded-3xl p-4 shadow-2xl text-white space-y-3.5 ring-1 ring-amber-400/20"
+      >
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center text-sm font-bold">
+              💸
+            </div>
+            <div>
+              <h3 className="font-bold text-xs text-white">Simulação de Pix (DICT)</h3>
+              <p className="text-[10px] text-white/50">Consulta oficial ao Banco Central</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-full hover:bg-white/10 text-white/60 hover:text-white cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Card do comprovante simulado */}
+        <div className="bg-slate-950/80 border border-white/10 rounded-2xl p-3 space-y-2 text-xs">
+          <div className="flex justify-between items-center text-[11px] text-white/60">
+            <span>Valor a Transferir:</span>
+            <span className="text-sm font-mono font-bold text-emerald-400">{valor}</span>
+          </div>
+          <div className="border-t border-white/10 pt-2 space-y-1 text-[11.5px]">
+            <div className="flex justify-between">
+              <span className="text-white/50">Chave Pix:</span>
+              <span className="font-mono font-semibold text-white/90">{chave}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/50">Instituição:</span>
+              <span className="font-semibold text-white/90">{banco}</span>
+            </div>
+            <div className="flex justify-between items-center bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/30">
+              <span className="text-amber-400 font-bold text-[11px]">Titular Registrado:</span>
+              <span className="font-bold text-amber-300 text-xs">{titular}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Box da Dúvida Reflexiva */}
+        <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-400/40 space-y-1.5 text-left">
+          <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>Dúvida Investigativa</span>
+          </div>
+          <p className="text-[11.5px] text-white/90 leading-relaxed">
+            {c.category.includes('Família') || c.category.includes('WhatsApp')
+              ? `Espere um pouco... A mensagem dizia ser da sua filha Sofia. Mas o titular cadastrado no Banco Central é "${titular}"! Por que você pagaria uma conta de faculdade para a conta pessoal de um estranho?`
+              : `Atenção: A chave Pix informada está em nome de pessoa física ("${titular}"), e não no CNPJ oficial do órgão ou empresa!`}
+          </p>
+          <div className="text-[10.5px] font-mono text-amber-300/80 pt-1">
+            💡 Dica: Esta é a clássica conta de &quot;laranja&quot; usada para pulverizar dinheiro de golpes.
+          </div>
+        </div>
+
+        {/* Botões de Ação */}
+        <div className="space-y-2 pt-1">
+          <button
+            type="button"
+            onClick={() => onConfrontInChat(pixClue)}
+            className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Desconfiar e Confrontar no Chat</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onMarkClue(pixClue)}
+            className="w-full py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 font-bold text-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Check className="w-4 h-4" />
+            <span>Anotar Evidência no Bloco de Notas</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-2 text-white/60 hover:text-white font-medium text-xs cursor-pointer text-center"
+          >
+            Cancelar e Voltar
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// ============================================================================
+// BLOCO DE NOTAS COM DESBLOQUEIO PROGRESSIVO (PASSO 1 -> 2 -> 3)
+// ============================================================================
 const NotesScreen = ({
   c,
   inspectedClueIds = [],
   onInspectClue,
   onBack,
+  onOpenVerdict,
+  onOpenTips,
+  onSimulatePix,
+  onRequestAudio,
+  onInspectContact,
+  onInspectBank,
+  onInspectBrowser,
 }: {
   c: ScamCase;
   inspectedClueIds: string[];
   onInspectClue?: (clue: InvestigativeClue) => void;
   onBack: () => void;
+  onOpenVerdict?: () => void;
+  onOpenTips?: () => void;
+  onSimulatePix?: (clue: InvestigativeClue) => void;
+  onRequestAudio?: (clue: InvestigativeClue) => void;
+  onInspectContact?: () => void;
+  onInspectBank?: () => void;
+  onInspectBrowser?: (url?: string) => void;
 }) => {
   const [checkedSteps, setCheckedSteps] = useState<{ [key: number]: boolean }>(() => ({
     0: inspectedClueIds.includes(c.clues[0]?.id),
@@ -428,17 +674,32 @@ const NotesScreen = ({
     });
   }, [inspectedClueIds, c.clues]);
 
+  const isStepUnlocked = (idx: number) => {
+    if (idx === 0) return true;
+    if (idx === 1) return Boolean(checkedSteps[0]);
+    if (idx === 2) return Boolean(checkedSteps[0] && checkedSteps[1]);
+    return false;
+  };
+
   const toggleStep = (index: number) => {
-    sound.playKeyboardClick();
+    if (!isStepUnlocked(index)) {
+      sound.playPhoneVibrate();
+      return;
+    }
     const nextVal = !checkedSteps[index];
     setCheckedSteps((prev) => ({ ...prev, [index]: nextVal }));
-    if (nextVal && c.clues[index]) {
-      onInspectClue?.(c.clues[index]);
+    if (nextVal) {
+      sound.playSuccess();
+      if (c.clues[index]) {
+        onInspectClue?.(c.clues[index]);
+      }
+    } else {
+      sound.playKeyboardClick();
     }
   };
 
   const completedCount = Object.values(checkedSteps).filter(Boolean).length;
-  const totalClues = c.clues.length;
+  const totalClues = Math.min(3, c.clues.length);
 
   return (
     <div className="flex flex-col h-full bg-[#18181b] text-white select-none">
@@ -458,16 +719,29 @@ const NotesScreen = ({
           <FileText className="w-4 h-4 text-amber-400" />
           <span>Checklist de Verificação 📌</span>
         </div>
-        <span className="text-[11px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full font-bold">
-          {completedCount}/{totalClues} checados
-        </span>
+        <div className="flex items-center gap-1.5">
+          {onOpenTips && (
+            <button
+              type="button"
+              onClick={onOpenTips}
+              className="flex items-center gap-1 text-[10.5px] font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 px-2 py-0.5 rounded-full cursor-pointer transition active:scale-95"
+              title="Dicas de investigação"
+            >
+              <Lightbulb className="w-3 h-3 text-amber-400" />
+              <span>Dicas</span>
+            </button>
+          )}
+          <span className="text-[11px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full font-bold">
+            {completedCount}/{totalClues}
+          </span>
+        </div>
       </div>
 
-      {/* Conteúdo limpo e objetivo: Apenas os 3 procedimentos operacionais do caso */}
+      {/* Conteúdo limpo e objetivo com Desbloqueio Progressivo */}
       <div className="flex-1 overflow-y-auto no-scrollbar overscroll-contain p-3.5 space-y-3">
         <div className="border-b border-white/10 pb-2">
           <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold">
-            Procedimento Operacional
+            Procedimento Operacional • Desbloqueio Sequencial
           </div>
           <h2 className="text-sm font-bold text-white mt-0.5">
             {c.title}
@@ -477,12 +751,42 @@ const NotesScreen = ({
         {/* Os 3 Passos de Auditoria Específicos do Caso Atual */}
         <div className="space-y-2.5">
           {c.clues.slice(0, 3).map((clue, idx) => {
+            const isUnlocked = isStepUnlocked(idx);
             const isChecked = Boolean(checkedSteps[idx]);
+
+            if (!isUnlocked) {
+              return (
+                <div
+                  key={clue.id || idx}
+                  onClick={() => sound.playPhoneVibrate()}
+                  className="p-3 rounded-2xl border border-white/10 bg-white/[0.02] opacity-60 transition-all select-none cursor-not-allowed"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-md border border-white/20 flex items-center justify-center shrink-0 mt-0.5 bg-white/5 text-white/40">
+                      <Lock className="w-3 h-3" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-mono uppercase font-bold text-white/40 block">
+                        Passo {idx + 1} • Bloqueado 🔒
+                      </span>
+                      <p className="text-xs font-semibold text-white/50 leading-snug mt-0.5">
+                        Conclua a auditoria do Passo {idx} para desbloquear esta etapa
+                      </p>
+                      <p className="text-[10.5px] text-white/30 mt-1 italic">
+                        Siga a ordem dos procedimentos periciais para não contaminar a investigação.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
-              <div
+              <motion.div
                 key={clue.id || idx}
-                onClick={() => toggleStep(idx)}
-                className={`p-3 rounded-2xl border transition-all cursor-pointer active:scale-98 ${
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-3 rounded-2xl border transition-all ${
                   isChecked
                     ? 'bg-emerald-950/30 border-emerald-500/40'
                     : 'bg-white/5 border-white/10 hover:border-amber-400/30'
@@ -490,7 +794,8 @@ const NotesScreen = ({
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition ${
+                    onClick={() => toggleStep(idx)}
+                    className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 cursor-pointer transition ${
                       isChecked
                         ? 'bg-emerald-500 text-white'
                         : 'border-2 border-white/30 hover:border-amber-400'
@@ -499,15 +804,73 @@ const NotesScreen = ({
                     {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-mono uppercase font-bold text-amber-400 block">
-                      Passo {idx + 1} • {clue.name}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono uppercase font-bold text-amber-400 block">
+                        Passo {idx + 1} • {clue.name}
+                      </span>
+                      {isChecked && (
+                        <span className="text-[9.5px] font-mono text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded font-bold">
+                          ✓ Concluído
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs font-semibold text-white leading-snug mt-0.5">
                       {clue.question}
                     </p>
                     <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
                       {clue.inspection.observation}
                     </p>
+
+                    {/* Botões de Ação Prática Contextual Direto no Passo */}
+                    <div className="pt-2">
+                      {clue.category === 'pix' ? (
+                        <button
+                          type="button"
+                          onClick={() => onSimulatePix?.(clue)}
+                          className="w-full py-1.5 px-2.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+                        >
+                          <span>💸 Simular Pix & Auditar Favorecido</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      ) : clue.category === 'behavior' ? (
+                        <button
+                          type="button"
+                          onClick={() => onRequestAudio?.(clue)}
+                          className="w-full py-1.5 px-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+                        >
+                          <span>🎙️ Pedir Áudio ao Remetente</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      ) : clue.category === 'phone' ? (
+                        <button
+                          type="button"
+                          onClick={() => onInspectContact?.()}
+                          className="w-full py-1.5 px-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+                        >
+                          <span>👤 Inspecionar Ficha do Contato (DDD)</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      ) : clue.category === 'system' || clue.inspection.type === 'security' || clue.name.toLowerCase().includes('banco') ? (
+                        <button
+                          type="button"
+                          onClick={() => onInspectBank?.()}
+                          className="w-full py-1.5 px-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+                        >
+                          <span>🏦 Conferir Extrato no Meu Banco</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      ) : clue.category === 'whois' || clue.inspection.type === 'link' ? (
+                        <button
+                          type="button"
+                          onClick={() => onInspectBrowser?.(clue.inspection.field1Value)}
+                          className="w-full py-1.5 px-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+                        >
+                          <span>🌐 Inspecionar Link no Navegador</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      ) : null}
+                    </div>
+
                     {isChecked && (
                       <div className="mt-2 pt-1.5 border-t border-emerald-500/20 text-[10.5px] text-emerald-300 font-medium">
                         ✓ Fato apurado: {clue.evidenceResult.fato}
@@ -515,10 +878,36 @@ const NotesScreen = ({
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
+
+        {/* Card de Celebração e Botão de Veredito quando 3/3 Passos Estão Checados */}
+        {completedCount >= totalClues && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-amber-500/20 border-2 border-amber-400 text-center space-y-2 mt-2"
+          >
+            <div className="flex items-center justify-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider font-mono">
+              <span>🎯 AUDITORIA COMPLETA (3/3)</span>
+            </div>
+            <p className="text-xs text-white/90">
+              Você auditou todas as orientações do Lucas e possui evidências suficientes para julgar o caso com segurança.
+            </p>
+            {onOpenVerdict && (
+              <button
+                type="button"
+                onClick={onOpenVerdict}
+                className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>⚖️ Emitir Veredito Pericial no Tribunal</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </motion.div>
+        )}
 
         <div className="pt-2 text-center">
           <span className="text-[10px] font-mono text-neutral-500">
@@ -1241,6 +1630,10 @@ const WhatsAppScreen = ({
   onBackToHome,
   onOpenNotes,
   onStoryDeliveredChange,
+  onOpenTips,
+  onOpenVerdictModal,
+  onOpenPixModal,
+  inspectedClueCount = 0,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -1256,6 +1649,10 @@ const WhatsAppScreen = ({
   onBackToHome: () => void;
   onOpenNotes?: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  onOpenTips?: () => void;
+  onOpenVerdictModal?: () => void;
+  onOpenPixModal?: () => void;
+  inspectedClueCount?: number;
 }) => {
   const [isTypingPlayer, setIsTypingPlayer] = useState(false);
   const number = findContactNumber(c);
@@ -1315,11 +1712,78 @@ const WhatsAppScreen = ({
     }
   };
 
-  const availableActions = (c.interactiveActions || []).filter(
+  // Ações interativas contextuais e dinâmicas geradas a partir do caso e das pistas
+  const contextualActions = React.useMemo(() => {
+    const base = c.interactiveActions || [];
+    const extras: InteractiveAction[] = [];
+
+    const audioClue = c.clues.find((k) => k.category === 'behavior');
+    if (audioClue) {
+      extras.push({
+        id: `act-${c.id}-audio`,
+        label: '🎙️ Pedir Áudio: "Mande um áudio falando meu nome"',
+        actionType: 'investigation',
+        playerMessage: 'Filha, me manda um áudio de 5 segundos falando meu nome. Não vou transferir nada sem ouvir a sua voz.',
+        replyMessage: 'Mãe, já falei que a tela caiu de cara no chão e queimou o microfone! O áudio fica só xiado! Para de desconfiar de mim e me ajuda pelo amor de Deus, faltam 10 minutos!',
+        evidenceDiscovered: {
+          id: `ev-${c.id}-audio`,
+          title: 'Recusa Desesperada de Enviar Áudio',
+          description: 'O golpista inventou desculpa de microfone quebrado para não mandar áudio.',
+          status: 'suspicious',
+          forensicFact: 'Regra de ouro: Nunca transfira sem ouvir a voz real do familiar no número antigo.',
+        },
+      });
+    }
+
+    const pixClue = c.clues.find((k) => k.category === 'pix');
+    if (pixClue) {
+      const titular = pixClue.inspection.field2Value || 'Valdir dos Santos';
+      extras.push({
+        id: `act-${c.id}-pix`,
+        label: `💸 Simular Pix & Auditar Favorecido (${titular})`,
+        actionType: 'investigation',
+        playerMessage: `Sofia, quem é esse ${titular} da chave Pix? A faculdade não cobra por boleto ou CNPJ?`,
+        replyMessage: 'Mãe, é o coordenador financeiro da faculdade! Ele disse que só segura minha vaga se pagar direto na conta dele agora, por favor faz logo!',
+        evidenceDiscovered: {
+          id: `ev-${c.id}-pix`,
+          title: `Titular Incompatível: ${titular}`,
+          description: `A conta de destino pertence a uma pessoa física estranha (${titular}).`,
+          status: 'suspicious',
+          forensicFact: 'Instituições de ensino e empresas cobram por CNPJ oficial ou boleto registrado.',
+        },
+      });
+    }
+
+    const phoneClue = c.clues.find((k) => k.category === 'phone');
+    if (phoneClue) {
+      extras.push({
+        id: `act-${c.id}-ddd`,
+        label: '📱 Questionar DDD: "Por que você está com DDD de outro estado?"',
+        actionType: 'investigation',
+        playerMessage: 'Por que o seu número está com DDD diferente da nossa cidade?',
+        replyMessage: 'É porque eu comprei o chip provisório na banca perto da rodoviária e foi o único prefixo de promoção que tinha disponível! Me ajuda logo!',
+        evidenceDiscovered: {
+          id: `ev-${c.id}-ddd`,
+          title: 'DDD Incompatível',
+          description: 'O número foi ativado recentemente com DDD divergente da família.',
+          status: 'suspicious',
+          forensicFact: 'Golpistas compram chips descartáveis de outros DDDs para aplicar golpes.',
+        },
+      });
+    }
+
+    return [...base, ...extras.filter((ex) => !base.some((b) => b.id === ex.id))];
+  }, [c]);
+
+  const availableActions = contextualActions.filter(
     (act) => !executedActionIds.includes(act.id),
   );
 
   const handleActionClick = (action: InteractiveAction) => {
+    if (action.id.includes('-pix') && onOpenPixModal) {
+      onOpenPixModal();
+      return;
+    }
     sound.playKeyboardClick();
     setIsTypingPlayer(true);
     setTimeout(() => {
@@ -1410,6 +1874,19 @@ const WhatsAppScreen = ({
           </button>
 
           <div className="flex items-center gap-1.5 text-white/90 shrink-0">
+            {onOpenTips && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenTips();
+                }}
+                className="p-1 hover:bg-white/10 rounded-full cursor-pointer active:scale-90 transition-transform"
+                title="Dicas do Celular (Tips)"
+              >
+                <Lightbulb className="w-4 h-4 text-amber-300" />
+              </button>
+            )}
             <button
               type="button"
               onClick={(e) => {
@@ -1453,7 +1930,7 @@ const WhatsAppScreen = ({
             </span>
           </div>
           <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-900 px-2 py-0.5 rounded-full shrink-0 ml-1">
-            Ver Notas ➔
+            {inspectedClueCount}/3 Notas ➔
           </span>
         </div>
       )}
@@ -1561,54 +2038,95 @@ const WhatsAppScreen = ({
         )}
       </div>
 
-      {/* Rodapé do WhatsApp (sem barra falsa de escrita; mensagens e opções reais) */}
-      {!hasFinishedTyping ? (
-        <div className="bg-[#f0f2f5] px-3 py-2 border-t border-black/5 text-center">
-          <span className="text-[10px] text-neutral-500 font-medium italic animate-pulse">
-            Recebendo mensagens... (Toque no chat para acelerar)
-          </span>
-        </div>
-      ) : availableActions.length > 0 && !isBlocked && !stamped ? (
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#f0f2f5] p-2.5 border-t border-black/10 space-y-2"
-        >
-          <div className="text-[11px] font-mono text-[#54656f] uppercase tracking-wider font-bold px-1 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#008069]" /> Responder no WhatsApp:
+      {/* Rodapé do WhatsApp */}
+      <div className="bg-[#f0f2f5] border-t border-black/10 flex flex-col">
+        {!hasFinishedTyping ? (
+          <div className="px-3 py-2 text-center">
+            <span className="text-[10px] text-neutral-500 font-medium italic animate-pulse">
+              Recebendo mensagens... (Toque no chat para acelerar)
+            </span>
           </div>
-          <div className="space-y-1.5 max-h-28 overflow-y-auto pr-0.5">
-            {availableActions.map((act) => (
+        ) : availableActions.length > 0 && !isBlocked && !stamped ? (
+          <div className="p-2 border-b border-black/5 space-y-1.5">
+            <div className="text-[10px] font-mono text-[#54656f] uppercase tracking-wider font-bold px-1 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-[#008069]" /> Responder no WhatsApp:
+            </div>
+            <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
+              {availableActions.map((act) => (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleActionClick(act);
+                  }}
+                  className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-300 text-[#008069] rounded-xl px-2.5 py-1.5 text-xs font-semibold shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
+                >
+                  <span className="text-[11.5px] leading-tight font-medium line-clamp-1">{act.label}</span>
+                  <span className="text-[9.5px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold shrink-0">
+                    Enviar ➔
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : isBlocked ? (
+          <div className="px-3 py-2 text-center bg-red-50">
+            <span className="text-xs text-red-600 font-semibold flex items-center justify-center gap-1.5">
+              <UserX className="w-3.5 h-3.5" /> Você bloqueou este contato
+            </span>
+          </div>
+        ) : (
+          <div className="px-3 py-1.5 text-center">
+            <span className="text-[10.5px] text-[#54656f] font-medium">
+              Fim das mensagens • Siga os procedimentos no Bloco de Notas
+            </span>
+          </div>
+        )}
+
+        {/* Barra de Veredito no Rodapé do WhatsApp */}
+        {!stamped && onOpenVerdictModal && (
+          <div className="p-2 pt-1">
+            {inspectedClueCount < 3 ? (
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 text-white border border-white/10 text-xs">
+                <div className="flex items-center gap-1.5 text-[11px] text-white/80 min-w-0">
+                  <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="truncate">
+                    Veredito: <strong>{inspectedClueCount}/3</strong> notas checadas
+                  </span>
+                </div>
+                {onOpenNotes && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenNotes();
+                    }}
+                    className="text-[10px] font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 px-2 py-1 rounded-lg transition active:scale-95 shrink-0 ml-1 cursor-pointer"
+                  >
+                    Abrir Notas ➔
+                  </button>
+                )}
+              </div>
+            ) : (
               <button
-                key={act.id}
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleActionClick(act);
+                  onOpenVerdictModal();
                 }}
-                className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-300 text-[#008069] rounded-xl px-2.5 py-2 text-xs font-semibold shadow-sm transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
+                className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-between animate-pulse"
               >
-                <span className="text-xs leading-snug font-medium line-clamp-2">{act.label}</span>
-                <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md shrink-0 font-bold">
-                  Enviar ➔
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">⚖️</span>
+                  <span>Emitir Veredito Pericial no Tribunal (3/3 Provas)</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-950/70" />
               </button>
-            ))}
+            )}
           </div>
-        </motion.div>
-      ) : isBlocked ? (
-        <div className="bg-[#f0f2f5] px-3 py-2.5 border-t border-red-200 text-center">
-          <span className="text-xs text-red-600 font-semibold flex items-center justify-center gap-1.5">
-            <UserX className="w-3.5 h-3.5" /> Você bloqueou este contato
-          </span>
-        </div>
-      ) : (
-        <div className="bg-[#f0f2f5] px-3 py-2 border-t border-black/5 text-center">
-          <span className="text-[10.5px] text-[#54656f] font-medium">
-            Fim das mensagens • Confira o Bloco de Notas para auditar o caso
-          </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
@@ -1629,6 +2147,9 @@ const SmsScreen = ({
   onBackToHome,
   onOpenNotes,
   onStoryDeliveredChange,
+  onOpenTips,
+  onOpenVerdictModal,
+  inspectedClueCount = 0,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -1641,6 +2162,9 @@ const SmsScreen = ({
   onBackToHome: () => void;
   onOpenNotes?: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  onOpenTips?: () => void;
+  onOpenVerdictModal?: () => void;
+  inspectedClueCount?: number;
 }) => {
   const number = findContactNumber(c);
   const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
@@ -1689,7 +2213,60 @@ const SmsScreen = ({
     }
   };
 
-  const availableActions = (c.interactiveActions || []).filter(
+  const contextualActions = React.useMemo(() => {
+    const base = c.interactiveActions || [];
+    const extras: InteractiveAction[] = [];
+
+    const bankClue = c.clues.find(
+      (k) =>
+        k.category === 'system' ||
+        k.inspection.type === 'security' ||
+        k.name.toLowerCase().includes('banco')
+    );
+    if (bankClue) {
+      extras.push({
+        id: `act-${c.id}-bank-sms`,
+        label: '🏦 Questionar: "Não reconheço essa compra no meu extrato"',
+        actionType: 'investigation',
+        playerMessage: 'Não reconheço essa compra. Vou verificar no extrato oficial do meu aplicativo.',
+        replyMessage: 'Central de Segurança: Para cancelamento emergencial e estorno, disque imediatamente para a central informada.',
+        evidenceDiscovered: {
+          id: `ev-${c.id}-bank`,
+          title: 'SMS de Engenharia Social',
+          description: 'O golpista tenta forçar a ligação para a falsa central telefônica.',
+          status: 'suspicious',
+          forensicFact: 'Bancos nunca pedem para ligar para números 0800 desconhecidos via SMS.',
+        },
+      });
+    }
+
+    const linkClue = c.clues.find(
+      (k) =>
+        k.category === 'whois' ||
+        k.inspection.type === 'link' ||
+        k.name.toLowerCase().includes('link')
+    );
+    if (linkClue) {
+      extras.push({
+        id: `act-${c.id}-link-sms`,
+        label: '🔗 Questionar Link: "Qual é o site oficial?"',
+        actionType: 'investigation',
+        playerMessage: 'Esse endereço de internet não parece com o site oficial da empresa.',
+        replyMessage: 'Aviso do Sistema: Link exclusivo de pagamento e desembaraço aduaneiro expresso.',
+        evidenceDiscovered: {
+          id: `ev-${c.id}-link`,
+          title: 'Domínio Web Falso',
+          description: 'O endereço de internet diverge do portal oficial.',
+          status: 'suspicious',
+          forensicFact: 'Empresas públicas e bancos utilizam apenas domínios oficiais registrados.',
+        },
+      });
+    }
+
+    return [...base, ...extras.filter((ex) => !base.some((b) => b.id === ex.id))];
+  }, [c]);
+
+  const availableActions = contextualActions.filter(
     (act) => !executedActionIds.includes(act.id),
   );
 
@@ -1753,6 +2330,20 @@ const SmsScreen = ({
             {number ?? c.sender} <span className="text-[#8e8e93]">›</span>
           </div>
         </button>
+
+        {onOpenTips && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenTips();
+            }}
+            className="p-1 text-amber-500 hover:bg-amber-50 rounded-full cursor-pointer"
+            title="Dicas de Investigação"
+          >
+            <Lightbulb className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Banner Diegético: Lucas (Filho) avisando sobre o Bloco de Notas */}
@@ -1772,7 +2363,7 @@ const SmsScreen = ({
             </span>
           </div>
           <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-900 px-2 py-0.5 rounded-full shrink-0 ml-1">
-            Ver Notas ➔
+            {inspectedClueCount}/3 Notas ➔
           </span>
         </div>
       )}
@@ -1816,49 +2407,90 @@ const SmsScreen = ({
         </div>
       </div>
 
-      {/* Rodapé do SMS (sem barra de digitação falsa; foco na leitura) */}
-      {!hasFinishedTyping ? (
-        <div className="p-2 bg-neutral-50 border-t border-black/10 text-center">
-          <span className="text-[10px] text-neutral-500 font-medium italic animate-pulse">
-            Recebendo SMS... (Toque para acelerar)
-          </span>
-        </div>
-      ) : availableActions.length > 0 && !stamped ? (
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-2.5 bg-neutral-100 border-t border-black/10 space-y-2"
-        >
-          <div className="text-[11px] font-mono text-neutral-600 uppercase tracking-wider font-bold px-1 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#007aff]" /> Responder por SMS:
+      {/* Rodapé do SMS */}
+      <div className="bg-neutral-100 border-t border-black/10 flex flex-col">
+        {!hasFinishedTyping ? (
+          <div className="p-2 bg-neutral-50 text-center">
+            <span className="text-[10px] text-neutral-500 font-medium italic animate-pulse">
+              Recebendo SMS... (Toque para acelerar)
+            </span>
           </div>
-          <div className="space-y-1.5 max-h-28 overflow-y-auto pr-0.5">
-            {availableActions.map((act) => (
+        ) : availableActions.length > 0 && !stamped ? (
+          <div className="p-2.5 space-y-1.5 border-b border-black/5">
+            <div className="text-[11px] font-mono text-neutral-600 uppercase tracking-wider font-bold px-1 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#007aff]" /> Responder por SMS:
+            </div>
+            <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
+              {availableActions.map((act) => (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    sound.playBlip();
+                    onPerformAction(act);
+                  }}
+                  className="w-full text-left bg-white hover:bg-blue-50 border border-blue-200 text-[#007aff] rounded-xl px-2.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-between gap-2"
+                >
+                  <span className="text-xs leading-snug font-medium line-clamp-1">{act.label}</span>
+                  <span className="text-[10px] font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md shrink-0 font-bold">
+                    Perguntar ➔
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="p-1.5 bg-neutral-50 text-center">
+            <span className="text-[10.5px] text-neutral-500 font-medium">
+              Fim do SMS • Confira o Bloco de Notas para auditar o caso
+            </span>
+          </div>
+        )}
+
+        {/* Barra de Veredito no Rodapé do SMS */}
+        {!stamped && onOpenVerdictModal && (
+          <div className="p-2 pt-1 bg-white">
+            {inspectedClueCount < 3 ? (
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 text-white border border-white/10 text-xs">
+                <div className="flex items-center gap-1.5 text-[11px] text-white/80 min-w-0">
+                  <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="truncate">
+                    Veredito: <strong>{inspectedClueCount}/3</strong> notas checadas
+                  </span>
+                </div>
+                {onOpenNotes && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenNotes();
+                    }}
+                    className="text-[10px] font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 px-2 py-1 rounded-lg transition active:scale-95 shrink-0 ml-1 cursor-pointer"
+                  >
+                    Abrir Notas ➔
+                  </button>
+                )}
+              </div>
+            ) : (
               <button
-                key={act.id}
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  sound.playBlip();
-                  onPerformAction(act);
+                  onOpenVerdictModal();
                 }}
-                className="w-full text-left bg-white hover:bg-blue-50 border border-blue-200 text-[#007aff] rounded-xl px-2.5 py-2 text-xs font-semibold shadow-sm transition cursor-pointer flex items-center justify-between gap-2"
+                className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-between animate-pulse"
               >
-                <span className="text-xs leading-snug font-medium line-clamp-2">{act.label}</span>
-                <span className="text-[10px] font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md shrink-0 font-bold">
-                  Perguntar ➔
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">⚖️</span>
+                  <span>Emitir Veredito Pericial no Tribunal (3/3 Provas)</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-950/70" />
               </button>
-            ))}
+            )}
           </div>
-        </motion.div>
-      ) : (
-        <div className="p-2 bg-neutral-50 border-t border-black/10 text-center">
-          <span className="text-[10.5px] text-neutral-500 font-medium">
-            Fim do SMS • Confira o Bloco de Notas para auditar o caso
-          </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
@@ -2396,6 +3028,7 @@ const HomeScreen = ({
   onOpenBank,
   onOpenBrowser,
   onOpenVerdictModal,
+  onOpenTips,
   onToast,
   inspectedClueCount,
   levelText,
@@ -2411,6 +3044,7 @@ const HomeScreen = ({
   onOpenBank: () => void;
   onOpenBrowser: () => void;
   onOpenVerdictModal: () => void;
+  onOpenTips?: () => void;
   onToast: (msg: string) => void;
   inspectedClueCount: number;
   levelText?: string;
@@ -2619,15 +3253,15 @@ const HomeScreen = ({
             <span className="text-[11px] text-white/90 font-medium">Notas</span>
           </div>
 
-          {/* 5. Música */}
+          {/* 5. DICAS DO CELULAR (Tips de Investigação) */}
           <div
-            onClick={() => onToast('🎵 Tocando música favorita em segundo plano.')}
+            onClick={onOpenTips}
             className="flex flex-col items-center gap-1 group cursor-pointer"
           >
-            <div className="w-12 h-12 rounded-2xl bg-[#1db954] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <Music className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 shadow-md group-hover:scale-105 transition-transform">
+              <Lightbulb className="w-6 h-6" />
             </div>
-            <span className="text-[11px] text-white/90 font-medium">Música</span>
+            <span className="text-[11px] text-white/90 font-medium">Dicas</span>
           </div>
 
           {/* 6. Internet */}
@@ -2675,7 +3309,7 @@ const HomeScreen = ({
           </div>
         </div>
 
-        {/* Rodapé da Tela Inicial com Contagem Regressiva e Botão de Veredito Pericial */}
+        {/* Rodapé da Tela Inicial com Contagem Regressiva e Botão de Veredito Pericial Condicionado */}
         <div className="pt-2 space-y-2">
           {!notificationArrived ? (
             <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10 text-xs">
@@ -2705,16 +3339,29 @@ const HomeScreen = ({
             </button>
           )}
 
-          {/* Botão de Tribunal / Veredito Pericial */}
-          <button
-            type="button"
-            onClick={onOpenVerdictModal}
-            className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <span className="text-sm">⚖️</span>
-            <span>Emitir Veredito Pericial (Tribunal)</span>
-            <ChevronRight className="w-4 h-4 ml-auto text-slate-950/70" />
-          </button>
+          {/* Botão de Tribunal / Veredito Pericial Condicionado a 3/3 */}
+          {inspectedClueCount < 3 ? (
+            <button
+              type="button"
+              onClick={onOpenNotes}
+              className="w-full py-2.5 rounded-xl bg-slate-800 border border-white/10 hover:border-amber-400/40 text-neutral-300 font-semibold text-xs shadow transition active:scale-95 cursor-pointer flex items-center justify-center gap-2 group"
+              title="Conclua os 3 procedimentos no Bloco de Notas para liberar o Tribunal"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Veredito Bloqueado ({inspectedClueCount}/3 checados) • Ver Notas</span>
+              <ChevronRight className="w-4 h-4 ml-auto text-neutral-500 group-hover:text-amber-400 transition" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenVerdictModal}
+              className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 animate-pulse"
+            >
+              <span className="text-sm">⚖️</span>
+              <span>Emitir Veredito Pericial (Tribunal Desbloqueado!)</span>
+              <ChevronRight className="w-4 h-4 ml-auto text-slate-950/70" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -2763,6 +3410,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [toastMessage, setToastMessage] = useState<string>('');
   const [isBlocked, setIsBlocked] = useState(false);
   const [skillToast, setSkillToast] = useState<Skill[] | null>(null);
+  const [isTipsModalOpen, setIsTipsModalOpen] = useState(false);
+  const [isPixDoubtModalOpen, setIsPixDoubtModalOpen] = useState(false);
 
   const levelText = levelIndex ? `Nível ${levelIndex} / ${totalLevels || 9}` : undefined;
 
@@ -2831,6 +3480,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setScamCountdown(30);
     setIsVerdictModalOpen(false);
     setUserHypothesisIndex(null);
+    setIsTipsModalOpen(false);
+    setIsPixDoubtModalOpen(false);
     onAppOpenChangeRef.current?.(false);
     onStoryDeliveredChangeRef.current?.(false);
     setVibrateKey((k) => k + 1);
@@ -2954,6 +3605,64 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     onVerdict?.(verdict);
   };
 
+  const handleConfrontPixInChat = (pixClue: InvestigativeClue) => {
+    const titular = pixClue?.inspection?.field2Value || 'Valdir dos Santos';
+    const playerMsg = `Sofia, quem é esse ${titular} da chave Pix? A faculdade não cobra por boleto ou CNPJ?`;
+    const replyMsg = `Mãe, é o coordenador financeiro da faculdade! Ele disse que só segura minha vaga se pagar direto na conta dele agora, por favor faz logo!`;
+
+    setIsPixDoubtModalOpen(false);
+    setActiveApp('messaging');
+    sound.playKeyboardClick();
+
+    setTimeout(() => {
+      sound.playMessagePing();
+      sound.playTensionPulse();
+      handleInspectClue(pixClue);
+      onPerformAction({
+        id: `act-${scamCase.id}-pix-confront`,
+        label: `Confrontar Favorecido: ${titular}`,
+        actionType: 'investigation',
+        playerMessage: playerMsg,
+        replyMessage: replyMsg,
+        evidenceDiscovered: {
+          id: `ev-${scamCase.id}-pix-favorecido`,
+          title: `Favorecido Estranho: ${titular}`,
+          description: `A conta Pix pertence a ${titular}, e não à instituição.`,
+          status: 'suspicious',
+          forensicFact: 'Instituições de ensino e empresas cobram por CNPJ oficial ou boleto registrado.',
+        },
+      });
+    }, 600);
+  };
+
+  const handleRequestAudioInChat = (audioClue: InvestigativeClue) => {
+    const playerMsg = `Filha, me manda um áudio de 5 segundos falando meu nome. Não vou transferir nada sem ouvir a sua voz.`;
+    const replyMsg = `Mãe, já falei que a tela caiu de cara no chão e queimou o microfone! O áudio fica só xiado! Para de desconfiar de mim e me ajuda pelo amor de Deus, faltam 10 minutos!`;
+
+    setActiveApp('messaging');
+    sound.playKeyboardClick();
+
+    setTimeout(() => {
+      sound.playMessagePing();
+      sound.playTensionPulse();
+      handleInspectClue(audioClue);
+      onPerformAction({
+        id: `act-${scamCase.id}-audio-confront`,
+        label: 'Pedir Áudio ao Remetente',
+        actionType: 'investigation',
+        playerMessage: playerMsg,
+        replyMessage: replyMsg,
+        evidenceDiscovered: {
+          id: `ev-${scamCase.id}-audio-recusa`,
+          title: 'Recusa de Áudio e Desculpa de Microfone',
+          description: 'O golpista recusa enviar áudio para não revelar a voz real.',
+          status: 'suspicious',
+          forensicFact: 'Regra de ouro: Nunca transfira sem ouvir a voz real do familiar no número antigo.',
+        },
+      });
+    }, 600);
+  };
+
   const showToast = (message: string) => {
     sound.playBlip();
     setToastMessage(message);
@@ -2999,6 +3708,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onBackToHome={() => setActiveApp('home')}
             onOpenNotes={handleOpenNotes}
             onStoryDeliveredChange={onStoryDeliveredChange}
+            onOpenTips={() => setIsTipsModalOpen(true)}
+            onOpenVerdictModal={() => setIsVerdictModalOpen(true)}
+            onOpenPixModal={() => setIsPixDoubtModalOpen(true)}
+            inspectedClueCount={inspectedClueIds.length}
           />
         );
       case 'call':
@@ -3038,6 +3751,9 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onBackToHome={() => setActiveApp('home')}
             onOpenNotes={handleOpenNotes}
             onStoryDeliveredChange={onStoryDeliveredChange}
+            onOpenTips={() => setIsTipsModalOpen(true)}
+            onOpenVerdictModal={() => setIsVerdictModalOpen(true)}
+            inspectedClueCount={inspectedClueIds.length}
           />
         );
     }
@@ -3262,6 +3978,87 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             )}
           </AnimatePresence>
 
+          {/* NOTIFICAÇÃO GLOBAL HEADS-UP (BANNER DESLIZANTE ESTILO IOS EM QUALQUER APLICATIVO) */}
+          <AnimatePresence>
+            {notificationArrived && activeApp !== 'messaging' && !isLocked && !stamped && (
+              <motion.div
+                key="global-headsup-scam"
+                initial={{ y: -70, opacity: 0, scale: 0.94 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: -70, opacity: 0, scale: 0.94 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+                onClick={handleOpenAppDirectly}
+                className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 right-2 sm:right-2.5 z-40 bg-slate-950/95 border-2 border-emerald-400/80 rounded-2xl p-2.5 shadow-[0_16px_36px_rgba(0,0,0,0.9)] backdrop-blur-2xl cursor-pointer active:scale-98 transition group flex items-center gap-2.5 ring-1 ring-emerald-400/30"
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-md ${
+                    scamCase.channel === 'whatsapp'
+                      ? 'bg-[#25D366]'
+                      : scamCase.channel === 'call'
+                      ? 'bg-emerald-500 animate-pulse'
+                      : scamCase.channel === 'push'
+                      ? 'bg-[#820ad1]'
+                      : 'bg-[#007aff]'
+                  }`}
+                >
+                  {scamCase.channel === 'whatsapp' ? (
+                    <MessageSquare className="w-4 h-4" />
+                  ) : scamCase.channel === 'call' ? (
+                    <Phone className="w-4 h-4 animate-bounce" />
+                  ) : scamCase.channel === 'push' ? (
+                    <CreditCard className="w-4 h-4" />
+                  ) : (
+                    <MessageCircle className="w-4 h-4" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 leading-tight">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white truncate">{cleanName(scamCase.sender)}</span>
+                    <span className="text-[9.5px] font-mono font-bold uppercase bg-emerald-500/25 text-emerald-300 px-1.5 py-0.5 rounded-full border border-emerald-400/30">
+                      {scamCase.channel === 'call' ? 'Tocando...' : 'Agora'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/80 truncate mt-0.5">
+                    {scamCase.channel === 'call'
+                      ? '📞 Chamada de voz em andamento • Toque para atender'
+                      : (scamCase.preview || scamCase.messageContent)}
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-emerald-400 shrink-0 group-hover:translate-x-0.5 transition" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {lucasNotificationArrived && !notificationArrived && activeApp !== 'lucasChat' && activeApp !== 'home' && !isLocked && !stamped && (
+              <motion.div
+                key="global-headsup-lucas"
+                initial={{ y: -70, opacity: 0, scale: 0.94 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: -70, opacity: 0, scale: 0.94 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+                onClick={handleOpenLucasChat}
+                className="absolute top-2 sm:top-2.5 left-2 sm:left-2.5 right-2 sm:right-2.5 z-40 bg-slate-950/95 border-2 border-amber-400/80 rounded-2xl p-2.5 shadow-[0_16px_36px_rgba(0,0,0,0.9)] backdrop-blur-2xl cursor-pointer active:scale-98 transition group flex items-center gap-2.5 ring-1 ring-amber-400/30"
+              >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#25D366] text-white shrink-0 shadow-md">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0 leading-tight">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white truncate">Lucas (Filho) 🛡️</span>
+                    <span className="text-[9.5px] font-mono font-bold uppercase bg-amber-400/25 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-400/30">
+                      Dica
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/80 truncate mt-0.5">
+                    &quot;Deixei no Bloco de Notas orientações pra quando for vítima dos vagabundos...&quot;
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-amber-400 shrink-0 group-hover:translate-x-0.5 transition" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* VINHETA DE SUSPENSE COTIDIANO (PULSAÇÃO CINEMATOGRÁFICA NAS BORDAS SOB AMEAÇA) */}
           {notificationArrived && !stamped && (
             <motion.div
@@ -3312,6 +4109,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   onOpenBank={() => handleOpenBank()}
                   onOpenBrowser={() => handleOpenBrowser()}
                   onOpenVerdictModal={() => setIsVerdictModalOpen(true)}
+                  onOpenTips={() => setIsTipsModalOpen(true)}
                   onToast={showToast}
                   inspectedClueCount={inspectedClueIds.length}
                   levelText={levelText}
@@ -3357,6 +4155,13 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   inspectedClueIds={inspectedClueIds}
                   onInspectClue={handleInspectClue}
                   onBack={() => setActiveApp(previousApp === 'notes' ? 'home' : previousApp)}
+                  onOpenVerdict={() => setIsVerdictModalOpen(true)}
+                  onOpenTips={() => setIsTipsModalOpen(true)}
+                  onSimulatePix={handleConfrontPixInChat}
+                  onRequestAudio={handleRequestAudioInChat}
+                  onInspectContact={() => setActiveModal('contact')}
+                  onInspectBank={handleOpenBank}
+                  onInspectBrowser={handleOpenBrowser}
                 />
               </motion.div>
             ) : activeApp === 'bank' ? (
@@ -3534,6 +4339,26 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* MODAL DE DICAS DE INVESTIGAÇÃO DO CELULAR */}
+          <TipsModal
+            isOpen={isTipsModalOpen}
+            onClose={() => setIsTipsModalOpen(false)}
+            c={scamCase}
+          />
+
+          {/* MODAL DE DÚVIDA PERICIAL NA TRANSFERÊNCIA PIX */}
+          <PixDoubtModal
+            isOpen={isPixDoubtModalOpen}
+            onClose={() => setIsPixDoubtModalOpen(false)}
+            c={scamCase}
+            onConfrontInChat={handleConfrontPixInChat}
+            onMarkClue={(clue) => {
+              handleInspectClue(clue);
+              setIsPixDoubtModalOpen(false);
+              showToast('✓ Favorecido desconhecido anotado nas notas!');
+            }}
+          />
 
           {/* MODAL DO TRIBUNAL PERICIAL COM REVALIDAÇÃO FORENSE (O PORQUÊ) */}
           <VerdictModal
