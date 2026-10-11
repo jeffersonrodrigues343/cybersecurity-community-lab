@@ -26,7 +26,13 @@ import {
   Bell,
   ChevronRight,
   PhoneIncoming,
-  Unlock,
+  Camera,
+  Settings,
+  Music,
+  Search,
+  Sun,
+  MessageCircle,
+  CreditCard,
 } from 'lucide-react';
 import type { ScamCase, InteractiveAction } from '../data/scamsData';
 import { sound } from '../utils/audio';
@@ -40,6 +46,7 @@ interface PhoneScreenProps {
   onPerformAction: (action: InteractiveAction) => void;
   executedActionIds: string[];
   actionHistory: { player: string; reply: string }[];
+  onAppOpenChange?: (open: boolean) => void;
 }
 
 const findContactNumber = (c: ScamCase): string | null => {
@@ -680,8 +687,8 @@ const PushScreen = ({
 };
 
 
-// ---------- TELA DE BLOQUEIO REALISTA COM CHEGADA DE NOTIFICAÇÃO ----------
-const LockScreen = ({
+// ---------- TELA INICIAL REALISTA DO CELULAR (HOME SCREEN) ----------
+const HomeScreen = ({
   c,
   onOpenApp,
   onRejectCall,
@@ -696,7 +703,7 @@ const LockScreen = ({
   const isCall = c.channel === 'call';
 
   useEffect(() => {
-    // Delay de 400ms para simular a chegada súbita da mensagem no bolso
+    // Simula a chegada da mensagem durante o uso do celular
     const t = setTimeout(() => {
       setNotificationArrived(true);
       sound.playPhoneVibrate();
@@ -705,135 +712,260 @@ const LockScreen = ({
       } else {
         sound.playMessagePing();
       }
-    }, 450);
+    }, 600);
     return () => clearTimeout(t);
   }, [c.id, isCall]);
 
-  const previewText = c.messageContent.length > 85
-    ? c.messageContent.slice(0, 85) + '...'
-    : c.messageContent;
+  const previewText =
+    c.messageContent.length > 72
+      ? c.messageContent.slice(0, 72) + '...'
+      : c.messageContent;
 
   return (
-    <div className="relative flex flex-col h-full bg-gradient-to-b from-[#1a1c29] via-[#0d0f17] to-[#07080c] text-white select-none overflow-hidden">
+    <div className="relative flex flex-col h-full bg-gradient-to-b from-[#111827] via-[#0f172a] to-[#030712] text-white select-none overflow-hidden">
+      {/* Luz ambiente de papel de parede */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-900/30 via-slate-900/50 to-black pointer-events-none" />
+
       <StatusBar time={c.time} dark />
 
-      {/* Relógio e Data da Tela de Bloqueio */}
-      <div className="flex flex-col items-center pt-5 pb-3">
-        <Lock className="w-3.5 h-3.5 text-white/60 mb-1" />
-        <div className="text-[11px] text-white/70 font-medium">sábado, 10 de outubro</div>
-        <div className="text-[46px] font-bold leading-none tracking-tight mt-0.5 font-display">
-          {c.time}
-        </div>
-      </div>
-
-      {/* Área Central: Notificação Chegando ou Ligação Tocando */}
-      <div className="flex-1 px-3 pt-2">
-        <AnimatePresence>
-          {notificationArrived && !isCall && (
-            <motion.div
-              initial={{ y: -40, opacity: 0, scale: 0.92 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-              onClick={onOpenApp}
-              className="w-full bg-white/20 hover:bg-white/25 border border-white/25 rounded-2xl p-3 backdrop-blur-xl shadow-2xl cursor-pointer active:scale-96 transition-all group"
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <div
-                  className={`w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-bold ${
-                    c.channel === 'whatsapp'
-                      ? 'bg-[#25D366]'
-                      : c.channel === 'push'
-                      ? 'bg-[#820ad1]'
-                      : 'bg-[#007aff]'
-                  }`}
-                >
-                  {c.channel === 'whatsapp' ? (
-                    <MessageSquare className="w-3 h-3" />
-                  ) : (
-                    <Bell className="w-3 h-3" />
-                  )}
-                </div>
-                <span className="font-semibold text-xs truncate text-white/95">
-                  {name}
-                </span>
-                <span className="text-[9.5px] text-white/60 ml-auto font-mono">agora</span>
-              </div>
-
-              <p className="text-xs text-white/90 leading-snug line-clamp-2 font-normal">
-                {previewText}
-              </p>
-
-              <div className="mt-2.5 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-emerald-300 font-semibold">
-                <span className="flex items-center gap-1 animate-pulse">
-                  👉 Toque para abrir a conversa
-                </span>
-                <ChevronRight className="w-3.5 h-3.5 text-white/60 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </motion.div>
-          )}
-
-          {notificationArrived && isCall && (
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="flex flex-col items-center justify-center pt-4 space-y-4"
-            >
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-3xl font-bold shadow-2xl border-2 border-white/20"
+      {/* BANNER DE NOTIFICAÇÃO FLUTUANTE (Desliza do topo como no smartphone real) */}
+      <AnimatePresence>
+        {notificationArrived && !isCall && (
+          <motion.div
+            initial={{ y: -70, opacity: 0, scale: 0.92 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 25 }}
+            onClick={onOpenApp}
+            className="absolute top-8 left-2 right-2 z-40 bg-slate-900/95 hover:bg-slate-850 border border-white/25 rounded-2xl p-2.5 backdrop-blur-2xl shadow-[0_12px_32px_rgba(0,0,0,0.85)] cursor-pointer active:scale-96 transition-all group ring-1 ring-white/10"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <div
+                className={`w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-bold shadow ${
+                  c.channel === 'whatsapp'
+                    ? 'bg-[#25D366]'
+                    : c.channel === 'push'
+                    ? 'bg-[#820ad1]'
+                    : 'bg-[#007aff]'
+                }`}
               >
-                {c.sender.charAt(0)}
-              </motion.div>
-
-              <div className="text-center">
-                <div className="text-lg font-bold text-white">{name}</div>
-                <div className="text-xs text-white/60 font-mono mt-0.5">{number ?? 'Número desconhecido'}</div>
-                <div className="text-xs text-emerald-400 font-semibold mt-1 animate-pulse flex items-center justify-center gap-1">
-                  <PhoneIncoming className="w-3.5 h-3.5" />
-                  <span>Chamada recebida...</span>
-                </div>
+                {c.channel === 'whatsapp' ? (
+                  <MessageSquare className="w-3 h-3" />
+                ) : (
+                  <Bell className="w-3 h-3" />
+                )}
               </div>
+              <span className="font-semibold text-xs truncate text-white">
+                {name}
+              </span>
+              <span className="text-[9px] text-white/50 ml-auto font-mono">agora</span>
+            </div>
 
-              <div className="flex items-center gap-8 pt-4">
-                <button
-                  type="button"
-                  onClick={onRejectCall}
-                  className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
-                >
-                  <div className="w-13 h-13 rounded-full bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/40">
-                    <PhoneOff className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-[10px] text-white/80 font-medium">Recusar</span>
-                </button>
+            <p className="text-[11.5px] text-white/90 leading-tight line-clamp-2">
+              {previewText}
+            </p>
 
-                <button
-                  type="button"
-                  onClick={onOpenApp}
-                  className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
-                >
-                  <div className="w-13 h-13 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40 animate-bounce">
-                    <Phone className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-[10px] text-white/80 font-medium">Atender</span>
-                </button>
-              </div>
+            <div className="mt-2 pt-1 border-t border-white/10 flex items-center justify-between text-[9.5px] text-emerald-400 font-semibold">
+              <span className="flex items-center gap-1 animate-pulse">
+                👉 Toque para abrir no aplicativo
+              </span>
+              <ChevronRight className="w-3 h-3 text-white/60 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* SE FOR LIGAÇÃO TELEFÔNICA RECEBIDA (0800 Falsa Central) */}
+      <AnimatePresence>
+        {notificationArrived && isCall && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute inset-0 z-40 bg-black/95 flex flex-col items-center justify-center p-4 space-y-4"
+          >
+            <motion.div
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ repeat: Infinity, duration: 1.4 }}
+              className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-3xl font-bold shadow-2xl border-2 border-white/20"
+            >
+              {c.sender.charAt(0)}
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
-      {/* Rodapé da Tela de Bloqueio */}
-      <div className="p-4 flex items-center justify-between text-white/60 text-xs">
-        <button
-          type="button"
-          onClick={onOpenApp}
-          className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-center text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition"
-        >
-          <Unlock className="w-3.5 h-3.5 text-white/70" />
-          <span>Desbloquear Aparelho</span>
-        </button>
+            <div className="text-center">
+              <div className="text-lg font-bold text-white">{name}</div>
+              <div className="text-xs text-white/60 font-mono mt-0.5">
+                {number ?? 'Número desconhecido'}
+              </div>
+              <div className="text-xs text-emerald-400 font-semibold mt-1 animate-pulse flex items-center justify-center gap-1">
+                <PhoneIncoming className="w-3.5 h-3.5" />
+                <span>Chamada recebida...</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-8 pt-4">
+              <button
+                type="button"
+                onClick={onRejectCall}
+                className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
+              >
+                <div className="w-13 h-13 rounded-full bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/40">
+                  <PhoneOff className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-[10px] text-white/80 font-medium">Recusar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenApp}
+                className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
+              >
+                <div className="w-13 h-13 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40 animate-bounce">
+                  <Phone className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-[10px] text-white/80 font-medium">Atender</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* CONTEÚDO DA TELA INICIAL (Uso Normal do Celular) */}
+      <div className="flex-1 flex flex-col justify-between p-3.5 z-10 pt-3">
+        {/* Widget de Relógio & Clima */}
+        <div className="flex flex-col items-center text-center pt-2">
+          <div className="text-[42px] font-bold leading-none tracking-tight font-display text-white/95">
+            {c.time}
+          </div>
+          <div className="text-[11px] text-white/70 font-medium flex items-center gap-1.5 mt-1">
+            <Sun className="w-3 h-3 text-amber-400" />
+            <span>Sábado, 10 de out • 26°C Ensolarado</span>
+          </div>
+        </div>
+
+        {/* Barra de Pesquisa Estilo Google */}
+        <div className="w-full bg-white/10 hover:bg-white/15 border border-white/15 rounded-full py-1.5 px-3 flex items-center justify-between text-white/60 text-xs backdrop-blur-md transition mt-2">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-xs text-sky-400">G</span>
+            <span className="text-[10.5px] text-white/50">Pesquisar...</span>
+          </div>
+          <Search className="w-3 h-3 text-white/50" />
+        </div>
+
+        {/* Grid de Apps Realista */}
+        <div className="grid grid-cols-4 gap-y-3.5 gap-x-2 my-auto px-0.5">
+          {/* WhatsApp */}
+          <div
+            onClick={c.channel === 'whatsapp' ? onOpenApp : undefined}
+            className="flex flex-col items-center gap-1 group cursor-pointer relative"
+          >
+            <div className="relative w-10 h-10 rounded-2xl bg-[#25D366] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <MessageSquare className="w-4.5 h-4.5" />
+              {notificationArrived && c.channel === 'whatsapp' && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-bounce shadow">
+                  1
+                </span>
+              )}
+            </div>
+            <span className="text-[9.5px] text-white/80 font-medium">WhatsApp</span>
+          </div>
+
+          {/* Mensagens SMS */}
+          <div
+            onClick={c.channel === 'sms' ? onOpenApp : undefined}
+            className="flex flex-col items-center gap-1 group cursor-pointer relative"
+          >
+            <div className="relative w-10 h-10 rounded-2xl bg-[#007aff] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <MessageCircle className="w-4.5 h-4.5" />
+              {notificationArrived && c.channel === 'sms' && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-bounce shadow">
+                  1
+                </span>
+              )}
+            </div>
+            <span className="text-[9.5px] text-white/80 font-medium">Mensagens</span>
+          </div>
+
+          {/* Banco Digital */}
+          <div
+            onClick={c.channel === 'push' ? onOpenApp : undefined}
+            className="flex flex-col items-center gap-1 group cursor-pointer relative"
+          >
+            <div className="relative w-10 h-10 rounded-2xl bg-[#820ad1] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <CreditCard className="w-4.5 h-4.5" />
+              {notificationArrived && c.channel === 'push' && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-bounce shadow">
+                  1
+                </span>
+              )}
+            </div>
+            <span className="text-[9.5px] text-white/80 font-medium">Meu Banco</span>
+          </div>
+
+          {/* Galeria */}
+          <div className="flex flex-col items-center gap-1 group cursor-pointer">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <Camera className="w-4.5 h-4.5" />
+            </div>
+            <span className="text-[9.5px] text-white/80 font-medium">Galeria</span>
+          </div>
+
+          {/* Música */}
+          <div className="flex flex-col items-center gap-1 group cursor-pointer">
+            <div className="w-10 h-10 rounded-2xl bg-[#1db954] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <Music className="w-4.5 h-4.5" />
+            </div>
+            <span className="text-[9.5px] text-white/80 font-medium">Música</span>
+          </div>
+
+          {/* Internet */}
+          <div className="flex flex-col items-center gap-1 group cursor-pointer">
+            <div className="w-10 h-10 rounded-2xl bg-white text-slate-800 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <Globe className="w-4.5 h-4.5 text-sky-600" />
+            </div>
+            <span className="text-[9.5px] text-white/80 font-medium">Internet</span>
+          </div>
+
+          {/* Ajustes */}
+          <div className="flex flex-col items-center gap-1 group cursor-pointer">
+            <div className="w-10 h-10 rounded-2xl bg-slate-700 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <Settings className="w-4.5 h-4.5" />
+            </div>
+            <span className="text-[9.5px] text-white/80 font-medium">Ajustes</span>
+          </div>
+
+          {/* Telefone */}
+          <div
+            onClick={c.channel === 'call' ? onOpenApp : undefined}
+            className="flex flex-col items-center gap-1 group cursor-pointer relative"
+          >
+            <div className="relative w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <Phone className="w-4.5 h-4.5" />
+              {notificationArrived && c.channel === 'call' && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-bounce shadow">
+                  !
+                </span>
+              )}
+            </div>
+            <span className="text-[9.5px] text-white/80 font-medium">Telefone</span>
+          </div>
+        </div>
+
+        {/* Rodapé da Tela Inicial */}
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={onOpenApp}
+            className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-center text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition"
+          >
+            {notificationArrived ? (
+              <span className="flex items-center gap-1 text-emerald-300 animate-pulse">
+                👉 Toque para abrir a notificação
+              </span>
+            ) : (
+              <span>Você está navegando no celular...</span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -847,6 +979,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   onPerformAction,
   executedActionIds,
   actionHistory,
+  onAppOpenChange,
 }) => {
   const [vibrateKey, setVibrateKey] = useState(0);
   const [activeModal, setActiveModal] = useState<'link' | 'contact' | 'toast' | null>(null);
@@ -858,19 +991,22 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setIsBlocked(false);
     setActiveModal(null);
     setIsUnlocked(false);
+    onAppOpenChange?.(false);
     setVibrateKey((k) => k + 1);
-  }, [scamCase.id]);
+  }, [scamCase.id, onAppOpenChange]);
 
   useEffect(() => {
     if (stamped) {
       sound.playStampThud();
       setIsUnlocked(true);
+      onAppOpenChange?.(true);
     }
-  }, [stamped]);
+  }, [stamped, onAppOpenChange]);
 
   const handleOpenApp = () => {
     sound.playKeypress();
     setIsUnlocked(true);
+    onAppOpenChange?.(true);
   };
 
   const handleLinkClick = (url: string) => {
@@ -992,7 +1128,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 transition={{ duration: 0.25 }}
                 className="h-full"
               >
-                <LockScreen
+                <HomeScreen
                   c={scamCase}
                   onOpenApp={handleOpenApp}
                   onRejectCall={handleHangup}
