@@ -254,6 +254,116 @@ class SoundEngine {
     }
   }
 
+  // Realistic call pickup sound (relay click + slight line open pop)
+  public playCallPickup() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(320, now + 0.08);
+
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch {}
+  }
+
+  // Realistic call hangup sound (sharp disconnect pop + 3 fast busy beeps)
+  public playCallHangup() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Disconnect pop
+      const popOsc = this.ctx.createOscillator();
+      const popGain = this.ctx.createGain();
+      popOsc.type = 'square';
+      popOsc.frequency.setValueAtTime(150, now);
+      popGain.gain.setValueAtTime(0.09, now);
+      popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      popOsc.connect(popGain);
+      popGain.connect(this.ctx.destination);
+      popOsc.start(now);
+      popOsc.stop(now + 0.05);
+
+      // 3 fast busy beeps (425Hz European/BR standard)
+      [0.12, 0.38, 0.64].forEach((offset) => {
+        if (!this.ctx) return;
+        const beepOsc = this.ctx.createOscillator();
+        const beepGain = this.ctx.createGain();
+        beepOsc.type = 'sine';
+        beepOsc.frequency.setValueAtTime(425, now + offset);
+        beepGain.gain.setValueAtTime(0.08, now + offset);
+        beepGain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.16);
+        beepOsc.connect(beepGain);
+        beepGain.connect(this.ctx.destination);
+        beepOsc.start(now + offset);
+        beepOsc.stop(now + offset + 0.16);
+      });
+    } catch {}
+  }
+
+  // Voice synthesis for scammer / characters using native Web Speech API (pt-BR)
+  public speakScammer(text: string, onEnd?: () => void) {
+    if (!this.enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      onEnd?.();
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+      // Clean markdown, links and special chars from text for spoken dialogue
+      const cleanText = text
+        .replace(/https?:\/\/\S+/gi, 'link enviado')
+        .replace(/[*_#`~]/g, '')
+        .replace(/0800\s*(\d{3})\s*(\d{4})/g, 'zero oitocentos, $1, $2')
+        .replace(/R\$\s*([\d.,]+)/g, '$1 reais')
+        .trim();
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 1.08; // natural fast-paced urgent delivery
+      utterance.pitch = 0.98; // convincing authoritative pitch
+
+      // Select pt-BR voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const brVoice = voices.find((v) => v.lang === 'pt-BR' || v.lang.startsWith('pt'));
+      if (brVoice) {
+        utterance.voice = brVoice;
+      }
+
+      utterance.onend = () => onEnd?.();
+      utterance.onerror = () => onEnd?.();
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      onEnd?.();
+    }
+  }
+
+  // Stop active speech synthesis immediately
+  public stopSpeaking() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+  }
+
   // Heavy rubber stamp impact thud
   public playStampThud() {
     if (!this.enabled) return;

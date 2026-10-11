@@ -395,10 +395,16 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 <div className="rounded-xl border border-desk-line bg-desk/70 p-4 text-center space-y-2">
                   <div className="flex items-center justify-center gap-2 text-xs text-marker font-mono uppercase font-bold">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                    <span>Acompanhe o celular: remetente digitando...</span>
+                    <span>
+                      {current.channel === 'call'
+                        ? 'Acompanhe o celular: chamada telefônica em andamento...'
+                        : 'Acompanhe o celular: remetente digitando...'}
+                    </span>
                   </div>
                   <p className="text-xs text-neutral-300 font-medium">
-                    Foque na tela do aparelho e acompanhe a mensagem conforme ela chega. As dúvidas investigativas serão liberadas logo a seguir.
+                    {current.channel === 'call'
+                      ? 'Atenda a ligação no aparelho e ouça a exigência do atendente. As dúvidas investigativas serão liberadas assim que o roteiro do suspeito terminar.'
+                      : 'Foque na tela do aparelho e acompanhe a mensagem conforme ela chega. As dúvidas investigativas serão liberadas logo a seguir.'}
                   </p>
                 </div>
               ) : (

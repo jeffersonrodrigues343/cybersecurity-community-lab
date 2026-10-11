@@ -32,6 +32,8 @@ import {
   FileText,
   CheckCircle2,
   Lightbulb,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import type { ScamCase, InteractiveAction, InvestigativeClue } from '../data/scamsData';
 import { sound } from '../utils/audio';
@@ -159,7 +161,11 @@ const LockScreen = ({
               </p>
 
               <div className="mt-2.5 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-emerald-300 font-semibold">
-                <span className="animate-pulse">👉 Toque para abrir ou arraste para cima</span>
+                <span className="animate-pulse">
+                  {c.channel === 'call'
+                    ? '📞 Chamada Recebida • Toque para atender'
+                    : '👉 Toque para abrir ou arraste para cima'}
+                </span>
                 <ChevronRight className="w-3.5 h-3.5 text-white/60 group-hover:translate-x-0.5 transition" />
               </div>
             </motion.div>
@@ -1213,7 +1219,40 @@ const SmsScreen = ({
 };
 
 // ============================================================================
-// CHAMADA TELEFÔNICA INTERATIVA (0800 CENTRAL FALSA)
+// COMPONENTE DE ONDA DE ÁUDIO (VISUALIZADOR DA VOZ NA LIGAÇÃO)
+// ============================================================================
+const AudioWaveform = ({ active }: { active: boolean }) => (
+  <div className="flex items-center gap-0.5 h-4 px-1.5 py-0.5 rounded-full bg-white/10">
+    {[0, 1, 2, 3, 4].map((i) => (
+      <motion.span
+        key={i}
+        animate={
+          active
+            ? { height: ['4px', '14px', '6px', '16px', '4px'] }
+            : { height: '3px' }
+        }
+        transition={
+          active
+            ? { repeat: Infinity, duration: 0.5 + i * 0.12, ease: 'easeInOut' }
+            : { duration: 0.2 }
+        }
+        className={`w-0.5 rounded-full ${
+          active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-neutral-500'
+        }`}
+      />
+    ))}
+  </div>
+);
+
+// Formatar segundos em cronômetro telefônico mm:ss
+const formatCallTimer = (sec: number) => {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};
+
+// ============================================================================
+// CHAMADA TELEFÔNICA INTERATIVA ESTILO JOGO INDIE (0800 FALSA CENTRAL)
 // ============================================================================
 const CallScreen = ({
   c,
@@ -1223,6 +1262,10 @@ const CallScreen = ({
   stamped,
   onHangup,
   onVerdict,
+  onOpenNotes,
+  inspectedClueCount = 0,
+  onBackToHome,
+  onStoryDeliveredChange,
 }: {
   c: ScamCase;
   onPerformAction: (action: InteractiveAction) => void;
@@ -1231,108 +1274,420 @@ const CallScreen = ({
   stamped: Verdict;
   onHangup: () => void;
   onVerdict?: (v: 'scam' | 'safe') => void;
+  onOpenNotes?: () => void;
+  inspectedClueCount?: number;
+  onBackToHome?: () => void;
+  onStoryDeliveredChange?: (delivered: boolean) => void;
 }) => {
   const number = findContactNumber(c);
+  const [callState, setCallState] = useState<'ringing' | 'connected' | 'ended'>('ringing');
+  const [callSeconds, setCallSeconds] = useState(0);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceMuted, setVoiceMuted] = useState(false);
+  const [transcriptLines, setTranscriptLines] = useState<{ sender: 'caller' | 'player'; text: string }[]>([]);
+  const [hasDeliveredTrap, setHasDeliveredTrap] = useState(false);
+
+  const onStoryDeliveredChangeRef = useRef(onStoryDeliveredChange);
+  onStoryDeliveredChangeRef.current = onStoryDeliveredChange;
+
+  // Extrai a fala inicial do atendente
+  const rawCallerSpeech = (() => {
+    const lines = c.messageContent.split(/\n+/).filter(Boolean);
+    const speech = lines.find((l) => /atendente|central|olá|identificamos|falo com/i.test(l)) || lines[0] || c.messageContent;
+    return speech.replace(/^[A-Za-z\s()]+:\s*"?/, '').replace(/"?$/, '').trim();
+  })();
+
+  // Efeito de toque e vibração enquanto o telefone está tocando
+  useEffect(() => {
+    if (callState !== 'ringing') return;
+
+    sound.playPhoneRingtone();
+    sound.playPhoneVibrate();
+
+    const ringInterval = setInterval(() => {
+      sound.playPhoneRingtone();
+      sound.playPhoneVibrate();
+    }, 2800);
+
+    return () => clearInterval(ringInterval);
+  }, [callState]);
+
+  // Cronômetro da chamada conectada
+  useEffect(() => {
+    if (callState !== 'connected') return;
+    const timer = setInterval(() => {
+      setCallSeconds((s) => s + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [callState]);
+
+  // Limpeza de síntese de voz ao desmontar
+  useEffect(() => {
+    return () => {
+      sound.stopSpeaking();
+    };
+  }, []);
+
+  // Atender chamada
+  const handleAnswerCall = () => {
+    sound.playCallPickup();
+    setCallState('connected');
+    setCallSeconds(1);
+
+    const firstSpeech = rawCallerSpeech;
+    setTranscriptLines([{ sender: 'caller', text: firstSpeech }]);
+    setIsSpeaking(true);
+
+    if (!voiceMuted) {
+      sound.speakScammer(firstSpeech, () => {
+        setIsSpeaking(false);
+      });
+    } else {
+      setTimeout(() => setIsSpeaking(false), 2000);
+    }
+  };
+
+  // Desligar chamada
+  const handleEndCall = () => {
+    sound.stopSpeaking();
+    sound.playCallHangup();
+    setCallState('ended');
+    setIsSpeaking(false);
+    onHangup();
+  };
+
+  // Alternar voz mudo
+  const handleToggleVoiceMute = () => {
+    if (!voiceMuted) {
+      sound.stopSpeaking();
+      setIsSpeaking(false);
+      setVoiceMuted(true);
+    } else {
+      setVoiceMuted(false);
+    }
+  };
+
+  // Ações de diálogo do jogador
   const availableActions = (c.interactiveActions || []).filter(
     (act) => !executedActionIds.includes(act.id),
   );
 
-  return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-[#1c1c1e] via-[#000000] to-[#1c1c1e] text-white select-none">
-      <StatusBar time={c.time} dark />
+  const handlePlayerReply = (act: InteractiveAction) => {
+    sound.playKeypress();
+    setTranscriptLines((prev) => [...prev, { sender: 'player', text: act.label }]);
+    onPerformAction(act);
 
-      <div className="flex flex-col items-center pt-5 pb-3">
-        <motion.div
-          animate={{ scale: [1, 1.08, 1] }}
-          transition={{ repeat: Infinity, duration: 1.8 }}
-          className="w-18 h-18 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-3xl font-bold shadow-2xl"
-        >
-          {c.sender.charAt(0)}
-        </motion.div>
-        <div className="text-lg font-bold mt-2.5 text-center px-4">{c.sender}</div>
-        <div className="text-xs text-[#8e8e93] font-mono mt-0.5">{number ?? 'Chamada recebida'}</div>
-        <div className="text-xs text-emerald-400 mt-1 font-semibold flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>Em ligação... 00:14</span>
-        </div>
-      </div>
+    setIsSpeaking(true);
+    setTimeout(() => {
+      const reply = act.replyMessage.replace(/^[A-Za-z\s()]+:\s*"?/, '').replace(/"?$/, '').trim();
+      setTranscriptLines((prev) => [...prev, { sender: 'caller', text: reply }]);
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-3 space-y-2">
-        <div className="p-2.5 rounded-xl bg-white/10 border border-white/10 text-xs text-neutral-300">
-          <div className="text-[10px] uppercase font-mono text-amber-400 font-bold mb-1">
-            Áudio da Ligação:
-          </div>
-          <p className="leading-relaxed text-white text-[13px]">{c.messageContent}</p>
-        </div>
+      // Armadilha entregue!
+      setHasDeliveredTrap(true);
+      onStoryDeliveredChangeRef.current?.(true);
 
-        {actionHistory.map((item, idx) => (
+      if (!voiceMuted) {
+        sound.speakScammer(reply, () => {
+          setIsSpeaking(false);
+        });
+      } else {
+        setTimeout(() => setIsSpeaking(false), 2200);
+      }
+    }, 450);
+  };
+
+  // Sincroniza entrega caso venha de histórico prévio
+  useEffect(() => {
+    if (actionHistory.length > 0 && !hasDeliveredTrap) {
+      setHasDeliveredTrap(true);
+      onStoryDeliveredChangeRef.current?.(true);
+    }
+  }, [actionHistory.length, hasDeliveredTrap]);
+
+  // ==========================================================================
+  // ESTADO 1: O CELULAR ESTÁ TOCANDO (TELA DE CHAMADA RECEBIDA)
+  // ==========================================================================
+  if (callState === 'ringing') {
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-b from-[#0f172a] via-[#020617] to-black text-white select-none justify-between p-4 relative overflow-hidden">
+        {/* Anéis pulsantes de chamada telefônica */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-1"
+            animate={{ scale: [1, 1.8, 2.4], opacity: [0.35, 0.15, 0] }}
+            transition={{ repeat: Infinity, duration: 2.2, ease: 'easeOut' }}
+            className="w-48 h-48 rounded-full border border-emerald-500/40"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.5, 2], opacity: [0.45, 0.2, 0] }}
+            transition={{ repeat: Infinity, duration: 2.2, delay: 0.5, ease: 'easeOut' }}
+            className="w-48 h-48 rounded-full border border-emerald-400/30"
+          />
+        </div>
+
+        <StatusBar time={c.time} dark />
+
+        {/* Identificador da Chamada (BINA) */}
+        <div className="flex flex-col items-center pt-8 z-10 text-center">
+          <motion.div
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ repeat: Infinity, duration: 1.8 }}
+            className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-700 via-teal-600 to-sky-600 p-1 shadow-[0_0_30px_rgba(16,185,129,0.35)]"
           >
-            <div className="p-1.5 rounded-xl bg-[#0a84ff] text-white text-xs ml-3 shadow-sm">
-              <span className="font-mono text-[8.5px] opacity-75 block">Você perguntou:</span>
-              {item.player}
+            <div className="w-full h-full rounded-full bg-[#0f172a] flex items-center justify-center text-3xl font-bold font-display">
+              {c.sender.charAt(0)}
             </div>
-            <div className="p-1.5 rounded-xl bg-white/10 border border-white/15 text-white/90 text-xs mr-3 shadow-sm">
-              <span className="font-mono text-[8.5px] opacity-75 block text-sky-300">Golpista respondeu:</span>
-              {item.reply}
+            <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shadow-md animate-pulse">
+              <Phone className="w-3.5 h-3.5 text-white" />
             </div>
           </motion.div>
-        ))}
+
+          <h3 className="text-xl font-bold font-display mt-4 text-white drop-shadow">
+            {c.sender}
+          </h3>
+          <div className="text-xs font-mono text-emerald-400 mt-1 bg-emerald-500/15 px-3 py-0.5 rounded-full border border-emerald-500/30 font-semibold">
+            {number ?? '0800 729 0001'}
+          </div>
+          <div className="text-[11px] text-white/60 mt-1.5 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>Chamada de Voz Recebida • Tocando...</span>
+          </div>
+        </div>
+
+        {/* Controles de Atender e Recusar */}
+        <div className="z-10 pb-6 space-y-4">
+          <div className="text-[11px] text-center text-white/70 font-medium animate-pulse">
+            👉 Atenda para ouvir o que o atendente tem a dizer
+          </div>
+
+          <div className="flex items-center justify-around px-6">
+            {/* Botão Recusar */}
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleEndCall}
+                className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-750 flex items-center justify-center shadow-[0_8px_20px_rgba(220,38,38,0.4)] cursor-pointer active:scale-90 transition transform"
+                title="Recusar Chamada"
+              >
+                <PhoneOff className="w-6 h-6 text-white" />
+              </button>
+              <span className="text-[11px] text-white/70 font-medium">Recusar</span>
+            </div>
+
+            {/* Botão Atender */}
+            <div className="flex flex-col items-center gap-1.5">
+              <motion.button
+                type="button"
+                onClick={handleAnswerCall}
+                animate={{ scale: [1, 1.08, 1] }}
+                transition={{ repeat: Infinity, duration: 1.2 }}
+                className="w-18 h-18 rounded-full bg-emerald-500 hover:bg-emerald-450 flex items-center justify-center shadow-[0_10px_25px_rgba(16,185,129,0.55)] cursor-pointer active:scale-95 transition transform border-2 border-white/30"
+                title="Atender Chamada"
+              >
+                <Phone className="w-8 h-8 text-white animate-bounce" />
+              </motion.button>
+              <span className="text-xs text-emerald-300 font-bold uppercase tracking-wider">
+                Atender
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // ESTADO 2: LIGAÇÃO CONECTADA (CONVERSA VIVA ESTILO JOGO INDIE)
+  // ==========================================================================
+  return (
+    <div className="flex flex-col h-full bg-gradient-to-b from-[#0b101b] via-[#050811] to-black text-white select-none">
+      <StatusBar time={c.time} dark />
+
+      {/* Cabeçalho da Ligação em Andamento */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-slate-900/60 backdrop-blur-md">
+        <button
+          type="button"
+          onClick={onBackToHome}
+          className="flex items-center gap-1 text-[11px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer active:scale-95 transition"
+          title="Minimizar chamada e ver celular"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>Início</span>
+        </button>
+
+        <div className="flex flex-col items-center leading-tight">
+          <span className="font-bold text-xs text-white truncate max-w-[150px]">
+            {c.sender}
+          </span>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-[10px] font-mono text-emerald-300 font-bold">
+              {callState === 'connected' ? formatCallTimer(callSeconds) : 'Encerrada'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <AudioWaveform active={isSpeaking} />
+          <button
+            type="button"
+            onClick={handleToggleVoiceMute}
+            className={`p-1.5 rounded-full border cursor-pointer active:scale-90 transition ${
+              voiceMuted
+                ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                : 'bg-white/10 border-white/20 text-emerald-400'
+            }`}
+            title={voiceMuted ? 'Voz desativada (Clique para ligar voz)' : 'Voz ativa (Clique para mutar)'}
+          >
+            {voiceMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
 
-      {!stamped && (
-        <div className="p-2 bg-white/10 border-t border-white/15 space-y-1.5">
-          {availableActions.length > 0 && (
-            <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
+      {/* Área da Conversa: Balões Transcritos da Ligação */}
+      <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-2.5">
+        {/* Banner de Aviso de Canal Telefônico */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-[10px] text-white/70">
+          <span className="flex items-center gap-1 font-mono">
+            <Phone className="w-3 h-3 text-emerald-400" />
+            <span>Linha conectada com {number ?? '0800 729 0001'}</span>
+          </span>
+          {isSpeaking && (
+            <span className="text-emerald-400 font-bold animate-pulse font-mono">
+              Falando agora... 🎙️
+            </span>
+          )}
+        </div>
+
+        {/* Linhas da Conversa */}
+        {transcriptLines.map((line, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className={`p-2.5 rounded-2xl max-w-[92%] shadow-md text-xs leading-relaxed ${
+              line.sender === 'caller'
+                ? 'bg-slate-900/90 border border-slate-700/60 text-white rounded-tl-sm mr-auto'
+                : 'bg-emerald-600/90 text-white rounded-tr-sm ml-auto border border-emerald-400/30'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 font-mono text-[9px] uppercase font-bold mb-1 opacity-75">
+              {line.sender === 'caller' ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-emerald-300">Atendente na Linha:</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sky-200">Você respondeu:</span>
+                </>
+              )}
+            </div>
+            <p className="font-medium text-[12px]">{line.text}</p>
+          </motion.div>
+        ))}
+
+        {/* CARD DA VIRADA NARRATIVA (SURGE QUANDO O GOLPISTA SOLTA A ARMADILHA DO PIX) */}
+        {hasDeliveredTrap && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900/80 to-amber-950/60 border-2 border-amber-500/50 shadow-xl space-y-2"
+          >
+            <div className="flex items-center gap-1.5 text-amber-300 font-display font-bold text-xs uppercase tracking-wider">
+              <Lightbulb className="w-4 h-4 text-amber-400" />
+              <span>O Momento da Virada: Repare no Golpe!</span>
+            </div>
+            <p className="text-[11px] text-neutral-200 leading-relaxed font-medium">
+              O atendente acabou de exigir que você faça um Pix para uma suposta &quot;Conta de Segurança&quot;. <strong>O banco NUNCA pede transferências Pix de clientes para cancelar ou estornar transações!</strong>
+            </p>
+            {onOpenNotes && (
+              <button
+                type="button"
+                onClick={onOpenNotes}
+                className="w-full py-1.5 px-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-xl text-amber-300 text-[10.5px] font-bold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition"
+              >
+                <FileText className="w-3.5 h-3.5 text-amber-400" />
+                <span>Consultar Dúvidas Forenses no Bloco de Notas ({inspectedClueCount}/{c.clues.length})</span>
+              </button>
+            )}
+          </motion.div>
+        )}
+      </div>
+
+      {/* Rodapé: Respostas Interativas do Jogador + Botão de Desligar + Veredito */}
+      <div className="p-2.5 bg-slate-900/80 border-t border-white/10 space-y-2">
+        {/* Escolhas de Diálogo do Jogador (se a armadilha ainda não foi concluída) */}
+        {callState === 'connected' && availableActions.length > 0 && !hasDeliveredTrap && (
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-mono text-white/60 uppercase font-bold flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-emerald-400" /> Escolha sua fala na chamada:
+            </span>
+            <div className="space-y-1 max-h-28 overflow-y-auto pr-0.5">
               {availableActions.map((act) => (
                 <button
                   key={act.id}
                   type="button"
-                  onClick={() => {
-                    sound.playBlip();
-                    onPerformAction(act);
-                  }}
-                  className="w-full text-left bg-white/15 hover:bg-white/25 border border-white/20 text-white rounded-lg px-2 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center justify-between gap-1.5"
+                  onClick={() => handlePlayerReply(act)}
+                  className="w-full text-left bg-white/10 hover:bg-white/20 border border-white/15 text-white rounded-xl px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center justify-between gap-1.5 active:scale-98"
                 >
-                  <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
-                  <span className="text-[9px] font-mono bg-sky-500/30 text-sky-300 px-1.5 py-0.5 rounded shrink-0 font-bold">
+                  <span className="text-[11px] leading-snug line-clamp-2">{act.label}</span>
+                  <span className="text-[9px] font-mono bg-emerald-500/30 text-emerald-300 px-1.5 py-0.5 rounded shrink-0 font-bold">
                     Falar ➔
                   </span>
                 </button>
               ))}
             </div>
-          )}
-
-          <div className="flex justify-around items-center px-4 pt-1">
-            <button
-              type="button"
-              onClick={() => onVerdict?.('safe')}
-              className="px-3 py-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold text-[11px] cursor-pointer"
-            >
-              É Seguro
-            </button>
-            <button
-              type="button"
-              onClick={onHangup}
-              className="w-12 h-12 rounded-full bg-[#ff3b30] flex items-center justify-center shadow-lg shadow-red-500/30 cursor-pointer active:scale-90 transition-transform"
-              title="Desligar na cara"
-            >
-              <PhoneOff className="w-5 h-5 text-white" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onVerdict?.('scam')}
-              className="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white font-bold text-[11px] cursor-pointer"
-            >
-              É Golpe!
-            </button>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Controles de Chamada e Veredito (Disponíveis após ouvir a abordagem) */}
+        {!stamped ? (
+          <div className="flex items-center justify-between gap-2 pt-0.5">
+            {onVerdict && (
+              <button
+                type="button"
+                onClick={() => onVerdict('safe')}
+                className="flex-1 py-2 px-2 bg-emerald-700/80 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>É Seguro</span>
+              </button>
+            )}
+
+            {/* Botão de Desligar */}
+            {callState === 'connected' ? (
+              <button
+                type="button"
+                onClick={handleEndCall}
+                className="w-11 h-11 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center shadow-lg shadow-red-500/30 cursor-pointer active:scale-90 transition shrink-0"
+                title="Desligar na cara do golpista"
+              >
+                <PhoneOff className="w-5 h-5 text-white" />
+              </button>
+            ) : (
+              <div className="text-[10px] font-mono text-red-400 font-bold bg-red-500/15 px-2.5 py-1 rounded-lg border border-red-500/25">
+                Desligado
+              </div>
+            )}
+
+            {onVerdict && (
+              <button
+                type="button"
+                onClick={() => onVerdict('scam')}
+                className="flex-1 py-2 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>🚨 É Golpe!</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-1.5 text-xs font-bold text-white/90 bg-white/10 rounded-xl">
+            {stamped === 'scam' ? '🚨 Veredito emitido: É GOLPE!' : '✅ Veredito emitido: É SEGURO'}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -1505,17 +1860,29 @@ const HomeScreen = ({
               ? 'bg-[#25D366]'
               : c.channel === 'push'
               ? 'bg-[#820ad1]'
+              : c.channel === 'call'
+              ? 'bg-emerald-500'
               : 'bg-[#007aff]'
           }`}
         >
-          {c.channel === 'whatsapp' ? <MessageSquare className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+          {c.channel === 'whatsapp' ? (
+            <MessageSquare className="w-3.5 h-3.5" />
+          ) : c.channel === 'call' ? (
+            <Phone className="w-3.5 h-3.5" />
+          ) : (
+            <Bell className="w-3.5 h-3.5" />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-[11.5px] font-bold text-white truncate flex items-center gap-1.5">
             <span>{cleanName(c.sender)}</span>
-            <span className="text-[9px] text-emerald-400 font-normal animate-pulse">• Nova mensagem</span>
+            <span className="text-[9px] text-emerald-400 font-normal animate-pulse">
+              {c.channel === 'call' ? '• Chamada tocando' : '• Nova mensagem'}
+            </span>
           </div>
-          <div className="text-[10.5px] text-white/70 truncate">{c.messageContent}</div>
+          <div className="text-[10.5px] text-white/70 truncate">
+            {c.channel === 'call' ? 'Toque para atender a ligação telefônica' : c.messageContent}
+          </div>
         </div>
         <ChevronRight className="w-4 h-4 text-white/60 group-hover:translate-x-0.5 transition" />
       </div>
@@ -1868,6 +2235,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             stamped={stamped}
             onHangup={handleHangup}
             onVerdict={onVerdict}
+            onOpenNotes={handleOpenNotes}
+            inspectedClueCount={inspectedClueIds.length}
+            onBackToHome={() => setActiveApp('home')}
+            onStoryDeliveredChange={onStoryDeliveredChange}
           />
         );
       case 'push':
