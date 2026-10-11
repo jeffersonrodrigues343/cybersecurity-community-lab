@@ -531,6 +531,127 @@ class SoundEngine {
       // ignore
     }
   }
+
+  // Efeito Sonoro Imersivo: Boot inicial suave estilo Apple "Olá" / "Hello"
+  public playBootHelloChord() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Acorde cinematográfico D Major (D4, A4, D5, F#5) com harmônicos limpos
+      const chord = [
+        { freq: 293.66, delay: 0.0, gain: 0.08, dur: 1.6 },
+        { freq: 440.0, delay: 0.04, gain: 0.07, dur: 1.7 },
+        { freq: 587.33, delay: 0.08, gain: 0.09, dur: 1.9 },
+        { freq: 739.99, delay: 0.12, gain: 0.06, dur: 2.1 },
+      ];
+
+      chord.forEach(({ freq, delay, gain: maxGain, dur }) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + delay);
+
+        gain.gain.setValueAtTime(0.0001, now + delay);
+        gain.gain.exponentialRampToValueAtTime(maxGain, now + delay + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + dur);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now + delay);
+        osc.stop(now + delay + dur);
+      });
+    } catch {}
+  }
+
+  // Clique de destrave tátil e moderno da tela do celular
+  public playUnlockClick() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(480, now);
+      osc.frequency.exponentialRampToValueAtTime(240, now + 0.045);
+
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.045);
+    } catch {}
+  }
+
+  // Toque tátil e macio no teclado ao pesquisar ou interagir
+  public playKeyboardClick() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(380 + Math.random() * 50, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.025);
+
+      gain.gain.setValueAtTime(0.035, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.025);
+    } catch {}
+  }
+
+  // Tom de busca do Google realizada
+  public playGoogleSearch() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const notes = [
+        { freq: 659.25, time: 0, dur: 0.12 }, // E5
+        { freq: 880.0, time: 0.07, dur: 0.22 }, // A5
+      ];
+      notes.forEach(({ freq, time, dur }) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + time);
+
+        gain.gain.setValueAtTime(0.07, now + time);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + time + dur);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now + time);
+        osc.stop(now + time + dur);
+      });
+    } catch {}
+  }
 }
 
 export const sound = new SoundEngine();

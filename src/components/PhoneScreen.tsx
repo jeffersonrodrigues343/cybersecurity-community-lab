@@ -16,7 +16,6 @@ import {
   ExternalLink,
   ShieldCheck,
   ShieldAlert,
-  AlertTriangle,
   Globe,
   UserX,
   X,
@@ -638,6 +637,9 @@ const BankScreen = ({
 // ============================================================================
 // APP NAVEGADOR FORENSE (AUDITORIA DE LINKS POINT & CLICK)
 // ============================================================================
+// ============================================================================
+// APP NAVEGADOR FORENSE & GOOGLE BRASIL REALISTA (PESQUISA & AUDITORIA)
+// ============================================================================
 const BrowserScreen = ({
   c,
   url,
@@ -647,69 +649,313 @@ const BrowserScreen = ({
   url?: string;
   onBack: () => void;
 }) => {
+  const hasSpecificUrl = Boolean(url && url !== 'https://pesquisa-segura.com.br');
+  const [activeTab, setActiveTab] = useState<'google' | 'site'>(hasSpecificUrl ? 'site' : 'google');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
+
   const displayUrl = url || 'https://pesquisa-segura.com.br';
   const isSuspicious = c.isScam;
 
+  // Sugestões contextuais realistas para o caso atual
+  const getSuggestedQueries = () => {
+    const text = `${c.title} ${c.messageContent} ${c.sender}`.toLowerCase();
+    const suggestions: string[] = [];
+
+    if (text.includes('pix') || text.includes('banco') || text.includes('transferência') || c.category === 'pix') {
+      suggestions.push('banco liga pedindo confirmação de pix?');
+      suggestions.push('falsa central de segurança número 0800 é golpe');
+    }
+    if (text.includes('mãe') || text.includes('pai') || text.includes('filho') || text.includes('número novo')) {
+      suggestions.push('golpe do novo número filho pedindo dinheiro whatsapp');
+      suggestions.push('como saber se parente realmente trocou de zap');
+    }
+    if (text.includes('correios') || text.includes('encomenda') || text.includes('alfândega') || text.includes('taxa')) {
+      suggestions.push('sms correios taxa alfandegária retirada é golpe?');
+      suggestions.push('como rastrear encomenda no portal oficial correios');
+    }
+    if (text.includes('investimento') || text.includes('lucro') || text.includes('cripto') || text.includes('rendimento')) {
+      suggestions.push('promessa de 10% lucro ao dia é pirâmide?');
+      suggestions.push('como checar se corretora tem registro na cvm');
+    }
+
+    if (suggestions.length < 2) {
+      suggestions.push('como identificar mensagem golpista no celular');
+      suggestions.push('número desconhecido pedindo dinheiro no whatsapp');
+    }
+
+    return suggestions;
+  };
+
+  const handleExecuteSearch = (query: string) => {
+    if (!query.trim()) return;
+    sound.playGoogleSearch();
+    setSubmittedQuery(query.trim());
+    setSearchQuery(query.trim());
+  };
+
   return (
-    <div className="flex flex-col h-full bg-[#18181b] text-white select-none">
+    <div className="flex flex-col h-full bg-[#1e1e24] text-white select-none">
       <StatusBar time={c.time} dark />
 
-      <div className="px-2.5 py-2 border-b border-white/10 bg-[#27272a] space-y-1.5">
+      {/* Barra de Navegação Superior com Abas e URL */}
+      <div className="px-3 py-2 border-b border-white/10 bg-[#16161a] space-y-1.5">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onBack}
-            className="p-1 hover:bg-white/10 rounded-full cursor-pointer text-neutral-300"
+            className="p-1 hover:bg-white/10 rounded-full cursor-pointer text-neutral-300 active:scale-95 transition"
+            title="Voltar ao celular"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <div className="flex-1 bg-black/60 rounded-full px-3 py-1 flex items-center gap-1.5 text-[11px] border border-white/10 truncate">
-            {isSuspicious ? (
-              <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
-            ) : (
-              <Globe className="w-3 h-3 text-emerald-400 shrink-0" />
+
+          {/* Seletor de Modo: Google Brasil vs Inspecionar Site */}
+          <div className="flex-1 flex items-center bg-black/60 rounded-full p-0.5 border border-white/10 text-[11px]">
+            <button
+              type="button"
+              onClick={() => {
+                sound.playBlip();
+                setActiveTab('google');
+              }}
+              className={`flex-1 py-1 px-2 rounded-full font-semibold transition cursor-pointer flex items-center justify-center gap-1 ${
+                activeTab === 'google'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <Search className="w-3 h-3" />
+              <span>Google</span>
+            </button>
+
+            {hasSpecificUrl && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playBlip();
+                  setActiveTab('site');
+                }}
+                className={`flex-1 py-1 px-2 rounded-full font-semibold transition cursor-pointer flex items-center justify-center gap-1 ${
+                  activeTab === 'site'
+                    ? 'bg-emerald-600 text-white shadow'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Globe className="w-3 h-3" />
+                <span>Link ({displayUrl.replace(/https?:\/\//, '').slice(0, 12)}...)</span>
+              </button>
             )}
-            <span className="truncate font-mono text-[10px]">{displayUrl}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-3 flex flex-col justify-center items-center text-center">
-        <div
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl ${
-            isSuspicious
-              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-          }`}
-        >
-          {isSuspicious ? <ShieldAlert className="w-8 h-8" /> : <ShieldCheck className="w-8 h-8" />}
-        </div>
+      {/* Conteúdo: Google Brasil ou Inspecionar Link */}
+      <div className="flex-1 overflow-y-auto no-scrollbar">
+        {activeTab === 'google' ? (
+          <div className="min-h-full bg-white text-slate-800 p-3.5 flex flex-col">
+            {/* Logo do Google Brasil */}
+            <div className="flex flex-col items-center pt-2 pb-3">
+              <div className="flex items-center text-3xl font-bold tracking-tight select-none">
+                <span className="text-[#4285F4]">G</span>
+                <span className="text-[#EA4335]">o</span>
+                <span className="text-[#FBBC05]">o</span>
+                <span className="text-[#4285F4]">g</span>
+                <span className="text-[#34A853]">l</span>
+                <span className="text-[#EA4335]">e</span>
+                <span className="text-[10px] font-semibold text-slate-400 ml-1.5 align-top tracking-normal">
+                  Brasil
+                </span>
+              </div>
+            </div>
 
-        <div>
-          <h4 className="font-bold text-sm">
-            {isSuspicious ? '⚠️ Domínio Falso / Redirecionamento' : '✅ Conexão Criptografada e Segura'}
-          </h4>
-          <p className="text-[11px] text-neutral-300 mt-1 leading-relaxed">
-            {isSuspicious
-              ? 'O link verificado não pertence ao portal oficial e tenta capturar credenciais ou Pix!'
-              : 'O site possui certificado digital válido e pertence aos canais autênticos.'}
-          </p>
-        </div>
+            {/* Caixa de Pesquisa do Google */}
+            <div className="relative mb-3">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-300 rounded-full px-3 py-2 shadow-sm focus-within:shadow-md focus-within:border-blue-500 transition">
+                <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    sound.playKeyboardClick();
+                    setSearchQuery(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleExecuteSearch(searchQuery);
+                  }}
+                  placeholder="Pesquisar no Google Brasil..."
+                  className="flex-1 text-xs text-slate-800 placeholder-slate-400 bg-transparent outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <Mic className="w-3.5 h-3.5 text-blue-500 shrink-0 cursor-pointer" />
+              </div>
 
-        <div className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-left text-[10.5px] space-y-1">
-          <span className="text-[9px] font-mono text-neutral-400 uppercase font-bold block">
-            Auditoria de Domínio:
-          </span>
-          <div className="font-mono text-white text-[11px] break-all">{displayUrl}</div>
-        </div>
+              {searchQuery && !submittedQuery && (
+                <button
+                  type="button"
+                  onClick={() => handleExecuteSearch(searchQuery)}
+                  className="mt-2 w-full py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold shadow cursor-pointer active:scale-98 transition flex items-center justify-center gap-1"
+                >
+                  <Search className="w-3.5 h-3.5" /> Pesquisar
+                </button>
+              )}
+            </div>
 
-        <button
-          type="button"
-          onClick={onBack}
-          className="w-full py-2.5 bg-white text-black font-bold text-xs rounded-xl shadow-md cursor-pointer active:scale-95 transition"
-        >
-          ← Fechar Navegador e Voltar
-        </button>
+            {/* Sugestões de Pesquisa Rápida (Chips Investigativos) */}
+            <div className="mb-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                🔍 Dúvidas Frequentes da Investigação:
+              </span>
+              <div className="flex flex-col gap-1.5">
+                {getSuggestedQueries().map((q, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleExecuteSearch(q)}
+                    className="w-full text-left bg-slate-100 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 text-slate-700 hover:text-blue-700 rounded-xl px-2.5 py-1.5 text-[11px] font-medium transition cursor-pointer flex items-center justify-between group active:scale-98"
+                  >
+                    <span className="truncate">{q}</span>
+                    <span className="text-[10px] text-blue-600 group-hover:translate-x-0.5 transition font-bold shrink-0 ml-1">
+                      Pesquisar ➔
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Resultados de Pesquisa (SERP) */}
+            {submittedQuery && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-3 pt-1 border-t border-slate-200"
+              >
+                <div className="text-[10px] text-slate-500 font-medium">
+                  Aproximadamente 482.000 resultados para &quot;{submittedQuery}&quot;
+                </div>
+
+                {/* Resultado 1: G1 Segurança Digital */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 shadow-xs space-y-1">
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                    <span className="font-bold text-red-600">G1</span>
+                    <span>› tecnologia › seguranca-digital</span>
+                  </div>
+                  <h5 className="text-[12.5px] font-bold text-blue-700 leading-snug hover:underline cursor-pointer">
+                    Alerta de Fraude: Como golpistas usam urgência e falsos contatos para enganar vítimas
+                  </h5>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Especialistas da FEBRABAN e delegacias de crimes cibernéticos esclarecem: empresas sérias e bancos <b>nunca entram em contato solicitando transferências imediatas</b> para testes, estornos ou cancelamentos.
+                  </p>
+                  <div className="inline-flex items-center gap-1 text-[9.5px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full mt-1">
+                    <ShieldAlert className="w-3 h-3" /> Fato Verificado: Alerta Oficial
+                  </div>
+                </div>
+
+                {/* Resultado 2: FEBRABAN / Reclame Aqui */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 shadow-xs space-y-1">
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                    <span className="font-bold text-emerald-700">FEBRABAN</span>
+                    <span>› orientacoes › golpe-da-falsa-central</span>
+                  </div>
+                  <h5 className="text-[12.5px] font-bold text-blue-700 leading-snug hover:underline cursor-pointer">
+                    Cartilha Bancária: Bancos nunca pedem Pix para anular compras suspeitas
+                  </h5>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Se você recebeu uma ligação ou mensagem dizendo que sua conta foi invadida e que deve transferir seu dinheiro para uma &quot;chave de segurança&quot;, <b>isso é 100% golpe</b>. Desligue e confira o extrato no app oficial.
+                  </p>
+                  <div className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full mt-1">
+                    <ShieldCheck className="w-3 h-3" /> Fonte Verificada • FEBRABAN
+                  </div>
+                </div>
+
+                {/* Dica de Ação para o Jogador */}
+                <div className="bg-amber-50 border border-amber-300 rounded-xl p-2.5 text-center space-y-1">
+                  <span className="text-[11px] font-bold text-amber-900 block">
+                    💡 Informação confirmada na internet!
+                  </span>
+                  <span className="text-[10px] text-amber-800 block">
+                    Você já sabe como funciona. Volte ao celular para analisar as evidências e emitir seu veredito.
+                  </span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Botão de Fechar Navegador */}
+            <div className="mt-auto pt-4">
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-full py-2.5 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow cursor-pointer active:scale-95 transition"
+              >
+                ← Fechar Navegador e Voltar
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Aba: Inspecionar Link / Domínio Direto */
+          <div className="p-3.5 space-y-3 flex flex-col justify-center items-center text-center">
+            <div
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl ${
+                isSuspicious
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              }`}
+            >
+              {isSuspicious ? <ShieldAlert className="w-8 h-8" /> : <ShieldCheck className="w-8 h-8" />}
+            </div>
+
+            <div>
+              <h4 className="font-bold text-sm">
+                {isSuspicious ? '⚠️ Domínio Falso / Redirecionamento' : '✅ Conexão Criptografada e Segura'}
+              </h4>
+              <p className="text-[11px] text-neutral-300 mt-1 leading-relaxed">
+                {isSuspicious
+                  ? 'O endereço verificado não pertence ao portal oficial e tenta capturar credenciais ou Pix!'
+                  : 'O site possui certificado digital válido e pertence aos canais autênticos.'}
+              </p>
+            </div>
+
+            <div className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-left text-[10.5px] space-y-1">
+              <span className="text-[9px] font-mono text-neutral-400 uppercase font-bold block">
+                Auditoria de Domínio (Whois):
+              </span>
+              <div className="font-mono text-white text-[11px] break-all">{displayUrl}</div>
+              <div className="text-[10px] text-neutral-400 pt-1">
+                {isSuspicious
+                  ? 'Domínio registrado recentemente em servidor anônimo no exterior.'
+                  : 'Domínio registrado com CNPJ e autoridade certificadora válida.'}
+              </div>
+            </div>
+
+            <div className="w-full space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playBlip();
+                  setActiveTab('google');
+                }}
+                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
+              >
+                <Search className="w-3.5 h-3.5" /> Pesquisar sobre este golpe no Google
+              </button>
+
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-full py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl cursor-pointer active:scale-95 transition"
+              >
+                ← Fechar Navegador e Voltar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2033,6 +2279,7 @@ const LockBadge = () => (
 
 const HomeScreen = ({
   c,
+  notificationArrived = false,
   onOpenMessaging,
   onOpenNotes,
   onOpenBank,
@@ -2043,6 +2290,7 @@ const HomeScreen = ({
   browserLocked = false,
 }: {
   c: ScamCase;
+  notificationArrived?: boolean;
   onOpenMessaging: () => void;
   onOpenNotes: () => void;
   onOpenBank: () => void;
@@ -2066,48 +2314,58 @@ const HomeScreen = ({
 
       <StatusBar time={c.time} dark />
 
-      {/* Banner de Notificação no Topo da HomeScreen */}
-      <div
-        onClick={onOpenMessaging}
-        className="mx-3 mt-1.5 bg-slate-900/95 border border-emerald-400/50 rounded-2xl p-2.5 backdrop-blur-xl shadow-lg cursor-pointer active:scale-98 transition flex items-center gap-2 group ring-1 ring-emerald-400/30"
-      >
-        <div
-          className={`w-6 h-6 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shadow ${
-            c.channel === 'whatsapp'
-              ? 'bg-[#25D366]'
-              : c.channel === 'push'
-              ? 'bg-[#820ad1]'
-              : c.channel === 'call'
-              ? 'bg-emerald-500'
-              : 'bg-[#007aff]'
-          }`}
-        >
-          {c.channel === 'whatsapp' ? (
-            <MessageSquare className="w-3.5 h-3.5" />
-          ) : c.channel === 'call' ? (
-            <Phone className="w-3.5 h-3.5" />
-          ) : (
-            <Bell className="w-3.5 h-3.5" />
+      {/* Banner de Notificação no Topo da HomeScreen (Só surge após o suspense de 10-15s) */}
+      <div className="min-h-[58px] flex items-center justify-center">
+        <AnimatePresence>
+          {notificationArrived && (
+            <motion.div
+              initial={{ y: -50, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -40, opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              onClick={onOpenMessaging}
+              className="w-full mx-3 bg-slate-900/95 border border-emerald-400/50 rounded-2xl p-2.5 backdrop-blur-xl shadow-lg cursor-pointer active:scale-98 transition flex items-center gap-2 group ring-1 ring-emerald-400/30"
+            >
+              <div
+                className={`w-6 h-6 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shadow ${
+                  c.channel === 'whatsapp'
+                    ? 'bg-[#25D366]'
+                    : c.channel === 'push'
+                    ? 'bg-[#820ad1]'
+                    : c.channel === 'call'
+                    ? 'bg-emerald-500'
+                    : 'bg-[#007aff]'
+                }`}
+              >
+                {c.channel === 'whatsapp' ? (
+                  <MessageSquare className="w-3.5 h-3.5" />
+                ) : c.channel === 'call' ? (
+                  <Phone className="w-3.5 h-3.5" />
+                ) : (
+                  <Bell className="w-3.5 h-3.5" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11.5px] font-bold text-white truncate flex items-center gap-1.5">
+                  <span>{cleanName(c.sender)}</span>
+                  <span className="text-[9px] text-emerald-400 font-normal animate-pulse">
+                    {c.channel === 'call' ? '• Chamada tocando' : '• Nova mensagem'}
+                  </span>
+                </div>
+                <div className="text-[10.5px] text-white/70 truncate">
+                  {c.channel === 'call' ? 'Toque para atender a ligação telefônica' : c.messageContent}
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-white/60 group-hover:translate-x-0.5 transition" />
+            </motion.div>
           )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[11.5px] font-bold text-white truncate flex items-center gap-1.5">
-            <span>{cleanName(c.sender)}</span>
-            <span className="text-[9px] text-emerald-400 font-normal animate-pulse">
-              {c.channel === 'call' ? '• Chamada tocando' : '• Nova mensagem'}
-            </span>
-          </div>
-          <div className="text-[10.5px] text-white/70 truncate">
-            {c.channel === 'call' ? 'Toque para atender a ligação telefônica' : c.messageContent}
-          </div>
-        </div>
-        <ChevronRight className="w-4 h-4 text-white/60 group-hover:translate-x-0.5 transition" />
+        </AnimatePresence>
       </div>
 
       {/* CONTEÚDO DA TELA INICIAL */}
-      <div className="flex-1 flex flex-col justify-between p-3.5 z-10 pt-2">
+      <div className="flex-1 flex flex-col justify-between p-3.5 z-10 pt-1">
         {/* Widget de Relógio & Clima */}
-        <div className="flex flex-col items-center text-center pt-1">
+        <div className="flex flex-col items-center text-center pt-0.5">
           <div className="text-[44px] font-bold leading-none tracking-tight font-display text-white/95">
             {c.time}
           </div>
@@ -2124,7 +2382,7 @@ const HomeScreen = ({
         >
           <div className="flex items-center gap-2">
             <span className="font-bold text-xs text-sky-400">G</span>
-            <span className="text-[10.5px] text-white/50">Pesquisar ou digitar link...</span>
+            <span className="text-[10.5px] text-white/50">Pesquisar ou checar no Google...</span>
           </div>
           {browserLocked ? <Lock className="w-3.5 h-3.5 text-white/40" /> : <Search className="w-3.5 h-3.5 text-white/50" />}
         </div>
@@ -2138,13 +2396,13 @@ const HomeScreen = ({
           >
             <div
               className={`relative w-11 h-11 rounded-2xl bg-[#25D366] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
-                isTargetChannel('whatsapp')
+                isTargetChannel('whatsapp') && notificationArrived
                   ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(52,211,153,0.7)]'
                   : ''
               }`}
             >
               <MessageSquare className="w-5 h-5" />
-              {isTargetChannel('whatsapp') && (
+              {isTargetChannel('whatsapp') && notificationArrived && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
@@ -2160,13 +2418,13 @@ const HomeScreen = ({
           >
             <div
               className={`relative w-11 h-11 rounded-2xl bg-[#007aff] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
-                isTargetChannel('sms')
+                isTargetChannel('sms') && notificationArrived
                   ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(96,165,250,0.7)]'
                   : ''
               }`}
             >
               <MessageCircle className="w-5 h-5" />
-              {isTargetChannel('sms') && (
+              {isTargetChannel('sms') && notificationArrived && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
@@ -2184,14 +2442,14 @@ const HomeScreen = ({
               className={`relative w-11 h-11 rounded-2xl bg-[#820ad1] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
                 bankLocked ? 'grayscale opacity-50' : ''
               } ${
-                isTargetChannel('bank')
+                isTargetChannel('bank') && notificationArrived
                   ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(192,132,252,0.7)]'
                   : ''
               }`}
             >
               <CreditCard className="w-5 h-5" />
               {bankLocked && <LockBadge />}
-              {isTargetChannel('bank') && (
+              {isTargetChannel('bank') && notificationArrived && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
@@ -2263,13 +2521,13 @@ const HomeScreen = ({
           >
             <div
               className={`relative w-11 h-11 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
-                isTargetChannel('call')
+                isTargetChannel('call') && notificationArrived
                   ? 'ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(52,211,153,0.7)]'
                   : ''
               }`}
             >
               <Phone className="w-5 h-5" />
-              {isTargetChannel('call') && (
+              {isTargetChannel('call') && notificationArrived && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   !
                 </span>
@@ -2284,11 +2542,21 @@ const HomeScreen = ({
           <button
             type="button"
             onClick={onOpenMessaging}
-            className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-center text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition"
+            className={`w-full py-2.5 rounded-xl border text-center text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition ${
+              notificationArrived
+                ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200 shadow-sm'
+                : 'bg-white/10 border-white/10 text-white/70 hover:bg-white/15'
+            }`}
           >
-            <span className="flex items-center gap-1.5 text-emerald-300 animate-pulse font-bold">
-              👉 Toque no app com notificação para abrir
-            </span>
+            {notificationArrived ? (
+              <span className="flex items-center gap-1.5 text-emerald-300 animate-pulse font-bold">
+                🔔 Nova notificação! Toque no aplicativo para abrir
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-white/70 font-medium">
+                📱 Celular em modo de espera • Toque nos apps para navegar
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -2320,6 +2588,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [previousApp, setPreviousApp] = useState<'home' | 'messaging' | 'notes'>('home');
   const [isLocked, setIsLocked] = useState(true);
   const [isScreenOff, setIsScreenOff] = useState(true);
+  const [bootStage, setBootStage] = useState<'hello' | 'welcome' | 'ready'>('hello');
   const [notificationArrived, setNotificationArrived] = useState(false);
   const [vibrateKey, setVibrateKey] = useState(0);
   const [activeModal, setActiveModal] = useState<'contact' | 'toast' | null>(null);
@@ -2327,6 +2596,22 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [toastMessage, setToastMessage] = useState<string>('');
   const [isBlocked, setIsBlocked] = useState(false);
   const [skillToast, setSkillToast] = useState<Skill[] | null>(null);
+
+  // Efeito de Boot Inicial Suave (Olá -> Seja Bem-Vindo -> Destravamento)
+  useEffect(() => {
+    if (bootStage === 'hello') {
+      sound.playBootHelloChord();
+      const t1 = setTimeout(() => {
+        setBootStage('welcome');
+      }, 1900);
+      return () => clearTimeout(t1);
+    } else if (bootStage === 'welcome') {
+      const t2 = setTimeout(() => {
+        setBootStage('ready');
+      }, 1600);
+      return () => clearTimeout(t2);
+    }
+  }, [bootStage]);
 
   // Progressão: o jogador só investiga/decide depois de consultar o Lucas neste caso
   const hasConsultedNotes = inspectedClueIds.length > 0;
@@ -2383,7 +2668,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       sound.playScreenWake();
     }, 450);
 
-    // 3. Notificação chega na LockScreen com som de sino iOS e vibração
+    // 3. Suspense Timer: 12 segundos de calma e observação antes de a notificação chegar
     const notifTimer = setTimeout(() => {
       setNotificationArrived(true);
       sound.playPhoneVibrate();
@@ -2392,7 +2677,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       } else {
         sound.playIOSBellChime();
       }
-    }, 1100);
+    }, 12000);
 
     return () => {
       clearTimeout(wakeTimer);
@@ -2410,13 +2695,17 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   }, [stamped]);
 
   const handleUnlockToHome = () => {
-    sound.playBlip();
+    sound.playUnlockClick();
     setIsLocked(false);
     setActiveApp('home');
   };
 
   const handleOpenAppDirectly = () => {
     sound.playKeypress();
+    if (!notificationArrived) {
+      setNotificationArrived(true);
+      sound.playPhoneVibrate();
+    }
     setIsLocked(false);
     setActiveApp('messaging');
     setPreviousApp('home');
@@ -2580,15 +2869,79 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       {/* Moldura: Apenas no desktop (sm:). No celular real, a tela é nativa sem bordas artificiais */}
       <div className="relative w-full h-full sm:rounded-[50px] sm:bg-[#0c0e14] sm:p-[12px] sm:shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] sm:border sm:border-white/20 flex flex-col">
         <div className="relative flex-1 h-full w-full rounded-2xl sm:rounded-[40px] overflow-hidden font-phone select-none bg-black flex flex-col shadow-md sm:shadow-none">
+          {/* EFEITO DE BOOT SUAVE ESTILO SMARTPHONE / INDIE GAME ("Olá" -> "Seja Bem-Vindo") */}
+          <AnimatePresence>
+            {bootStage !== 'ready' && (
+              <motion.div
+                key="boot-screen-overlay"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                onClick={() => {
+                  if (bootStage === 'hello') {
+                    setBootStage('welcome');
+                  } else {
+                    setBootStage('ready');
+                  }
+                }}
+                className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center select-none cursor-pointer"
+              >
+                <AnimatePresence mode="wait">
+                  {bootStage === 'hello' && (
+                    <motion.div
+                      key="boot-hello"
+                      initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 1.05, y: -12 }}
+                      transition={{ duration: 0.55, ease: 'easeOut' }}
+                      className="flex flex-col items-center gap-3"
+                    >
+                      <span className="text-5xl font-light tracking-tight text-white/95 font-display drop-shadow-[0_0_24px_rgba(255,255,255,0.35)]">
+                        Olá
+                      </span>
+                      <span className="text-[11px] text-white/40 font-mono tracking-widest uppercase">
+                        Iniciando HackLearn OS
+                      </span>
+                    </motion.div>
+                  )}
+
+                  {bootStage === 'welcome' && (
+                    <motion.div
+                      key="boot-welcome"
+                      initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 1.05, y: -12 }}
+                      transition={{ duration: 0.55, ease: 'easeOut' }}
+                      className="flex flex-col items-center gap-3"
+                    >
+                      <span className="text-4xl font-light tracking-tight text-white/95 font-display drop-shadow-[0_0_24px_rgba(255,255,255,0.35)]">
+                        Seja Bem-Vindo
+                      </span>
+                      <span className="text-[11px] text-emerald-400 font-mono tracking-wider">
+                        Toque na tela para continuar
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="absolute bottom-6 flex flex-col items-center gap-2">
+                  <div className="w-16 h-1 rounded-full bg-white/30 animate-pulse" />
+                  <span className="text-[10px] text-white/40 font-mono">Toque para avançar</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* EFEITO DE TELA APAGADA / TRANSIÇÃO OLED */}
           <AnimatePresence>
-            {isScreenOff && (
+            {isScreenOff && bootStage === 'ready' && (
               <motion.div
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.35 }}
-                className="absolute inset-0 z-50 bg-black flex items-center justify-center pointer-events-none"
+                className="absolute inset-0 z-40 bg-black flex items-center justify-center pointer-events-none"
               >
                 <div className="w-16 h-1 rounded-full bg-neutral-800/60" />
               </motion.div>
@@ -2624,6 +2977,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               >
                 <HomeScreen
                   c={scamCase}
+                  notificationArrived={notificationArrived}
                   onOpenMessaging={handleOpenAppDirectly}
                   onOpenNotes={handleOpenNotes}
                   onOpenBank={() => handleOpenBank()}
