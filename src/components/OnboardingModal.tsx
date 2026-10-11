@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight, ShieldAlert, ShieldCheck, Sparkles, Paperclip } from 'lucide-react';
 import { sound } from '../utils/audio';
@@ -10,18 +10,6 @@ interface OnboardingModalProps {
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (isOpen) {
-      setLoading(true);
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
   const handleStart = () => {
     sound.playSuccess();
     try {
@@ -46,19 +34,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         >
           <Paperclip className="absolute -top-4 left-8 w-8 h-8 text-clip rotate-[-20deg]" aria-hidden />
 
-          {loading ? (
-            <div className="py-16 flex flex-col items-center justify-center space-y-4">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                className="w-10 h-10 rounded-full border-2 border-ink/20 border-t-marker"
-              />
-              <p className="text-xs text-ink-soft tracking-wider uppercase font-mono">
-                Preparando os arquivos da investigação...
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
+          <div className="space-y-6">
               {/* Header */}
               <div className="text-center space-y-1.5 border-b-2 border-dashed border-ink/15 pb-4">
                 <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-ink/10 text-xs font-mono text-ink-soft uppercase tracking-wider">
@@ -139,7 +115,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                 </button>
               </div>
             </div>
-          )}
         </motion.div>
       </div>
     </AnimatePresence>

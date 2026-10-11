@@ -16,10 +16,11 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
   suffix = '',
 }) => {
   const [displayValue, setDisplayValue] = useState(value);
+  const prevValueRef = React.useRef(value);
 
   useEffect(() => {
     let startTimestamp: number | null = null;
-    const startValue = displayValue;
+    const startValue = prevValueRef.current;
     const diff = value - startValue;
 
     if (diff === 0) return;
@@ -27,17 +28,22 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
     const step = (timestamp: number) => {
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      // math de animacao que peguei no codepen
       const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      setDisplayValue(Math.round(startValue + diff * ease));
+      const currentVal = Math.round(startValue + diff * ease);
+      setDisplayValue(currentVal);
 
       if (progress < 1) {
         window.requestAnimationFrame(step);
+      } else {
+        prevValueRef.current = value;
       }
     };
 
     const animId = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(animId);
+    return () => {
+      window.cancelAnimationFrame(animId);
+      prevValueRef.current = value;
+    };
   }, [value, duration]);
 
   return (
