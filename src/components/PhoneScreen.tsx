@@ -22,6 +22,11 @@ import {
   Globe,
   UserX,
   X,
+  MessageSquare,
+  Bell,
+  ChevronRight,
+  PhoneIncoming,
+  Unlock,
 } from 'lucide-react';
 import type { ScamCase, InteractiveAction } from '../data/scamsData';
 import { sound } from '../utils/audio';
@@ -674,6 +679,166 @@ const PushScreen = ({
   );
 };
 
+
+// ---------- TELA DE BLOQUEIO REALISTA COM CHEGADA DE NOTIFICAÇÃO ----------
+const LockScreen = ({
+  c,
+  onOpenApp,
+  onRejectCall,
+}: {
+  c: ScamCase;
+  onOpenApp: () => void;
+  onRejectCall: () => void;
+}) => {
+  const [notificationArrived, setNotificationArrived] = useState(false);
+  const number = findContactNumber(c);
+  const name = cleanName(c.sender);
+  const isCall = c.channel === 'call';
+
+  useEffect(() => {
+    // Delay de 400ms para simular a chegada súbita da mensagem no bolso
+    const t = setTimeout(() => {
+      setNotificationArrived(true);
+      sound.playPhoneVibrate();
+      if (isCall) {
+        sound.playPhoneRingtone();
+      } else {
+        sound.playMessagePing();
+      }
+    }, 450);
+    return () => clearTimeout(t);
+  }, [c.id, isCall]);
+
+  const previewText = c.messageContent.length > 85
+    ? c.messageContent.slice(0, 85) + '...'
+    : c.messageContent;
+
+  return (
+    <div className="relative flex flex-col h-full bg-gradient-to-b from-[#1a1c29] via-[#0d0f17] to-[#07080c] text-white select-none overflow-hidden">
+      <StatusBar time={c.time} dark />
+
+      {/* Relógio e Data da Tela de Bloqueio */}
+      <div className="flex flex-col items-center pt-5 pb-3">
+        <Lock className="w-3.5 h-3.5 text-white/60 mb-1" />
+        <div className="text-[11px] text-white/70 font-medium">sábado, 10 de outubro</div>
+        <div className="text-[46px] font-bold leading-none tracking-tight mt-0.5 font-display">
+          {c.time}
+        </div>
+      </div>
+
+      {/* Área Central: Notificação Chegando ou Ligação Tocando */}
+      <div className="flex-1 px-3 pt-2">
+        <AnimatePresence>
+          {notificationArrived && !isCall && (
+            <motion.div
+              initial={{ y: -40, opacity: 0, scale: 0.92 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              onClick={onOpenApp}
+              className="w-full bg-white/20 hover:bg-white/25 border border-white/25 rounded-2xl p-3 backdrop-blur-xl shadow-2xl cursor-pointer active:scale-96 transition-all group"
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <div
+                  className={`w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-bold ${
+                    c.channel === 'whatsapp'
+                      ? 'bg-[#25D366]'
+                      : c.channel === 'push'
+                      ? 'bg-[#820ad1]'
+                      : 'bg-[#007aff]'
+                  }`}
+                >
+                  {c.channel === 'whatsapp' ? (
+                    <MessageSquare className="w-3 h-3" />
+                  ) : (
+                    <Bell className="w-3 h-3" />
+                  )}
+                </div>
+                <span className="font-semibold text-xs truncate text-white/95">
+                  {name}
+                </span>
+                <span className="text-[9.5px] text-white/60 ml-auto font-mono">agora</span>
+              </div>
+
+              <p className="text-xs text-white/90 leading-snug line-clamp-2 font-normal">
+                {previewText}
+              </p>
+
+              <div className="mt-2.5 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-emerald-300 font-semibold">
+                <span className="flex items-center gap-1 animate-pulse">
+                  👉 Toque para abrir a conversa
+                </span>
+                <ChevronRight className="w-3.5 h-3.5 text-white/60 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </motion.div>
+          )}
+
+          {notificationArrived && isCall && (
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center justify-center pt-4 space-y-4"
+            >
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-3xl font-bold shadow-2xl border-2 border-white/20"
+              >
+                {c.sender.charAt(0)}
+              </motion.div>
+
+              <div className="text-center">
+                <div className="text-lg font-bold text-white">{name}</div>
+                <div className="text-xs text-white/60 font-mono mt-0.5">{number ?? 'Número desconhecido'}</div>
+                <div className="text-xs text-emerald-400 font-semibold mt-1 animate-pulse flex items-center justify-center gap-1">
+                  <PhoneIncoming className="w-3.5 h-3.5" />
+                  <span>Chamada recebida...</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-8 pt-4">
+                <button
+                  type="button"
+                  onClick={onRejectCall}
+                  className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
+                >
+                  <div className="w-13 h-13 rounded-full bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/40">
+                    <PhoneOff className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-[10px] text-white/80 font-medium">Recusar</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onOpenApp}
+                  className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
+                >
+                  <div className="w-13 h-13 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40 animate-bounce">
+                    <Phone className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-[10px] text-white/80 font-medium">Atender</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Rodapé da Tela de Bloqueio */}
+      <div className="p-4 flex items-center justify-between text-white/60 text-xs">
+        <button
+          type="button"
+          onClick={onOpenApp}
+          className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-center text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition"
+        >
+          <Unlock className="w-3.5 h-3.5 text-white/70" />
+          <span>Desbloquear Aparelho</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ---------- Componente Principal do Celular Interativo ----------
 export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   scamCase,
@@ -687,24 +852,26 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [activeModal, setActiveModal] = useState<'link' | 'contact' | 'toast' | null>(null);
   const [modalData, setModalData] = useState<{ url?: string; message?: string }>({});
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
 
   useEffect(() => {
-    sound.playPhoneVibrate();
-    if (scamCase.channel === 'call') {
-      sound.playPhoneRingtone();
-    } else {
-      sound.playMessagePing();
-    }
-    setVibrateKey((k) => k + 1);
     setIsBlocked(false);
     setActiveModal(null);
-  }, [scamCase.id, scamCase.channel]);
+    setIsUnlocked(false);
+    setVibrateKey((k) => k + 1);
+  }, [scamCase.id]);
 
   useEffect(() => {
     if (stamped) {
       sound.playStampThud();
+      setIsUnlocked(true);
     }
   }, [stamped]);
+
+  const handleOpenApp = () => {
+    sound.playKeypress();
+    setIsUnlocked(true);
+  };
 
   const handleLinkClick = (url: string) => {
     sound.playBlip();
@@ -815,7 +982,34 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       {/* Moldura Realista do Celular */}
       <div className="relative rounded-[40px] sm:rounded-[46px] bg-[#0c0e14] p-[8px] sm:p-[10px] shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] border border-white/20">
         <div className="relative h-[510px] sm:h-[600px] max-h-[72vh] sm:max-h-[82vh] min-h-[440px] rounded-[32px] sm:rounded-[38px] overflow-hidden font-phone select-none bg-black">
-          {screen}
+          <AnimatePresence mode="wait">
+            {!isUnlocked && !stamped ? (
+              <motion.div
+                key={`lock-${scamCase.id}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                transition={{ duration: 0.25 }}
+                className="h-full"
+              >
+                <LockScreen
+                  c={scamCase}
+                  onOpenApp={handleOpenApp}
+                  onRejectCall={handleHangup}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`app-${scamCase.id}`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.25 }}
+                className="h-full"
+              >
+                {screen}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Notch Dinâmico no Topo do Celular */}
           <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-[76px] h-[18px] rounded-full bg-black flex items-center justify-between px-2.5 z-30 shadow-md border border-white/10">
