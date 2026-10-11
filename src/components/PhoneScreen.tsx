@@ -29,6 +29,9 @@ import {
   CreditCard,
   FileText,
   Check,
+  CheckCircle,
+  UserCheck,
+  Building,
   Lightbulb,
   AlertTriangle,
 } from 'lucide-react';
@@ -660,45 +663,45 @@ const NotesScreen = ({
   onInspectBank?: () => void;
   onInspectBrowser?: (url?: string) => void;
 }) => {
-  const [checkedSteps, setCheckedSteps] = useState<{ [key: number]: boolean }>(() => ({
-    0: inspectedClueIds.includes(c.clues[0]?.id),
-    1: inspectedClueIds.includes(c.clues[1]?.id),
-    2: inspectedClueIds.includes(c.clues[2]?.id),
-  }));
-
-  useEffect(() => {
-    setCheckedSteps({
-      0: inspectedClueIds.includes(c.clues[0]?.id),
-      1: inspectedClueIds.includes(c.clues[1]?.id),
-      2: inspectedClueIds.includes(c.clues[2]?.id),
-    });
-  }, [inspectedClueIds, c.clues]);
+  const isStepChecked = (idx: number) => {
+    return Boolean(c.clues[idx] && inspectedClueIds.includes(c.clues[idx].id));
+  };
 
   const isStepUnlocked = (idx: number) => {
     if (idx === 0) return true;
-    if (idx === 1) return Boolean(checkedSteps[0]);
-    if (idx === 2) return Boolean(checkedSteps[0] && checkedSteps[1]);
+    if (idx === 1) return isStepChecked(0);
+    if (idx === 2) return isStepChecked(0) && isStepChecked(1);
     return false;
   };
 
-  const toggleStep = (index: number) => {
+  const handleStepAction = (index: number) => {
     if (!isStepUnlocked(index)) {
       sound.playPhoneVibrate();
       return;
     }
-    const nextVal = !checkedSteps[index];
-    setCheckedSteps((prev) => ({ ...prev, [index]: nextVal }));
-    if (nextVal) {
-      sound.playSuccess();
-      if (c.clues[index]) {
-        onInspectClue?.(c.clues[index]);
-      }
+    const clue = c.clues[index];
+    if (!clue) return;
+
+    if (clue.category === 'phone' || clue.inspection.type === 'contact') {
+      onInspectContact?.();
+    } else if (clue.category === 'pix') {
+      onSimulatePix?.(clue);
+    } else if (clue.category === 'behavior') {
+      onRequestAudio?.(clue);
+    } else if (
+      clue.category === 'system' ||
+      clue.inspection.type === 'security' ||
+      clue.name.toLowerCase().includes('banco')
+    ) {
+      onInspectBank?.();
+    } else if (clue.category === 'whois' || clue.inspection.type === 'link') {
+      onInspectBrowser?.(clue.inspection.field1Value);
     } else {
-      sound.playKeyboardClick();
+      onInspectClue?.(clue);
     }
   };
 
-  const completedCount = Object.values(checkedSteps).filter(Boolean).length;
+  const completedCount = [0, 1, 2].filter((idx) => isStepChecked(idx)).length;
   const totalClues = Math.min(3, c.clues.length);
 
   return (
@@ -741,18 +744,18 @@ const NotesScreen = ({
       <div className="flex-1 overflow-y-auto no-scrollbar overscroll-contain p-3.5 space-y-3">
         <div className="border-b border-white/10 pb-2">
           <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold">
-            Procedimento Operacional • Desbloqueio Sequencial
+            Passo a Passo de Verificação
           </div>
           <h2 className="text-sm font-bold text-white mt-0.5">
             {c.title}
           </h2>
         </div>
 
-        {/* Os 3 Passos de Auditoria Específicos do Caso Atual */}
+        {/* Os 3 Passos de Verificação Específicos do Caso Atual */}
         <div className="space-y-2.5">
           {c.clues.slice(0, 3).map((clue, idx) => {
             const isUnlocked = isStepUnlocked(idx);
-            const isChecked = Boolean(checkedSteps[idx]);
+            const isChecked = isStepChecked(idx);
 
             if (!isUnlocked) {
               return (
@@ -770,10 +773,10 @@ const NotesScreen = ({
                         Passo {idx + 1} • Bloqueado 🔒
                       </span>
                       <p className="text-xs font-semibold text-white/50 leading-snug mt-0.5">
-                        Conclua a auditoria do Passo {idx} para desbloquear esta etapa
+                        Faça o Passo {idx} primeiro para liberar esta dica
                       </p>
                       <p className="text-[10.5px] text-white/30 mt-1 italic">
-                        Siga a ordem dos procedimentos periciais para não contaminar a investigação.
+                        Siga as orientações uma por uma com calma para não cair em pegadinha.
                       </p>
                     </div>
                   </div>
@@ -794,7 +797,7 @@ const NotesScreen = ({
               >
                 <div className="flex items-start gap-3">
                   <div
-                    onClick={() => toggleStep(idx)}
+                    onClick={() => handleStepAction(idx)}
                     className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 cursor-pointer transition ${
                       isChecked
                         ? 'bg-emerald-500 text-white'
@@ -1141,7 +1144,7 @@ const VerdictModal = ({
         transition={{ type: 'spring', damping: 25, stiffness: 350 }}
         className="w-full max-w-sm max-h-[92vh] overflow-y-auto no-scrollbar bg-slate-900 border-2 border-amber-400/50 rounded-3xl p-4 shadow-2xl text-white space-y-3.5 ring-1 ring-amber-400/20"
       >
-        {/* Cabeçalho do Tribunal */}
+        {/* Cabeçalho do Veredito */}
         <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center text-sm font-bold">
@@ -1149,9 +1152,9 @@ const VerdictModal = ({
             </div>
             <div>
               <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold">
-                Tribunal Pericial
+                Decisão Final
               </div>
-              <h3 className="text-xs font-bold text-white">Julgamento & Revalidação</h3>
+              <h3 className="text-xs font-bold text-white">Avaliação do Caso</h3>
             </div>
           </div>
           <button
@@ -1166,7 +1169,7 @@ const VerdictModal = ({
         {/* ETAPA 1: Decisão Principal (Golpe ou Seguro) */}
         <div className="space-y-2">
           <label className="text-[11px] font-semibold text-neutral-200 block">
-            1. Qual é a sua conclusão pericial sobre este caso?
+            1. O que você acha desta mensagem?
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -1186,7 +1189,7 @@ const VerdictModal = ({
                 <span>É Golpe!</span>
               </div>
               <span className="text-[10px] opacity-80 leading-tight block">
-                Tentativa de fraude cibernética ou engenharia social.
+                Tentativa de golpe para tirar dinheiro ou dados.
               </span>
             </button>
 
@@ -1207,13 +1210,13 @@ const VerdictModal = ({
                 <span>É Seguro!</span>
               </div>
               <span className="text-[10px] opacity-80 leading-tight block">
-                Comunicação autêntica e sem intenção criminosa.
+                Mensagem autêntica, comum e sem risco.
               </span>
             </button>
           </div>
         </div>
 
-        {/* ETAPA 2: A REVALIDAÇÃO FORENSE (POR QUE VOCÊ CHEGOU A ESSA CONCLUSÃO?) */}
+        {/* ETAPA 2: O MOTIVO DA DECISÃO */}
         {chosenVerdict && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -1221,9 +1224,9 @@ const VerdictModal = ({
             className="space-y-2 pt-1 border-t border-white/10"
           >
             <label className="text-[11px] font-semibold text-amber-300 block">
-              2. Por que você chegou a essa conclusão?
+              2. Por que você tomou essa decisão?
               <span className="text-[10px] text-white/60 font-normal block mt-0.5">
-                Selecione o fato concreto comprovado que fundamenta seu laudo pericial:
+                Escolha o motivo principal que você percebeu:
               </span>
             </label>
 
@@ -1275,7 +1278,7 @@ const VerdictModal = ({
                 : 'bg-white/10 text-white/40 cursor-not-allowed'
             }`}
           >
-            <span>⚖️ Confirmar e Carimbar Veredito</span>
+            <span>Confirmar Resposta ➔</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -1613,6 +1616,135 @@ const BrowserScreen = ({
 };
 
 // ============================================================================
+// GERADOR DINÂMICO DE AÇÕES DE CONFRONTO FORENSE POR ETAPA
+// ============================================================================
+const getClueConfrontationAction = (
+  clue: InvestigativeClue,
+  c: ScamCase,
+): InteractiveAction => {
+  if (clue.category === 'phone' || clue.inspection.type === 'contact') {
+    return {
+      id: `act-${c.id}-ddd`,
+      label: '📱 Questionar DDD: "Por que você está com DDD de outro estado?"',
+      actionType: 'investigation',
+      playerMessage: 'Por que o seu número está com DDD diferente da nossa cidade?',
+      replyMessage:
+        'É porque eu comprei o chip provisório na banca perto da rodoviária e foi o único prefixo de promoção que tinha disponível! Me ajuda logo!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-ddd`,
+        title: 'DDD Incompatível',
+        description: 'O número foi ativado recentemente com DDD divergente da família.',
+        status: 'suspicious',
+        forensicFact: 'Golpistas compram chips descartáveis de outros DDDs para aplicar golpes.',
+      },
+    };
+  }
+
+  if (clue.category === 'pix' || clue.inspection.type === 'pix') {
+    const titular = clue.inspection.field2Value || 'Valdir dos Santos';
+    return {
+      id: `act-${c.id}-pix`,
+      label: `💸 Confrontar Favorecido: "Sofia, quem é ${titular}?"`,
+      actionType: 'investigation',
+      playerMessage: `Sofia, quem é esse ${titular} da chave Pix? A faculdade não cobra por boleto ou CNPJ?`,
+      replyMessage:
+        'Mãe, é o coordenador financeiro da faculdade! Ele disse que só segura minha vaga se pagar direto na conta dele agora, por favor faz logo!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-pix`,
+        title: `Titular Incompatível: ${titular}`,
+        description: `A conta de destino pertence a uma pessoa física estranha (${titular}).`,
+        status: 'suspicious',
+        forensicFact: 'Instituições de ensino e empresas cobram por CNPJ oficial ou boleto registrado.',
+      },
+    };
+  }
+
+  if (
+    clue.category === 'behavior' ||
+    clue.buttonLabel.toLowerCase().includes('áudio') ||
+    clue.buttonLabel.toLowerCase().includes('audio')
+  ) {
+    return {
+      id: `act-${c.id}-audio`,
+      label: '🎙️ Pedir Áudio: "Mande um áudio falando meu nome"',
+      actionType: 'investigation',
+      playerMessage:
+        'Filha, me manda um áudio de 5 segundos falando meu nome. Não vou transferir nada sem ouvir a sua voz.',
+      replyMessage:
+        'Mãe, já falei que a tela caiu de cara no chão e queimou o microfone! O áudio fica só xiado! Para de desconfiar de mim e me ajuda pelo amor de Deus, faltam 10 minutos!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-audio`,
+        title: 'Recusa Desesperada de Enviar Áudio',
+        description: 'O golpista inventou desculpa de microfone quebrado para não mandar áudio.',
+        status: 'suspicious',
+        forensicFact: 'Regra de ouro: Nunca transfira sem ouvir a voz real do familiar no número antigo.',
+      },
+    };
+  }
+
+  if (
+    clue.category === 'whois' ||
+    clue.inspection.type === 'link' ||
+    clue.name.toLowerCase().includes('link')
+  ) {
+    return {
+      id: `act-${c.id}-link`,
+      label: '🔗 Questionar Link: "Qual é o site oficial?"',
+      actionType: 'investigation',
+      playerMessage: 'Esse endereço de internet diverge do portal oficial da empresa.',
+      replyMessage:
+        'Aviso do Sistema: Link exclusivo e seguro de pagamento e desembaraço aduaneiro expresso.',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-link`,
+        title: 'Domínio Web Falso',
+        description: 'O endereço de internet diverge do portal oficial.',
+        status: 'suspicious',
+        forensicFact:
+          'Empresas públicas e bancos utilizam apenas domínios oficiais registrados (.com.br ou .gov.br).',
+      },
+    };
+  }
+
+  if (
+    clue.category === 'system' ||
+    clue.inspection.type === 'security' ||
+    clue.name.toLowerCase().includes('banco') ||
+    clue.name.toLowerCase().includes('extrato')
+  ) {
+    return {
+      id: `act-${c.id}-bank`,
+      label: '🏦 Questionar: "Não reconheço essa compra no meu extrato"',
+      actionType: 'investigation',
+      playerMessage: 'Não reconheço essa compra. Vou verificar no extrato oficial do meu aplicativo.',
+      replyMessage:
+        'Central de Segurança: Para cancelamento emergencial e estorno, disque imediatamente para a central informada.',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-bank`,
+        title: 'SMS de Engenharia Social',
+        description: 'O golpista tenta forçar a ligação para a falsa central telefônica.',
+        status: 'suspicious',
+        forensicFact: 'Bancos nunca pedem para ligar para números 0800 desconhecidos via SMS.',
+      },
+    };
+  }
+
+  return {
+    id: `act-${c.id}-clue-${clue.id}`,
+    label: `🔍 Questionar: "${clue.name}"`,
+    actionType: 'investigation',
+    playerMessage: `Verifiquei as informações e identifiquei inconsistências em: ${clue.question}`,
+    replyMessage: 'Aviso: Confirme seus dados com urgência para evitar bloqueio definitivo.',
+    evidenceDiscovered: {
+      id: `ev-${c.id}-${clue.id}`,
+      title: clue.name,
+      description: clue.inspection.observation,
+      status: 'suspicious',
+      forensicFact: clue.evidenceResult.fato,
+    },
+  };
+};
+
+// ============================================================================
 // WHATSAPP INTERATIVO COM ENTREGA GRADUAL DE MENSAGENS EM TEMPO REAL
 // ============================================================================
 const WhatsAppScreen = ({
@@ -1634,6 +1766,9 @@ const WhatsAppScreen = ({
   onOpenVerdictModal,
   onOpenPixModal,
   inspectedClueCount = 0,
+  inspectedClueIds = [],
+  onInspectClue,
+  onOpenBank,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -1653,6 +1788,9 @@ const WhatsAppScreen = ({
   onOpenVerdictModal?: () => void;
   onOpenPixModal?: () => void;
   inspectedClueCount?: number;
+  inspectedClueIds?: string[];
+  onInspectClue?: (clue: InvestigativeClue) => void;
+  onOpenBank?: () => void;
 }) => {
   const [isTypingPlayer, setIsTypingPlayer] = useState(false);
   const number = findContactNumber(c);
@@ -1712,84 +1850,34 @@ const WhatsAppScreen = ({
     }
   };
 
-  // Ações interativas contextuais e dinâmicas geradas a partir do caso e das pistas
-  const contextualActions = React.useMemo(() => {
-    const base = c.interactiveActions || [];
-    const extras: InteractiveAction[] = [];
+  // Status de auditoria de cada um dos 3 passos do caso
+  const step0 = c.clues[0];
+  const step1 = c.clues[1];
+  const step2 = c.clues[2];
 
-    const audioClue = c.clues.find((k) => k.category === 'behavior');
-    if (audioClue) {
-      extras.push({
-        id: `act-${c.id}-audio`,
-        label: '🎙️ Pedir Áudio: "Mande um áudio falando meu nome"',
-        actionType: 'investigation',
-        playerMessage: 'Filha, me manda um áudio de 5 segundos falando meu nome. Não vou transferir nada sem ouvir a sua voz.',
-        replyMessage: 'Mãe, já falei que a tela caiu de cara no chão e queimou o microfone! O áudio fica só xiado! Para de desconfiar de mim e me ajuda pelo amor de Deus, faltam 10 minutos!',
-        evidenceDiscovered: {
-          id: `ev-${c.id}-audio`,
-          title: 'Recusa Desesperada de Enviar Áudio',
-          description: 'O golpista inventou desculpa de microfone quebrado para não mandar áudio.',
-          status: 'suspicious',
-          forensicFact: 'Regra de ouro: Nunca transfira sem ouvir a voz real do familiar no número antigo.',
-        },
-      });
-    }
+  const isStep0Done = Boolean(step0 && inspectedClueIds.includes(step0.id));
+  const isStep1Done = Boolean(step1 && inspectedClueIds.includes(step1.id));
+  const isStep2Done = Boolean(step2 && inspectedClueIds.includes(step2.id));
 
-    const pixClue = c.clues.find((k) => k.category === 'pix');
-    if (pixClue) {
-      const titular = pixClue.inspection.field2Value || 'Valdir dos Santos';
-      extras.push({
-        id: `act-${c.id}-pix`,
-        label: `💸 Simular Pix & Auditar Favorecido (${titular})`,
-        actionType: 'investigation',
-        playerMessage: `Sofia, quem é esse ${titular} da chave Pix? A faculdade não cobra por boleto ou CNPJ?`,
-        replyMessage: 'Mãe, é o coordenador financeiro da faculdade! Ele disse que só segura minha vaga se pagar direto na conta dele agora, por favor faz logo!',
-        evidenceDiscovered: {
-          id: `ev-${c.id}-pix`,
-          title: `Titular Incompatível: ${titular}`,
-          description: `A conta de destino pertence a uma pessoa física estranha (${titular}).`,
-          status: 'suspicious',
-          forensicFact: 'Instituições de ensino e empresas cobram por CNPJ oficial ou boleto registrado.',
-        },
-      });
-    }
+  // Ações de confronto contextual geradas para cada evidência
+  const act0 = step0 ? getClueConfrontationAction(step0, c) : null;
+  const act1 = step1 ? getClueConfrontationAction(step1, c) : null;
+  const act2 = step2 ? getClueConfrontationAction(step2, c) : null;
 
-    const phoneClue = c.clues.find((k) => k.category === 'phone');
-    if (phoneClue) {
-      extras.push({
-        id: `act-${c.id}-ddd`,
-        label: '📱 Questionar DDD: "Por que você está com DDD de outro estado?"',
-        actionType: 'investigation',
-        playerMessage: 'Por que o seu número está com DDD diferente da nossa cidade?',
-        replyMessage: 'É porque eu comprei o chip provisório na banca perto da rodoviária e foi o único prefixo de promoção que tinha disponível! Me ajuda logo!',
-        evidenceDiscovered: {
-          id: `ev-${c.id}-ddd`,
-          title: 'DDD Incompatível',
-          description: 'O número foi ativado recentemente com DDD divergente da família.',
-          status: 'suspicious',
-          forensicFact: 'Golpistas compram chips descartáveis de outros DDDs para aplicar golpes.',
-        },
-      });
-    }
+  const isAct0Done = Boolean(act0 && executedActionIds.includes(act0.id));
+  const isAct1Done = Boolean(act1 && executedActionIds.includes(act1.id));
+  const isAct2Done = Boolean(act2 && executedActionIds.includes(act2.id));
 
-    return [...base, ...extras.filter((ex) => !base.some((b) => b.id === ex.id))];
-  }, [c]);
-
-  const availableActions = contextualActions.filter(
-    (act) => !executedActionIds.includes(act.id),
-  );
-
-  const handleActionClick = (action: InteractiveAction) => {
-    if (action.id.includes('-pix') && onOpenPixModal) {
-      onOpenPixModal();
-      return;
-    }
+  const handleActionClick = (action: InteractiveAction, targetClue?: InvestigativeClue) => {
     sound.playKeyboardClick();
     setIsTypingPlayer(true);
     setTimeout(() => {
       setIsTypingPlayer(false);
       sound.playMessagePing();
       sound.playTensionPulse();
+      if (targetClue) {
+        onInspectClue?.(targetClue);
+      }
       onPerformAction(action);
     }, 650);
   };
@@ -2046,41 +2134,298 @@ const WhatsAppScreen = ({
               Recebendo mensagens... (Toque no chat para acelerar)
             </span>
           </div>
-        ) : availableActions.length > 0 && !isBlocked && !stamped ? (
-          <div className="p-2 border-b border-black/5 space-y-1.5">
-            <div className="text-[10px] font-mono text-[#54656f] uppercase tracking-wider font-bold px-1 flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-[#008069]" /> Responder no WhatsApp:
-            </div>
-            <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
-              {availableActions.map((act) => (
-                <button
-                  key={act.id}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleActionClick(act);
-                  }}
-                  className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-300 text-[#008069] rounded-xl px-2.5 py-1.5 text-xs font-semibold shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
-                >
-                  <span className="text-[11.5px] leading-tight font-medium line-clamp-1">{act.label}</span>
-                  <span className="text-[9.5px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold shrink-0">
-                    Enviar ➔
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
         ) : isBlocked ? (
           <div className="px-3 py-2 text-center bg-red-50">
             <span className="text-xs text-red-600 font-semibold flex items-center justify-center gap-1.5">
               <UserX className="w-3.5 h-3.5" /> Você bloqueou este contato
             </span>
           </div>
+        ) : !isStep0Done ? (
+          /* ETAPA 1 PENDENTE: NENHUMA MENSAGEM AO GOLPISTA! APENAS VERIFICAÇÃO DA REGRA */
+          <div className="p-2.5 bg-amber-50/90 border-b border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-amber-900 font-bold">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                <span>Procedimento 1 de 3 • {step0?.name || 'Verificação do Remetente'}</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold">
+                Regra Ativa
+              </span>
+            </div>
+            <p className="text-xs text-neutral-900 font-semibold leading-snug">
+              👉 {step0?.question}
+            </p>
+            <p className="text-[10.5px] text-amber-900/80 italic leading-tight">
+              🔒 Respostas bloqueadas pela orientação do Lucas: verifique a evidência da linha primeiro!
+            </p>
+            <div className="flex items-center gap-2 pt-0.5">
+              {step0?.category === 'phone' || step0?.inspection.type === 'contact' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onContactClick();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Inspecionar Contato (Checar DDD)</span>
+                </button>
+              ) : step0?.category === 'whois' || step0?.inspection.type === 'link' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLinkClick(step0.inspection.field1Value);
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Inspecionar Link no Navegador</span>
+                </button>
+              ) : step0?.category === 'system' || step0?.name.toLowerCase().includes('banco') ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenBank?.();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Building className="w-3.5 h-3.5" />
+                  <span>Conferir Extrato no Meu Banco</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNotes?.();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Abrir Bloco de Notas</span>
+                </button>
+              )}
+              {onOpenNotes && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNotes();
+                  }}
+                  className="py-2 px-2.5 rounded-xl bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center gap-1"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Notas</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : !isAct0Done && act0 ? (
+          /* ETAPA 1 VERIFICADA: DESBLOQUEIA A FUNÇÃO DE CONFRONTAR O FATO 1 */
+          <div className="p-2.5 bg-emerald-50/90 border-b border-emerald-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-emerald-900 font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Contexto Desbloqueado: Evidência 1 Apurada!</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-bold">
+                ✓ DDD Auditado
+              </span>
+            </div>
+            <p className="text-xs text-neutral-800 font-medium leading-snug">
+              {step0?.evidenceResult.headline} • Confronte o suspeito no chat com base no fato pericial:
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleActionClick(act0);
+              }}
+              className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-400 text-[#008069] rounded-xl px-2.5 py-2 text-xs font-semibold shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
+            >
+              <span className="text-[11.5px] leading-tight font-medium line-clamp-1">{act0.label}</span>
+              <span className="text-[9.5px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold shrink-0">
+                Enviar ➔
+              </span>
+            </button>
+          </div>
+        ) : !isStep1Done ? (
+          /* ETAPA 2 PENDENTE: AUDITORIA DO PASSO 2 (PIX / BANCO / RASTREIO) */
+          <div className="p-2.5 bg-amber-50/90 border-b border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-amber-900 font-bold">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                <span>Procedimento 2 de 3 • {step1?.name || 'Auditoria Financeira'}</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold">
+                Regra Ativa
+              </span>
+            </div>
+            <p className="text-xs text-neutral-900 font-semibold leading-snug">
+              👉 {step1?.question}
+            </p>
+            <p className="text-[10.5px] text-amber-900/80 italic leading-tight">
+              🔒 Respostas bloqueadas: simule ou audite os dados antes de qualquer transferência!
+            </p>
+            <div className="flex items-center gap-2 pt-0.5">
+              {step1?.category === 'pix' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenPixModal?.();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>💸 Simular Pix & Auditar Titular no Bacen</span>
+                </button>
+              ) : step1?.category === 'system' || step1?.inspection.type === 'official' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (step1) onInspectClue?.(step1);
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>📦 Consultar Sistema Oficial</span>
+                </button>
+              ) : step1?.category === 'whois' || step1?.inspection.type === 'link' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLinkClick(step1.inspection.field1Value);
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Inspecionar Link no Navegador</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNotes?.();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Abrir Bloco de Notas</span>
+                </button>
+              )}
+              {onOpenNotes && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNotes();
+                  }}
+                  className="py-2 px-2.5 rounded-xl bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center gap-1"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Notas</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : !isAct1Done && act1 ? (
+          /* ETAPA 2 VERIFICADA: DESBLOQUEIA A FUNÇÃO DE CONFRONTAR O FATO 2 */
+          <div className="p-2.5 bg-emerald-50/90 border-b border-emerald-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-emerald-900 font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Contexto Desbloqueado: Evidência 2 Apurada!</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-bold">
+                ✓ Titular Descoberto
+              </span>
+            </div>
+            <p className="text-xs text-neutral-800 font-medium leading-snug">
+              {step1?.evidenceResult.headline} • Confronte o golpista sobre essa incongruência:
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleActionClick(act1);
+              }}
+              className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-400 text-[#008069] rounded-xl px-2.5 py-2 text-xs font-semibold shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
+            >
+              <span className="text-[11.5px] leading-tight font-medium line-clamp-1">{act1.label}</span>
+              <span className="text-[9.5px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold shrink-0">
+                Enviar ➔
+              </span>
+            </button>
+          </div>
+        ) : !isStep2Done ? (
+          /* ETAPA 3 PENDENTE: TESTE DE VOZ / PROVA REAL */
+          <div className="p-2.5 bg-amber-50/90 border-b border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-amber-900 font-bold">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                <span>Procedimento 3 de 3 • {step2?.name || 'Prova de Voz Real'}</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold">
+                Regra de Ouro
+              </span>
+            </div>
+            <p className="text-xs text-neutral-900 font-semibold leading-snug">
+              👉 {step2?.question}
+            </p>
+            <p className="text-[10.5px] text-amber-900/80 italic leading-tight">
+              Regra de ouro: Nunca transfira sem ouvir a voz real do familiar. Exija um áudio imediatamente!
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (act2) {
+                  handleActionClick(act2, step2);
+                } else if (step2) {
+                  onInspectClue?.(step2);
+                }
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Mic className="w-4 h-4" />
+              <span>🎙️ Exigir Prova de Voz: &quot;Mande um áudio falando meu nome&quot;</span>
+            </button>
+          </div>
+        ) : !isAct2Done && act2 && step2?.category !== 'behavior' ? (
+          /* CONFRONTO DO PASSO 3 (CASO NÃO SEJA ÁUDIO) */
+          <div className="p-2.5 bg-emerald-50/90 border-b border-emerald-200/80 space-y-2">
+            <p className="text-xs text-neutral-800 font-medium">
+              Conclua o questionamento final da auditoria:
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleActionClick(act2);
+              }}
+              className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-400 text-[#008069] rounded-xl px-2.5 py-2 text-xs font-semibold shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
+            >
+              <span className="text-[11.5px] leading-tight font-medium line-clamp-1">{act2.label}</span>
+              <span className="text-[9.5px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold shrink-0">
+                Enviar ➔
+              </span>
+            </button>
+          </div>
         ) : (
-          <div className="px-3 py-1.5 text-center">
-            <span className="text-[10.5px] text-[#54656f] font-medium">
-              Fim das mensagens • Siga os procedimentos no Bloco de Notas
-            </span>
+          /* TODOS OS 3 PROCEDIMENTOS CONCLUÍDOS! */
+          <div className="p-2.5 bg-emerald-50/90 border-b border-emerald-200/80 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-800 font-bold">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Auditoria Completa • 3 de 3 Procedimentos Realizados!</span>
+            </div>
+            <p className="text-[11px] text-emerald-900/80 leading-snug">
+              Você seguiu todas as regras do Lucas e encurralou o suspeito com provas cabais.
+            </p>
           </div>
         )}
 
@@ -2149,7 +2494,11 @@ const SmsScreen = ({
   onStoryDeliveredChange,
   onOpenTips,
   onOpenVerdictModal,
+  onOpenPixModal,
   inspectedClueCount = 0,
+  inspectedClueIds = [],
+  onInspectClue,
+  onOpenBank,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -2164,7 +2513,11 @@ const SmsScreen = ({
   onStoryDeliveredChange?: (delivered: boolean) => void;
   onOpenTips?: () => void;
   onOpenVerdictModal?: () => void;
+  onOpenPixModal?: () => void;
   inspectedClueCount?: number;
+  inspectedClueIds?: string[];
+  onInspectClue?: (clue: InvestigativeClue) => void;
+  onOpenBank?: () => void;
 }) => {
   const number = findContactNumber(c);
   const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
@@ -2213,62 +2566,31 @@ const SmsScreen = ({
     }
   };
 
-  const contextualActions = React.useMemo(() => {
-    const base = c.interactiveActions || [];
-    const extras: InteractiveAction[] = [];
+  // Status de auditoria de cada um dos 3 passos do caso
+  const step0 = c.clues[0];
+  const step1 = c.clues[1];
+  const step2 = c.clues[2];
 
-    const bankClue = c.clues.find(
-      (k) =>
-        k.category === 'system' ||
-        k.inspection.type === 'security' ||
-        k.name.toLowerCase().includes('banco')
-    );
-    if (bankClue) {
-      extras.push({
-        id: `act-${c.id}-bank-sms`,
-        label: '🏦 Questionar: "Não reconheço essa compra no meu extrato"',
-        actionType: 'investigation',
-        playerMessage: 'Não reconheço essa compra. Vou verificar no extrato oficial do meu aplicativo.',
-        replyMessage: 'Central de Segurança: Para cancelamento emergencial e estorno, disque imediatamente para a central informada.',
-        evidenceDiscovered: {
-          id: `ev-${c.id}-bank`,
-          title: 'SMS de Engenharia Social',
-          description: 'O golpista tenta forçar a ligação para a falsa central telefônica.',
-          status: 'suspicious',
-          forensicFact: 'Bancos nunca pedem para ligar para números 0800 desconhecidos via SMS.',
-        },
-      });
+  const isStep0Done = Boolean(step0 && inspectedClueIds.includes(step0.id));
+  const isStep1Done = Boolean(step1 && inspectedClueIds.includes(step1.id));
+  const isStep2Done = Boolean(step2 && inspectedClueIds.includes(step2.id));
+
+  // Ações de confronto contextual geradas para cada evidência
+  const act0 = step0 ? getClueConfrontationAction(step0, c) : null;
+  const act1 = step1 ? getClueConfrontationAction(step1, c) : null;
+  const act2 = step2 ? getClueConfrontationAction(step2, c) : null;
+
+  const isAct0Done = Boolean(act0 && executedActionIds.includes(act0.id));
+  const isAct1Done = Boolean(act1 && executedActionIds.includes(act1.id));
+  const isAct2Done = Boolean(act2 && executedActionIds.includes(act2.id));
+
+  const handleActionClick = (action: InteractiveAction, targetClue?: InvestigativeClue) => {
+    sound.playBlip();
+    if (targetClue) {
+      onInspectClue?.(targetClue);
     }
-
-    const linkClue = c.clues.find(
-      (k) =>
-        k.category === 'whois' ||
-        k.inspection.type === 'link' ||
-        k.name.toLowerCase().includes('link')
-    );
-    if (linkClue) {
-      extras.push({
-        id: `act-${c.id}-link-sms`,
-        label: '🔗 Questionar Link: "Qual é o site oficial?"',
-        actionType: 'investigation',
-        playerMessage: 'Esse endereço de internet não parece com o site oficial da empresa.',
-        replyMessage: 'Aviso do Sistema: Link exclusivo de pagamento e desembaraço aduaneiro expresso.',
-        evidenceDiscovered: {
-          id: `ev-${c.id}-link`,
-          title: 'Domínio Web Falso',
-          description: 'O endereço de internet diverge do portal oficial.',
-          status: 'suspicious',
-          forensicFact: 'Empresas públicas e bancos utilizam apenas domínios oficiais registrados.',
-        },
-      });
-    }
-
-    return [...base, ...extras.filter((ex) => !base.some((b) => b.id === ex.id))];
-  }, [c]);
-
-  const availableActions = contextualActions.filter(
-    (act) => !executedActionIds.includes(act.id),
-  );
+    onPerformAction(action);
+  };
 
   const renderMessageContent = (text: string) => {
     const parts = text.split(/(https?:\/\/[^\s]+)/g);
@@ -2415,36 +2737,288 @@ const SmsScreen = ({
               Recebendo SMS... (Toque para acelerar)
             </span>
           </div>
-        ) : availableActions.length > 0 && !stamped ? (
-          <div className="p-2.5 space-y-1.5 border-b border-black/5">
-            <div className="text-[11px] font-mono text-neutral-600 uppercase tracking-wider font-bold px-1 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#007aff]" /> Responder por SMS:
+        ) : !isStep0Done ? (
+          /* ETAPA 1 PENDENTE: NENHUMA MENSAGEM AO GOLPISTA! APENAS VERIFICAÇÃO DA REGRA */
+          <div className="p-2.5 bg-amber-50/90 border-b border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-amber-900 font-bold">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                <span>Procedimento 1 de 3 • {step0?.name || 'Verificação Inicial'}</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold">
+                Regra Ativa
+              </span>
             </div>
-            <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
-              {availableActions.map((act) => (
+            <p className="text-xs text-neutral-900 font-semibold leading-snug">
+              👉 {step0?.question}
+            </p>
+            <p className="text-[10.5px] text-amber-900/80 italic leading-tight">
+              🔒 Respostas bloqueadas pela orientação do Lucas: verifique a evidência da mensagem primeiro!
+            </p>
+            <div className="flex items-center gap-2 pt-0.5">
+              {step0?.category === 'whois' || step0?.inspection.type === 'link' ? (
                 <button
-                  key={act.id}
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    sound.playBlip();
-                    onPerformAction(act);
+                    onLinkClick(step0.inspection.field1Value);
                   }}
-                  className="w-full text-left bg-white hover:bg-blue-50 border border-blue-200 text-[#007aff] rounded-xl px-2.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-between gap-2"
+                  className="flex-1 py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <span className="text-xs leading-snug font-medium line-clamp-1">{act.label}</span>
-                  <span className="text-[10px] font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md shrink-0 font-bold">
-                    Perguntar ➔
-                  </span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Inspecionar Link no Navegador</span>
                 </button>
-              ))}
+              ) : step0?.category === 'phone' || step0?.inspection.type === 'contact' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onContactClick();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Inspecionar Contato (Checar Origem)</span>
+                </button>
+              ) : step0?.category === 'system' || step0?.name.toLowerCase().includes('banco') ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenBank?.();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Building className="w-3.5 h-3.5" />
+                  <span>Conferir Extrato no Meu Banco</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNotes?.();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Abrir Bloco de Notas</span>
+                </button>
+              )}
+              {onOpenNotes && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNotes();
+                  }}
+                  className="py-2 px-2.5 rounded-xl bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center gap-1"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Notas</span>
+                </button>
+              )}
             </div>
           </div>
+        ) : !isAct0Done && act0 ? (
+          /* ETAPA 1 VERIFICADA: DESBLOQUEIA A FUNÇÃO DE CONFRONTAR O FATO 1 */
+          <div className="p-2.5 bg-sky-50 border-b border-sky-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-sky-900 font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                <span>Contexto Desbloqueado: Evidência 1 Apurada!</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-sky-200 text-sky-900 px-1.5 py-0.5 rounded font-bold">
+                ✓ Procedimento Concluído
+              </span>
+            </div>
+            <p className="text-xs text-neutral-800 font-medium leading-snug">
+              {step0?.evidenceResult.headline} • Confronte o remetente por SMS:
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleActionClick(act0);
+              }}
+              className="w-full text-left bg-white hover:bg-blue-50 border border-blue-400 text-[#007aff] rounded-xl px-2.5 py-2 text-xs font-semibold shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
+            >
+              <span className="text-[11.5px] leading-tight font-medium line-clamp-1">{act0.label}</span>
+              <span className="text-[9.5px] font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold shrink-0">
+                Enviar ➔
+              </span>
+            </button>
+          </div>
+        ) : !isStep1Done ? (
+          /* ETAPA 2 PENDENTE */
+          <div className="p-2.5 bg-amber-50/90 border-b border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-amber-900 font-bold">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                <span>Procedimento 2 de 3 • {step1?.name || 'Auditoria Oficial'}</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold">
+                Regra Ativa
+              </span>
+            </div>
+            <p className="text-xs text-neutral-900 font-semibold leading-snug">
+              👉 {step1?.question}
+            </p>
+            <p className="text-[10.5px] text-amber-900/80 italic leading-tight">
+              🔒 Respostas bloqueadas: confira no sistema oficial antes de pagar qualquer valor!
+            </p>
+            <div className="flex items-center gap-2 pt-0.5">
+              {step1?.category === 'system' || step1?.inspection.type === 'official' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (step1) onInspectClue?.(step1);
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>📦 Consultar Sistema Oficial</span>
+                </button>
+              ) : step1?.category === 'pix' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenPixModal?.();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>💸 Simular Pix & Auditar Titular</span>
+                </button>
+              ) : step1?.category === 'whois' || step1?.inspection.type === 'link' ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLinkClick(step1.inspection.field1Value);
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Inspecionar Link no Navegador</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNotes?.();
+                  }}
+                  className="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Abrir Bloco de Notas</span>
+                </button>
+              )}
+              {onOpenNotes && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenNotes();
+                  }}
+                  className="py-2 px-2.5 rounded-xl bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center gap-1"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Notas</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : !isAct1Done && act1 ? (
+          /* ETAPA 2 VERIFICADA */
+          <div className="p-2.5 bg-sky-50 border-b border-sky-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-sky-900 font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                <span>Contexto Desbloqueado: Evidência 2 Apurada!</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-sky-200 text-sky-900 px-1.5 py-0.5 rounded font-bold">
+                ✓ Sistema Consultado
+              </span>
+            </div>
+            <p className="text-xs text-neutral-800 font-medium leading-snug">
+              {step1?.evidenceResult.headline} • Confronte a alegação falsa por SMS:
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleActionClick(act1);
+              }}
+              className="w-full text-left bg-white hover:bg-blue-50 border border-blue-400 text-[#007aff] rounded-xl px-2.5 py-2 text-xs font-semibold shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
+            >
+              <span className="text-[11.5px] leading-tight font-medium line-clamp-1">{act1.label}</span>
+              <span className="text-[9.5px] font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold shrink-0">
+                Enviar ➔
+              </span>
+            </button>
+          </div>
+        ) : !isStep2Done ? (
+          /* ETAPA 3 PENDENTE */
+          <div className="p-2.5 bg-amber-50/90 border-b border-amber-200/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-mono uppercase tracking-wider text-amber-900 font-bold">
+                <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                <span>Procedimento 3 de 3 • {step2?.name || 'Origem da Mensagem'}</span>
+              </div>
+              <span className="text-[9.5px] font-mono bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold">
+                Regra Ativa
+              </span>
+            </div>
+            <p className="text-xs text-neutral-900 font-semibold leading-snug">
+              👉 {step2?.question}
+            </p>
+            <p className="text-[10.5px] text-amber-900/80 italic leading-tight">
+              Empresas oficiais usam códigos curtos (shortcodes) de 5 dígitos, nunca telefones móveis comuns.
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (step2) onInspectClue?.(step2);
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>📱 Inspecionar Número do Remetente</span>
+            </button>
+          </div>
+        ) : !isAct2Done && act2 ? (
+          /* CONFRONTO DO PASSO 3 */
+          <div className="p-2.5 bg-sky-50 border-b border-sky-200 space-y-2">
+            <p className="text-xs text-neutral-800 font-medium">
+              Conclua o questionamento do remetente suspeito:
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleActionClick(act2);
+              }}
+              className="w-full text-left bg-white hover:bg-blue-50 border border-blue-400 text-[#007aff] rounded-xl px-2.5 py-2 text-xs font-semibold shadow-xs transition active:scale-98 cursor-pointer flex items-center justify-between gap-2"
+            >
+              <span className="text-[11.5px] leading-tight font-medium line-clamp-1">{act2.label}</span>
+              <span className="text-[9.5px] font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold shrink-0">
+                Enviar ➔
+              </span>
+            </button>
+          </div>
         ) : (
-          <div className="p-1.5 bg-neutral-50 text-center">
-            <span className="text-[10.5px] text-neutral-500 font-medium">
-              Fim do SMS • Confira o Bloco de Notas para auditar o caso
-            </span>
+          /* TODOS OS 3 PROCEDIMENTOS CONCLUÍDOS! */
+          <div className="p-2.5 bg-emerald-50 border-b border-emerald-200 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-800 font-bold">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Auditoria Completa • 3 de 3 Procedimentos Realizados!</span>
+            </div>
+            <p className="text-[11px] text-emerald-900/80 leading-snug">
+              Você seguiu todas as regras do Lucas e reuniu evidências técnicas irrefutáveis.
+            </p>
           </div>
         )}
 
@@ -3686,6 +4260,18 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     showToast('📴 Chamada encerrada na cara do golpista!');
   };
 
+  const handleOpenContactModal = () => {
+    sound.playBlip();
+    setActiveModal('contact');
+    const contactClue = scamCase.clues.find(
+      (k) => k.category === 'phone' || k.inspection.type === 'contact'
+    );
+    if (contactClue && !inspectedClueIds.includes(contactClue.id)) {
+      handleInspectClue(contactClue);
+      showToast('🔍 DDD e dados da operadora inspecionados!');
+    }
+  };
+
   const flagged = stamped !== null && scamCase.isScam;
 
   // Render do app de mensagens conforme canal
@@ -3701,7 +4287,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             actionHistory={actionHistory}
             stamped={stamped}
             onLinkClick={handleOpenBrowser}
-            onContactClick={() => setActiveModal('contact')}
+            onContactClick={handleOpenContactModal}
             isBlocked={isBlocked}
             onBlockContact={handleBlockContact}
             onCallClick={handleCallClick}
@@ -3712,6 +4298,9 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onOpenVerdictModal={() => setIsVerdictModalOpen(true)}
             onOpenPixModal={() => setIsPixDoubtModalOpen(true)}
             inspectedClueCount={inspectedClueIds.length}
+            inspectedClueIds={inspectedClueIds}
+            onInspectClue={handleInspectClue}
+            onOpenBank={handleOpenBank}
           />
         );
       case 'call':
@@ -3747,13 +4336,17 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             actionHistory={actionHistory}
             stamped={stamped}
             onLinkClick={handleOpenBrowser}
-            onContactClick={() => setActiveModal('contact')}
+            onContactClick={handleOpenContactModal}
             onBackToHome={() => setActiveApp('home')}
             onOpenNotes={handleOpenNotes}
             onStoryDeliveredChange={onStoryDeliveredChange}
             onOpenTips={() => setIsTipsModalOpen(true)}
             onOpenVerdictModal={() => setIsVerdictModalOpen(true)}
+            onOpenPixModal={() => setIsPixDoubtModalOpen(true)}
             inspectedClueCount={inspectedClueIds.length}
+            inspectedClueIds={inspectedClueIds}
+            onInspectClue={handleInspectClue}
+            onOpenBank={handleOpenBank}
           />
         );
     }
@@ -4159,7 +4752,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   onOpenTips={() => setIsTipsModalOpen(true)}
                   onSimulatePix={handleConfrontPixInChat}
                   onRequestAudio={handleRequestAudioInChat}
-                  onInspectContact={() => setActiveModal('contact')}
+                  onInspectContact={handleOpenContactModal}
                   onInspectBank={handleOpenBank}
                   onInspectBrowser={handleOpenBrowser}
                 />
@@ -4258,86 +4851,149 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
 
           {/* MODAL: Perfil do Contato (Point & Click no Remetente) */}
           <AnimatePresence>
-            {activeModal === 'contact' && (
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 30 }}
-                className="absolute inset-0 z-50 bg-[#111317] text-white flex flex-col p-4"
-              >
-                <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                  <span className="text-xs font-bold text-neutral-400">Dados do Contato</span>
-                  <button
-                    type="button"
-                    onClick={() => setActiveModal(null)}
-                    className="p-1 hover:bg-white/10 rounded-full cursor-pointer text-neutral-400 hover:text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-3 p-2">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-2xl font-bold shadow-xl border-2 border-white/20">
-                    {scamCase.sender.charAt(0)}
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold text-base">{cleanName(scamCase.sender)}</h3>
-                    <div className="text-xs text-neutral-400 font-mono mt-0.5">
-                      {number ?? 'Sem identificador de chamada'}
-                    </div>
-                  </div>
-
-                  <div className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-left space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-400">Canal:</span>
-                      <span className="font-semibold capitalize text-emerald-400">{scamCase.channel}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-400">Verificação:</span>
-                      <span
-                        className={`font-semibold ${
-                          scamCase.isScam ? 'text-red-400' : 'text-emerald-400'
-                        }`}
-                      >
-                        {scamCase.isScam ? 'Não Verificado ✗' : 'Verificado ✓'}
+            {activeModal === 'contact' && (() => {
+              const contactClue = scamCase.clues.find(
+                (k) => k.category === 'phone' || k.inspection.type === 'contact'
+              );
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 30 }}
+                  className="absolute inset-0 z-50 bg-[#111317] text-white flex flex-col p-4 overflow-y-auto"
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-neutral-300">Auditoria Forense da Linha</span>
+                      <span className="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-400/30 px-1.5 py-0.5 rounded-full font-mono font-bold">
+                        ANATEL / Carrier
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-400">Status da Conta:</span>
-                      <span className="font-semibold text-neutral-200">
-                        {isBlocked ? 'Bloqueado' : 'Ativo'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="w-full space-y-2 pt-2">
-                    {!isBlocked ? (
-                      <button
-                        type="button"
-                        onClick={handleBlockContact}
-                        className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition"
-                      >
-                        <UserX className="w-4 h-4" />
-                        <span>Bloquear este Contato</span>
-                      </button>
-                    ) : (
-                      <div className="py-2 bg-neutral-800 text-neutral-400 font-semibold text-xs rounded-xl">
-                        ✓ Contato já está bloqueado
-                      </div>
-                    )}
-
                     <button
                       type="button"
                       onClick={() => setActiveModal(null)}
-                      className="w-full py-2 bg-white/10 hover:bg-white/20 text-neutral-200 font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition"
+                      className="p-1 hover:bg-white/10 rounded-full cursor-pointer text-neutral-400 hover:text-white"
                     >
-                      Fechar
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-              </motion.div>
-            )}
+
+                  <div className="flex-1 flex flex-col items-center justify-start text-center space-y-3 pt-3">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-2xl font-bold shadow-xl border-2 border-white/20">
+                      {scamCase.sender.charAt(0)}
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-base">{cleanName(scamCase.sender)}</h3>
+                      <div className="text-xs text-neutral-400 font-mono mt-0.5">
+                        {number ?? 'Sem identificador de chamada'}
+                      </div>
+                    </div>
+
+                    {/* DADOS DA OPERADORA / DDD SE HOUVER CLUE */}
+                    {contactClue ? (
+                      <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-left space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wide">
+                            {contactClue.inspection.badge || 'Registro Telefônico'}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold">
+                            Evidência Crítica
+                          </span>
+                        </div>
+
+                        <div className="space-y-1.5 text-xs text-neutral-300">
+                          <div className="flex items-center justify-between">
+                            <span className="text-neutral-400">{contactClue.inspection.field1Label}:</span>
+                            <span className="font-semibold text-white font-mono">{contactClue.inspection.field1Value}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-neutral-400">{contactClue.inspection.field2Label}:</span>
+                            <span className="font-semibold text-amber-400 font-mono">{contactClue.inspection.field2Value}</span>
+                          </div>
+                          {contactClue.inspection.field3Label && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-neutral-400">{contactClue.inspection.field3Label}:</span>
+                              <span className="font-semibold text-rose-400 font-mono">{contactClue.inspection.field3Value}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="text-[11px] text-amber-200/90 bg-black/40 p-2 rounded-lg border border-amber-500/20 leading-relaxed">
+                          ⚠️ <strong>Alerta Pericial:</strong> {contactClue.inspection.observation}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* DADOS GERAIS */}
+                    <div className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-left space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-neutral-400">Canal:</span>
+                        <span className="font-semibold capitalize text-emerald-400">{scamCase.channel}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-neutral-400">Verificação:</span>
+                        <span
+                          className={`font-semibold ${
+                            scamCase.isScam ? 'text-red-400' : 'text-emerald-400'
+                          }`}
+                        >
+                          {scamCase.isScam ? 'Não Verificado ✗' : 'Verificado ✓'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-neutral-400">Status da Conta:</span>
+                        <span className="font-semibold text-neutral-200">
+                          {isBlocked ? 'Bloqueado' : 'Ativo'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="w-full space-y-2 pt-1 pb-2">
+                      {contactClue && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!inspectedClueIds.includes(contactClue.id)) {
+                              handleInspectClue(contactClue);
+                            }
+                            setActiveModal(null);
+                            setActiveApp('messaging');
+                          }}
+                          className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Confrontar no Chat (Evidência Pronta)</span>
+                        </button>
+                      )}
+
+                      {!isBlocked ? (
+                        <button
+                          type="button"
+                          onClick={handleBlockContact}
+                          className="w-full py-2 bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition"
+                        >
+                          <UserX className="w-4 h-4" />
+                          <span>Bloquear este Contato</span>
+                        </button>
+                      ) : (
+                        <div className="py-2 bg-neutral-800 text-neutral-400 font-semibold text-xs rounded-xl">
+                          ✓ Contato já está bloqueado
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveModal(null)}
+                        className="w-full py-2 bg-white/10 hover:bg-white/20 text-neutral-200 font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition"
+                      >
+                        Fechar
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })()}
           </AnimatePresence>
 
           {/* MODAL DE DICAS DE INVESTIGAÇÃO DO CELULAR */}
@@ -4378,10 +5034,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 transition={{ type: 'spring', damping: 25, stiffness: 320, delay: 0.6 }}
                 className="absolute bottom-6 left-2.5 right-2.5 z-40 max-h-[78%] overflow-y-auto overscroll-contain no-scrollbar bg-slate-900/98 border-2 border-white/30 rounded-2xl p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] backdrop-blur-2xl text-white space-y-2.5"
               >
-                {/* Cabeçalho do Dossiê */}
+                {/* Cabeçalho do Resumo */}
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                   <span className="text-[9px] font-mono uppercase tracking-wider text-neutral-400 font-bold flex items-center gap-1">
-                    🔍 DOSSIÊ FORENSE • CASO RESOLVIDO
+                    📋 RESUMO DO CASO
                   </span>
                   {wasCorrect && earnedXp > 0 && (
                     <span className="font-mono font-bold text-[10px] bg-emerald-500/25 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40 shrink-0 animate-pulse">
@@ -4405,14 +5061,14 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   )}
                   <div className="font-bold text-xs flex-1 leading-snug">
                     {wasCorrect
-                      ? 'Defesa Bem-Sucedida! Veredito preciso.'
+                      ? 'Você acertou! Decisão correta.'
                       : scamCase.isScam
-                      ? 'Falha de Atenção! Você caiu no golpe.'
-                      : 'Alarme Falso! A mensagem era legítima.'}
+                      ? 'Atenção: era um golpe! Você caiu nele.'
+                      : 'Atenção: a mensagem era segura e verdadeira.'}
                   </div>
                 </div>
 
-                {/* Avaliação da Hipótese Forense Selecionada pelo Jogador */}
+                {/* Avaliação da Opção Escolhida */}
                 {userHypothesisIndex !== null && scamCase.evidenceHypotheses[userHypothesisIndex] && (
                   <div
                     className={`text-[10.5px] rounded-xl p-2.5 border ${
@@ -4423,22 +5079,22 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   >
                     <span className="text-[9px] font-mono uppercase tracking-wide font-bold block mb-0.5">
                       {userHypothesisIndex === scamCase.correctEvidenceIndex
-                        ? '✓ Fundamentação Pericial Precisa:'
-                        : '⚠️ Reavaliação da Evidência Principal:'}
+                        ? '✓ Motivo certo:'
+                        : '⚠️ Motivo principal:'}
                     </span>
                     <p className="leading-snug">
                       {userHypothesisIndex === scamCase.correctEvidenceIndex
-                        ? 'Você apontou com exatidão o fato técnico concreto que comprova o caso!'
-                        : `Sua hipótese: "${scamCase.evidenceHypotheses[userHypothesisIndex]}". A prova técnica chave é: ${scamCase.keyEvidenceReason}`}
+                        ? 'Você identificou exatamente o detalhe que comprova a situação!'
+                        : `Você escolheu: "${scamCase.evidenceHypotheses[userHypothesisIndex]}". Mas o detalhe principal era: ${scamCase.keyEvidenceReason}`}
                     </p>
                   </div>
                 )}
 
-                {/* Engenharia Social Identificada */}
+                {/* Como o Golpista Agiu */}
                 {scamCase.pedagogy?.emotionalTrigger && (
                   <div className="text-[10.5px] bg-white/5 border border-white/10 rounded-xl p-2 space-y-0.5">
                     <span className="text-[9px] font-mono uppercase tracking-wide text-amber-300 font-bold block">
-                      ⚠️ Tática de Engenharia Social:
+                      ⚠️ Como tentaram te enganar:
                     </span>
                     <span className="text-neutral-300 leading-snug block">
                       {scamCase.pedagogy.emotionalTrigger}
@@ -4446,18 +5102,18 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   </div>
                 )}
 
-                {/* Análise Pericial / Fato Concreto */}
+                {/* O Que Foi Descoberto */}
                 <div className="text-[11px] text-neutral-200 leading-relaxed bg-black/40 border border-white/10 rounded-xl p-2.5">
                   <span className="text-[9px] font-mono uppercase tracking-wide text-sky-400 font-bold block mb-0.5">
-                    🔎 Fato Concreto Apurado:
+                    🔎 O que foi descoberto:
                   </span>
                   {scamCase.keyEvidenceReason || scamCase.explanation}
                 </div>
 
-                {/* Regra de Ouro do Lucas */}
+                {/* Regra de Ouro */}
                 <div className="p-2.5 rounded-xl bg-amber-400/15 border border-amber-400/30">
                   <div className="text-[9px] font-mono uppercase tracking-wider text-amber-300 font-bold">
-                    📌 Regra de Ouro do Lucas
+                    📌 Regra de Ouro (Para lembrar sempre)
                   </div>
                   <p className="text-[11px] font-semibold text-white leading-snug mt-0.5">
                     {scamCase.pedagogy.goldenRule}
@@ -4474,7 +5130,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                     }}
                     className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
                   >
-                    <span>Avançar para o Próximo Caso ➔</span>
+                    <span>Próximo Caso ➔</span>
                   </button>
                 )}
               </motion.div>
@@ -4500,7 +5156,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             >
               {stamped === 'scam' ? 'GOLPE!' : 'SEGURO'}
               <div className="text-[10px] tracking-[0.3em] text-center mt-1 font-mono font-bold uppercase">
-                {wasCorrect ? 'veredito comprovado' : 'veredito incorreto'}
+                {wasCorrect ? 'resposta certa' : 'resposta incorreta'}
               </div>
             </div>
           </motion.div>
