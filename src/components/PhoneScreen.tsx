@@ -32,8 +32,6 @@ import {
   FileText,
   CheckCircle2,
   Lightbulb,
-  Volume2,
-  VolumeX,
 } from 'lucide-react';
 import type { ScamCase, InteractiveAction, InvestigativeClue } from '../data/scamsData';
 import { sound } from '../utils/audio';
@@ -1282,19 +1280,23 @@ const CallScreen = ({
   const number = findContactNumber(c);
   const [callState, setCallState] = useState<'ringing' | 'connected' | 'ended'>('ringing');
   const [callSeconds, setCallSeconds] = useState(0);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voiceMuted, setVoiceMuted] = useState(false);
+  const [isCallerTalking, setIsCallerTalking] = useState(false);
   const [transcriptLines, setTranscriptLines] = useState<{ sender: 'caller' | 'player'; text: string }[]>([]);
   const [hasDeliveredTrap, setHasDeliveredTrap] = useState(false);
 
   const onStoryDeliveredChangeRef = useRef(onStoryDeliveredChange);
   onStoryDeliveredChangeRef.current = onStoryDeliveredChange;
 
-  // Extrai a fala inicial do atendente
+  // Extrai a fala inicial do atendente e divide em frases para fluxo de conversa humana
   const rawCallerSpeech = (() => {
     const lines = c.messageContent.split(/\n+/).filter(Boolean);
     const speech = lines.find((l) => /atendente|central|olá|identificamos|falo com/i.test(l)) || lines[0] || c.messageContent;
     return speech.replace(/^[A-Za-z\s()]+:\s*"?/, '').replace(/"?$/, '').trim();
+  })();
+
+  const speechPhrases = (() => {
+    const parts = rawCallerSpeech.split(/(?<=[.?!])\s+/).filter(Boolean);
+    return parts.length > 0 ? parts : [rawCallerSpeech];
   })();
 
   // Efeito de toque e vibração enquanto o telefone está tocando
@@ -1321,50 +1323,42 @@ const CallScreen = ({
     return () => clearInterval(timer);
   }, [callState]);
 
-  // Limpeza de síntese de voz ao desmontar
-  useEffect(() => {
-    return () => {
-      sound.stopSpeaking();
-    };
-  }, []);
-
-  // Atender chamada
+  // Atender chamada com ritmo de conversa viva (sem voz TTS)
   const handleAnswerCall = () => {
     sound.playCallPickup();
     setCallState('connected');
     setCallSeconds(1);
+    setTranscriptLines([]);
+    setIsCallerTalking(true);
 
-    const firstSpeech = rawCallerSpeech;
-    setTranscriptLines([{ sender: 'caller', text: firstSpeech }]);
-    setIsSpeaking(true);
+    // Entrega progressiva da fala inicial com cadência humana
+    let phraseIdx = 0;
+    const deliverNext = () => {
+      if (phraseIdx < speechPhrases.length) {
+        const nextPhrase = speechPhrases[phraseIdx];
+        setTranscriptLines((prev) => [...prev, { sender: 'caller', text: nextPhrase }]);
+        sound.playDialogueBlip();
+        phraseIdx += 1;
 
-    if (!voiceMuted) {
-      sound.speakScammer(firstSpeech, () => {
-        setIsSpeaking(false);
-      });
-    } else {
-      setTimeout(() => setIsSpeaking(false), 2000);
-    }
+        if (phraseIdx < speechPhrases.length) {
+          setTimeout(deliverNext, 1200);
+        } else {
+          setIsCallerTalking(false);
+        }
+      } else {
+        setIsCallerTalking(false);
+      }
+    };
+
+    setTimeout(deliverNext, 450);
   };
 
   // Desligar chamada
   const handleEndCall = () => {
-    sound.stopSpeaking();
     sound.playCallHangup();
     setCallState('ended');
-    setIsSpeaking(false);
+    setIsCallerTalking(false);
     onHangup();
-  };
-
-  // Alternar voz mudo
-  const handleToggleVoiceMute = () => {
-    if (!voiceMuted) {
-      sound.stopSpeaking();
-      setIsSpeaking(false);
-      setVoiceMuted(true);
-    } else {
-      setVoiceMuted(false);
-    }
   };
 
   // Ações de diálogo do jogador
@@ -1377,23 +1371,18 @@ const CallScreen = ({
     setTranscriptLines((prev) => [...prev, { sender: 'player', text: act.label }]);
     onPerformAction(act);
 
-    setIsSpeaking(true);
+    // O atendente processa a resposta e replica com o golpe
+    setIsCallerTalking(true);
     setTimeout(() => {
       const reply = act.replyMessage.replace(/^[A-Za-z\s()]+:\s*"?/, '').replace(/"?$/, '').trim();
       setTranscriptLines((prev) => [...prev, { sender: 'caller', text: reply }]);
+      sound.playDialogueBlip();
+      setIsCallerTalking(false);
 
       // Armadilha entregue!
       setHasDeliveredTrap(true);
       onStoryDeliveredChangeRef.current?.(true);
-
-      if (!voiceMuted) {
-        sound.speakScammer(reply, () => {
-          setIsSpeaking(false);
-        });
-      } else {
-        setTimeout(() => setIsSpeaking(false), 2200);
-      }
-    }, 450);
+    }, 700);
   };
 
   // Sincroniza entrega caso venha de histórico prévio
@@ -1527,19 +1516,10 @@ const CallScreen = ({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <AudioWaveform active={isSpeaking} />
-          <button
-            type="button"
-            onClick={handleToggleVoiceMute}
-            className={`p-1.5 rounded-full border cursor-pointer active:scale-90 transition ${
-              voiceMuted
-                ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                : 'bg-white/10 border-white/20 text-emerald-400'
-            }`}
-            title={voiceMuted ? 'Voz desativada (Clique para ligar voz)' : 'Voz ativa (Clique para mutar)'}
-          >
-            {voiceMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-          </button>
+          <AudioWaveform active={isCallerTalking} />
+          <span className="text-[10px] font-mono text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+            Linha Aberta
+          </span>
         </div>
       </div>
 
@@ -1551,9 +1531,10 @@ const CallScreen = ({
             <Phone className="w-3 h-3 text-emerald-400" />
             <span>Linha conectada com {number ?? '0800 729 0001'}</span>
           </span>
-          {isSpeaking && (
-            <span className="text-emerald-400 font-bold animate-pulse font-mono">
-              Falando agora... 🎙️
+          {isCallerTalking && (
+            <span className="text-emerald-400 font-bold animate-pulse font-mono flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <span>Atendente falando...</span>
             </span>
           )}
         </div>
@@ -1585,6 +1566,23 @@ const CallScreen = ({
             <p className="font-medium text-[12px]">{line.text}</p>
           </motion.div>
         ))}
+
+        {/* Indicador de fala do Atendente enquanto a mensagem está sendo formulada na linha */}
+        {isCallerTalking && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-800/90 border border-slate-700/60 w-fit text-emerald-300 text-[11px] font-medium shadow-sm"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="italic">Atendente falando na linha...</span>
+            <span className="flex gap-1 ml-0.5">
+              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-bounce" />
+              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-bounce [animation-delay:0.15s]" />
+              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-bounce [animation-delay:0.3s]" />
+            </span>
+          </motion.div>
+        )}
 
         {/* CARD DA VIRADA NARRATIVA (SURGE QUANDO O GOLPISTA SOLTA A ARMADILHA DO PIX) */}
         {hasDeliveredTrap && (

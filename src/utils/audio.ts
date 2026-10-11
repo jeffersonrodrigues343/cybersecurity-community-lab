@@ -317,51 +317,40 @@ class SoundEngine {
     } catch {}
   }
 
-  // Voice synthesis for scammer / characters using native Web Speech API (pt-BR)
-  public speakScammer(text: string, onEnd?: () => void) {
-    if (!this.enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      onEnd?.();
-      return;
-    }
+  // Subtle indie game dialogue blip (soft, warm text typing tap)
+  public playDialogueBlip() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
 
     try {
-      window.speechSynthesis.cancel();
-      // Clean markdown, links and special chars from text for spoken dialogue
-      const cleanText = text
-        .replace(/https?:\/\/\S+/gi, 'link enviado')
-        .replace(/[*_#`~]/g, '')
-        .replace(/0800\s*(\d{3})\s*(\d{4})/g, 'zero oitocentos, $1, $2')
-        .replace(/R\$\s*([\d.,]+)/g, '$1 reais')
-        .trim();
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 1.08; // natural fast-paced urgent delivery
-      utterance.pitch = 0.98; // convincing authoritative pitch
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(320 + Math.random() * 40, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.035);
 
-      // Select pt-BR voice if available
-      const voices = window.speechSynthesis.getVoices();
-      const brVoice = voices.find((v) => v.lang === 'pt-BR' || v.lang.startsWith('pt'));
-      if (brVoice) {
-        utterance.voice = brVoice;
-      }
+      gain.gain.setValueAtTime(0.018, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
 
-      utterance.onend = () => onEnd?.();
-      utterance.onerror = () => onEnd?.();
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
 
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      onEnd?.();
-    }
+      osc.start(now);
+      osc.stop(now + 0.035);
+    } catch {}
   }
 
-  // Stop active speech synthesis immediately
+  // Voice synthesis removed per user request: dialogue is conveyed through dynamic indie text pacing
+  public speakScammer(_text: string, onEnd?: () => void) {
+    onEnd?.();
+  }
+
+  // Stop active speech
   public stopSpeaking() {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {}
-    }
+    // no-op
   }
 
   // Heavy rubber stamp impact thud
