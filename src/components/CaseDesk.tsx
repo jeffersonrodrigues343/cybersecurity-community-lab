@@ -103,6 +103,24 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [isFamilyGuideOpen, setIsFamilyGuideOpen] = useState(false);
   const [familyGuideTab, setFamilyGuideTab] = useState<'rules' | 'glossary'>('rules');
 
+  const [hasCompletedInitialBoot, setHasCompletedInitialBoot] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return sessionStorage.getItem('hacklearn_initial_boot') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleCompleteInitialBoot = useCallback(() => {
+    setHasCompletedInitialBoot(true);
+    try {
+      sessionStorage.setItem('hacklearn_initial_boot', 'true');
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const topRef = useRef<HTMLDivElement>(null);
 
   const answered = finalVerdict !== null;
@@ -217,21 +235,18 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [solved]);
 
-  // Teclado no Desktop (G para Golpe, S para Seguro, Enter para Próximo)
+  // Teclado no Desktop (Enter ou Espaço para avançar após veredito)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const k = e.key.toLowerCase();
-      if (!answered) {
-        if (k === 'g') handleDirectVerdict('scam');
-        else if (k === 's') handleDirectVerdict('safe');
-      } else if (answered && (k === 'enter' || k === ' ')) {
+      if (answered && (k === 'enter' || k === ' ')) {
         nextCase();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [answered, handleDirectVerdict, nextCase]);
+  }, [answered, nextCase]);
 
   // Auto-fechar toast de conquista
   useEffect(() => {
@@ -351,6 +366,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   unlockedSkills={unlockedSkills}
                   onUnlockSkill={handleUnlockSkill}
                   earnedXp={lastEarned}
+                  initialBootDone={hasCompletedInitialBoot}
+                  onCompleteInitialBoot={handleCompleteInitialBoot}
                 />
               </motion.div>
             </AnimatePresence>
