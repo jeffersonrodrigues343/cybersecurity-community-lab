@@ -235,11 +235,9 @@ const LockScreen = ({
 const LucasChatScreen = ({
   currentTime,
   onBackToHome,
-  onOpenNotes,
 }: {
   currentTime: string;
   onBackToHome: () => void;
-  onOpenNotes: () => void;
 }) => {
   const [revealedCount, setRevealedCount] = useState(0);
   const [isTyping, setIsTyping] = useState(true);
@@ -360,34 +358,6 @@ const LucasChatScreen = ({
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.2s]" />
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
-          </motion.div>
-        )}
-
-        {/* Botão de Ação Direta para o Bloco de Notas após ler */}
-        {revealedCount === lucasMessages.length && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="pt-2"
-          >
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                sound.playKeypress();
-                onOpenNotes();
-              }}
-              className="w-full bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-bold text-xs py-3 px-3.5 rounded-2xl shadow-md transition flex items-center justify-between cursor-pointer border border-amber-300"
-            >
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-slate-950" />
-                <span>Abrir o Bloco de Notas com o Checklist</span>
-              </div>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <div className="text-center text-[10px] text-slate-500 mt-1.5">
-              Toque acima ou use a barra inferior para ir às Notas
-            </div>
           </motion.div>
         )}
       </div>
@@ -641,15 +611,9 @@ const PixDoubtModal = ({
 const NotesScreen = ({
   c,
   inspectedClueIds = [],
-  onInspectClue,
   onBack,
   onOpenVerdict,
   onOpenTips,
-  onSimulatePix,
-  onRequestAudio,
-  onInspectContact,
-  onInspectBank,
-  onInspectBrowser,
 }: {
   c: ScamCase;
   inspectedClueIds: string[];
@@ -672,33 +636,6 @@ const NotesScreen = ({
     if (idx === 1) return isStepChecked(0);
     if (idx === 2) return isStepChecked(0) && isStepChecked(1);
     return false;
-  };
-
-  const handleStepAction = (index: number) => {
-    if (!isStepUnlocked(index)) {
-      sound.playPhoneVibrate();
-      return;
-    }
-    const clue = c.clues[index];
-    if (!clue) return;
-
-    if (clue.category === 'phone' || clue.inspection.type === 'contact') {
-      onInspectContact?.();
-    } else if (clue.category === 'pix') {
-      onSimulatePix?.(clue);
-    } else if (clue.category === 'behavior') {
-      onRequestAudio?.(clue);
-    } else if (
-      clue.category === 'system' ||
-      clue.inspection.type === 'security' ||
-      clue.name.toLowerCase().includes('banco')
-    ) {
-      onInspectBank?.();
-    } else if (clue.category === 'whois' || clue.inspection.type === 'link') {
-      onInspectBrowser?.(clue.inspection.field1Value);
-    } else {
-      onInspectClue?.(clue);
-    }
   };
 
   const completedCount = [0, 1, 2].filter((idx) => isStepChecked(idx)).length;
@@ -797,11 +734,10 @@ const NotesScreen = ({
               >
                 <div className="flex items-start gap-3">
                   <div
-                    onClick={() => handleStepAction(idx)}
-                    className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 cursor-pointer transition ${
+                    className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition ${
                       isChecked
                         ? 'bg-emerald-500 text-white'
-                        : 'border-2 border-white/30 hover:border-amber-400'
+                        : 'border-2 border-white/30'
                     }`}
                   >
                     {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -823,56 +759,6 @@ const NotesScreen = ({
                     <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
                       {clue.inspection.observation}
                     </p>
-
-                    {/* Botões de Ação Prática Contextual Direto no Passo */}
-                    <div className="pt-2">
-                      {clue.category === 'pix' ? (
-                        <button
-                          type="button"
-                          onClick={() => onSimulatePix?.(clue)}
-                          className="w-full py-1.5 px-2.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
-                        >
-                          <span>💸 Simular Pix & Auditar Favorecido</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      ) : clue.category === 'behavior' ? (
-                        <button
-                          type="button"
-                          onClick={() => onRequestAudio?.(clue)}
-                          className="w-full py-1.5 px-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
-                        >
-                          <span>🎙️ Pedir Áudio ao Remetente</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      ) : clue.category === 'phone' ? (
-                        <button
-                          type="button"
-                          onClick={() => onInspectContact?.()}
-                          className="w-full py-1.5 px-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
-                        >
-                          <span>👤 Inspecionar Ficha do Contato (DDD)</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      ) : clue.category === 'system' || clue.inspection.type === 'security' || clue.name.toLowerCase().includes('banco') ? (
-                        <button
-                          type="button"
-                          onClick={() => onInspectBank?.()}
-                          className="w-full py-1.5 px-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
-                        >
-                          <span>🏦 Conferir Extrato no Meu Banco</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      ) : clue.category === 'whois' || clue.inspection.type === 'link' ? (
-                        <button
-                          type="button"
-                          onClick={() => onInspectBrowser?.(clue.inspection.field1Value)}
-                          className="w-full py-1.5 px-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/40 font-bold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
-                        >
-                          <span>🌐 Inspecionar Link no Navegador</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      ) : null}
-                    </div>
 
                     {isChecked && (
                       <div className="mt-2 pt-1.5 border-t border-emerald-500/20 text-[10.5px] text-emerald-300 font-medium">
@@ -4720,7 +4606,6 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 <LucasChatScreen
                   currentTime={scamCase.time}
                   onBackToHome={() => setActiveApp('home')}
-                  onOpenNotes={handleOpenNotes}
                 />
               </motion.div>
             ) : activeApp === 'messaging' ? (
