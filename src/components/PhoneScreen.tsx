@@ -2673,6 +2673,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       sound.playScreenWake();
     }, 450);
 
+    // 2.5 Antecipação de Suspense: Pulso cardíaco sutil aos 8.5s antes do celular tocar
+    const pulseTimer = setTimeout(() => {
+      sound.playTensionPulse();
+    }, 8500);
+
     // 3. Suspense Timer: 12 segundos de calma e observação antes de a notificação chegar
     const notifTimer = setTimeout(() => {
       setNotificationArrived(true);
@@ -2687,6 +2692,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
 
     return () => {
       clearTimeout(wakeTimer);
+      clearTimeout(pulseTimer);
       clearTimeout(notifTimer);
     };
   }, [scamCase.id, scamCase.channel]);
@@ -3245,7 +3251,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             )}
           </AnimatePresence>
 
-          {/* CARD DE RESULTADO: TUDO DENTRO DO CELULAR (sem cards externos) */}
+          {/* CARD DE RESULTADO / DOSSIÊ FORENSE DIEGÉTICO */}
           <AnimatePresence>
             {stamped && (
               <motion.div
@@ -3253,48 +3259,83 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 90, opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 320, delay: 0.6 }}
-                className="absolute bottom-6 left-2.5 right-2.5 z-40 max-h-[75%] overflow-y-auto overscroll-contain no-scrollbar bg-slate-900/95 border-2 border-white/25 rounded-2xl p-3 shadow-2xl backdrop-blur-xl text-white space-y-2"
+                className="absolute bottom-6 left-2.5 right-2.5 z-40 max-h-[78%] overflow-y-auto overscroll-contain no-scrollbar bg-slate-900/98 border-2 border-white/30 rounded-2xl p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] backdrop-blur-2xl text-white space-y-2.5"
               >
-                <div className="flex items-center gap-2">
-                  {wasCorrect ? (
-                    <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
-                  ) : (
-                    <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
-                  )}
-                  <div className="font-bold text-xs flex-1">
-                    {wasCorrect
-                      ? 'Mandou bem! Você acertou.'
-                      : scamCase.isScam
-                      ? 'Cuidado! Você caiu no golpe.'
-                      : 'Alarme falso! Era seguro.'}
-                  </div>
+                {/* Cabeçalho do Dossiê */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-[9px] font-mono uppercase tracking-wider text-neutral-400 font-bold flex items-center gap-1">
+                    🔍 DOSSIÊ FORENSE • CASO RESOLVIDO
+                  </span>
                   {wasCorrect && earnedXp > 0 && (
-                    <span className="font-mono font-bold text-[10px] bg-emerald-500/25 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40 shrink-0">
+                    <span className="font-mono font-bold text-[10px] bg-emerald-500/25 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40 shrink-0 animate-pulse">
                       +{earnedXp} XP
                     </span>
                   )}
                 </div>
 
-                <p className="text-[11px] text-neutral-200 leading-snug">
-                  {scamCase.keyEvidenceReason || scamCase.explanation}
-                </p>
+                {/* Banner de Resultado */}
+                <div
+                  className={`flex items-center gap-2 p-2 rounded-xl border ${
+                    wasCorrect
+                      ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                      : 'bg-red-950/40 border-red-500/40 text-red-300'
+                  }`}
+                >
+                  {wasCorrect ? (
+                    <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                  ) : (
+                    <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
+                  )}
+                  <div className="font-bold text-xs flex-1 leading-snug">
+                    {wasCorrect
+                      ? 'Defesa Bem-Sucedida! Veredito preciso.'
+                      : scamCase.isScam
+                      ? 'Falha de Atenção! Você caiu no golpe.'
+                      : 'Alarme Falso! A mensagem era legítima.'}
+                  </div>
+                </div>
 
-                <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/25">
+                {/* Engenharia Social Identificada */}
+                {scamCase.pedagogy?.emotionalTrigger && (
+                  <div className="text-[10.5px] bg-white/5 border border-white/10 rounded-xl p-2 space-y-0.5">
+                    <span className="text-[9px] font-mono uppercase tracking-wide text-amber-300 font-bold block">
+                      ⚠️ Tática de Engenharia Social:
+                    </span>
+                    <span className="text-neutral-300 leading-snug block">
+                      {scamCase.pedagogy.emotionalTrigger}
+                    </span>
+                  </div>
+                )}
+
+                {/* Análise Pericial / Fato Concreto */}
+                <div className="text-[11px] text-neutral-200 leading-relaxed bg-black/40 border border-white/10 rounded-xl p-2.5">
+                  <span className="text-[9px] font-mono uppercase tracking-wide text-sky-400 font-bold block mb-0.5">
+                    🔎 Fato Concreto Apurado:
+                  </span>
+                  {scamCase.keyEvidenceReason || scamCase.explanation}
+                </div>
+
+                {/* Regra de Ouro do Lucas */}
+                <div className="p-2.5 rounded-xl bg-amber-400/15 border border-amber-400/30">
                   <div className="text-[9px] font-mono uppercase tracking-wider text-amber-300 font-bold">
-                    📌 Regra de ouro do Lucas
+                    📌 Regra de Ouro do Lucas
                   </div>
                   <p className="text-[11px] font-semibold text-white leading-snug mt-0.5">
                     {scamCase.pedagogy.goldenRule}
                   </p>
                 </div>
 
+                {/* Botão de Avançar para o Próximo Desafio */}
                 {onNextCase && (
                   <button
                     type="button"
-                    onClick={onNextCase}
-                    className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
+                    onClick={() => {
+                      sound.playBlip();
+                      onNextCase();
+                    }}
+                    className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
                   >
-                    <span>Próximo caso ➔</span>
+                    <span>Avançar para o Próximo Caso ➔</span>
                   </button>
                 )}
               </motion.div>
