@@ -278,8 +278,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
 
       {/* CONTAINER PRINCIPAL DO JOGO (STATUS + SMARTPHONE CENTRALIZADO) */}
       <div className="h-full max-w-5xl mx-auto flex flex-col gap-1.5 sm:gap-2.5 w-full overflow-hidden">
-        {/* Barra Superior de Status do Jogo */}
-        <div className="shrink-0 flex items-center justify-between gap-1.5 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-desk-2/90 border border-desk-line backdrop-blur-md shadow-lg">
+        {/* Barra Superior de Status do Jogo (Visível no desktop; no mobile o status fica diegético no próprio aparelho) */}
+        <div className="shrink-0 hidden sm:flex items-center justify-between gap-1.5 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-desk-2/90 border border-desk-line backdrop-blur-md shadow-lg">
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-[11px] sm:text-xs uppercase px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-desk border border-desk-line text-white font-bold">
               {caseNumber <= CAMPAIGN_CASES.length
@@ -324,8 +324,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         </div>
 
         {/* CELULAR CENTRALIZADO (FOCO TOTAL NA EXPERIÊNCIA DO APARELHO) */}
-        <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full max-w-full sm:max-w-[420px] mx-auto overflow-hidden">
-          <div className="w-full h-full flex flex-col justify-center">
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full max-w-full sm:max-w-[430px] mx-auto overflow-hidden">
+          <div className="w-full h-full flex flex-col items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={current.id}
@@ -333,9 +333,12 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.96, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+                className="w-full h-full flex flex-col items-center justify-center"
               >
                 <PhoneScreen
                   scamCase={current}
+                  levelIndex={caseNumber}
+                  totalLevels={CAMPAIGN_CASES.length}
                   stamped={finalVerdict}
                   wasCorrect={wasVerdictCorrect}
                   onPerformAction={handlePerformPhoneAction}

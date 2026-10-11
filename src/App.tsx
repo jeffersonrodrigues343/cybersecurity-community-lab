@@ -45,13 +45,21 @@ export function App() {
           : 'min-h-screen flex flex-col overflow-x-hidden'
       }`}
     >
-      {/* Barra de Navegação */}
-      <Header
-        score={score}
-        onOpenInstructions={() => setIsOnboardingOpen(true)}
-      />
+      {/* Barra de Navegação (oculta no mobile durante o jogo para foco 100% no celular) */}
+      <div className={isPlaying ? 'hidden sm:block shrink-0' : 'shrink-0'}>
+        <Header
+          score={score}
+          onOpenInstructions={() => setIsOnboardingOpen(true)}
+        />
+      </div>
 
-      <main className="flex-1 min-h-0 w-full max-w-6xl mx-auto px-1 sm:px-4 lg:px-6 relative z-10 flex flex-col overflow-hidden">
+      <main
+        className={`flex-1 min-h-0 w-full mx-auto relative z-10 flex flex-col overflow-hidden ${
+          isPlaying
+            ? 'p-0 sm:px-4 lg:px-6 max-w-full sm:max-w-6xl'
+            : 'px-1 sm:px-4 lg:px-6 max-w-6xl'
+        }`}
+      >
         {/* Seção Principal: Mesa Investigativa Gamificada focada 100% no celular */}
         <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <CaseDesk onScoreUpdate={handleScoreUpdate} />
