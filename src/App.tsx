@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Header } from './components/Header';
-import { Hero } from './components/Hero';
 import { CaseDesk } from './components/CaseDesk';
 import { CertificateModal } from './components/CertificateModal';
 import { ReportModal } from './components/ReportModal';
@@ -35,10 +34,16 @@ export function App() {
     }
   };
 
+  const isPlaying = !allCompleted;
+
   return (
     <div
       ref={mainContainerRef}
-      className="min-h-screen flex flex-col desk-surface text-[#e8eaf2] relative overflow-x-hidden"
+      className={`desk-surface text-[#e8eaf2] relative ${
+        isPlaying
+          ? 'h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col'
+          : 'min-h-screen flex flex-col overflow-x-hidden'
+      }`}
     >
       {/* Barra de Navegação */}
       <Header
@@ -46,12 +51,9 @@ export function App() {
         onOpenInstructions={() => setIsOnboardingOpen(true)}
       />
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-1 sm:px-6 lg:px-8 relative z-10 space-y-2 sm:space-y-6 flex flex-col">
-        {/* Hero Section Adaptada ao Novo Visual */}
-        <Hero />
-
-        {/* Seção Principal: Mesa Investigativa Gamificada */}
-        <section className="flex-1 flex flex-col">
+      <main className="flex-1 min-h-0 w-full max-w-6xl mx-auto px-1 sm:px-4 lg:px-6 relative z-10 flex flex-col overflow-hidden">
+        {/* Seção Principal: Mesa Investigativa Gamificada focada 100% no celular */}
+        <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <CaseDesk onScoreUpdate={handleScoreUpdate} />
         </section>
 
@@ -96,10 +98,12 @@ export function App() {
         onClose={() => setIsOnboardingOpen(false)}
       />
 
-      {/* Rodapé (exibido apenas no desktop para poupar altura no celular) */}
-      <div className="hidden sm:block">
-        <Footer />
-      </div>
+      {/* Rodapé (exibido apenas quando concluir a trilha para manter foco total no celular) */}
+      {!isPlaying && (
+        <div className="hidden sm:block">
+          <Footer />
+        </div>
+      )}
     </div>
   );
 }

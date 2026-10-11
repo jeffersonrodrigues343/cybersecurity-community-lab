@@ -38,6 +38,34 @@ import { sound } from '../utils/audio';
 
 type Verdict = 'scam' | 'safe' | null;
 
+// Habilidades aprendidas com as Notas do Lucas (progressão estilo Papers, Please)
+export type Skill = 'question' | 'bank' | 'browser' | 'verdict';
+
+export const SKILL_INFO: Record<Skill, { icon: string; title: string; lucas: string }> = {
+  question: {
+    icon: '💬',
+    title: 'Fazer Perguntas',
+    lucas: 'Pergunta algo que só a pessoa de verdade saberia responder.',
+  },
+  bank: {
+    icon: '🏦',
+    title: 'Conferir no Banco',
+    lucas: 'Abre o app do banco e olha o extrato. Se não tem nada lá, é mentira.',
+  },
+  browser: {
+    icon: '🌐',
+    title: 'Inspecionar Links',
+    lucas: 'Antes de tocar num link, confere o endereço. Site oficial tem nome certinho.',
+  },
+  verdict: {
+    icon: '⚖️',
+    title: 'Dar o Veredito',
+    lucas: 'Conferiu? Agora decide com calma: é golpe ou é seguro.',
+  },
+};
+
+const SKILL_ORDER: Skill[] = ['question', 'bank', 'browser', 'verdict'];
+
 interface PhoneScreenProps {
   scamCase: ScamCase;
   stamped: Verdict;
@@ -51,7 +79,48 @@ interface PhoneScreenProps {
   inspectedClueIds?: string[];
   onInspectClue?: (clue: InvestigativeClue) => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  unlockedSkills?: Skill[];
+  onUnlockSkill?: (skill: Skill) => void;
+  earnedXp?: number;
 }
+
+// Convite único e calmo: aparece quando a mensagem termina e o jogador ainda não consultou o Lucas
+const LucasNudge = ({
+  onOpenNotes,
+  tone = 'light',
+}: {
+  onOpenNotes?: () => void;
+  tone?: 'light' | 'dark';
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.4 }}
+    className={`p-2.5 border-t ${
+      tone === 'dark' ? 'bg-slate-900/80 border-white/10' : 'bg-[#f0f2f5] border-black/10'
+    }`}
+  >
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenNotes?.();
+      }}
+      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-500/40 cursor-pointer active:scale-98 transition text-left"
+    >
+      <span className="text-lg shrink-0">📌</span>
+      <span className="flex-1 min-w-0">
+        <span className={`block text-[11px] leading-snug ${tone === 'dark' ? 'text-amber-100' : 'text-amber-900'}`}>
+          O Lucas deixou uma dica pra situações assim.
+        </span>
+        <span className={`block text-xs font-bold ${tone === 'dark' ? 'text-amber-300' : 'text-amber-700'}`}>
+          Abrir Notas do Lucas
+        </span>
+      </span>
+      <ChevronRight className={`w-4 h-4 shrink-0 ${tone === 'dark' ? 'text-amber-300' : 'text-amber-700'}`} />
+    </button>
+  </motion.div>
+);
 
 const findContactNumber = (c: ScamCase): string | null => {
   const allValues = c.clues
@@ -241,6 +310,7 @@ const NotesScreen = ({
   stamped,
   onOpenBank,
   onOpenBrowser,
+  unlockedSkills = [],
 }: {
   c: ScamCase;
   inspectedClueIds: string[];
@@ -250,20 +320,32 @@ const NotesScreen = ({
   stamped: Verdict;
   onOpenBank?: () => void;
   onOpenBrowser?: (url?: string) => void;
+  unlockedSkills?: Skill[];
 }) => {
-  const [expandedId, setExpandedId] = useState<string | null>(() => c.clues[0]?.id ?? null);
+  // Revelação gradual: uma dica por vez. A próxima só destranca depois de conferir a anterior.
+  const isUnlockedAt = (idx: number) => idx === 0 || inspectedClueIds.includes(c.clues[idx - 1]?.id);
+  const firstPending = c.clues.find((cl, idx) => isUnlockedAt(idx) && !inspectedClueIds.includes(cl.id));
+  const [expandedId, setExpandedId] = useState<string | null>(() => firstPending?.id ?? c.clues[0]?.id ?? null);
+  const hasConsulted = inspectedClueIds.length > 0;
 
   const toggleClue = (clue: InvestigativeClue) => {
     sound.playBlip();
     setExpandedId((prev) => (prev === clue.id ? null : clue.id));
+  };
+
+  const checkInPlace = (clue: InvestigativeClue, idx: number) => {
+    sound.playBlip();
     onInspectClue?.(clue);
+    // Abre automaticamente a próxima dica, mantendo o ritmo calmo
+    const next = c.clues[idx + 1];
+    if (next) setTimeout(() => setExpandedId(next.id), 900);
   };
 
   return (
     <div className="flex flex-col h-full bg-[#18181b] text-white select-none">
       <StatusBar time={c.time} dark />
 
-      {/* Header do Bloco de Notas: Notas do Lucas */}
+      {/* Header do Bloco de Notas */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-[#27272a]/90 backdrop-blur-md">
         <button
           type="button"
@@ -273,51 +355,72 @@ const NotesScreen = ({
           <ChevronLeft className="w-4 h-4" />
           <span>Voltar</span>
         </button>
-        <div className="flex flex-col items-center leading-tight">
-          <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-100">
-            <FileText className="w-3.5 h-3.5 text-amber-400" />
-            <span>Notas do Lucas (Filho) 📌</span>
-          </div>
-          <span className="text-[9.5px] text-amber-300/80 font-medium">Lembretes pra não cair em golpe</span>
+        <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-100">
+          <FileText className="w-3.5 h-3.5 text-amber-400" />
+          <span>Notas do Lucas 📌</span>
         </div>
         <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
           {inspectedClueIds.length}/{c.clues.length}
         </span>
       </div>
 
-      {/* Conteúdo com a nota fixada do Lucas e os passos investigativos */}
-      <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-2.5">
-        {/* Recado Carinhoso Fixado do Filho */}
-        <div className="bg-gradient-to-br from-amber-500/15 via-amber-600/10 to-yellow-500/5 border border-amber-400/30 rounded-2xl p-3 shadow-md space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wide">
-              <span>📌</span> Recado Salvo do Lucas
+      {/* Habilidades aprendidas (acesas) e por aprender (apagadas) */}
+      <div className="flex items-center justify-center gap-1.5 px-3 py-1.5 border-b border-white/5 bg-black/30">
+        <span className="text-[9px] font-mono uppercase text-white/40 font-bold mr-0.5">Aprendido:</span>
+        {SKILL_ORDER.map((s) => {
+          const on = unlockedSkills.includes(s);
+          return (
+            <span
+              key={s}
+              title={on ? SKILL_INFO[s].title : 'Ainda não aprendido'}
+              className={`w-6 h-6 rounded-lg flex items-center justify-center text-[12px] border transition ${
+                on ? 'bg-amber-400/20 border-amber-400/40' : 'bg-white/5 border-white/10 grayscale opacity-40'
+              }`}
+            >
+              {on ? SKILL_INFO[s].icon : '🔒'}
             </span>
-            <span className="text-[9px] font-mono text-amber-300 bg-amber-400/15 border border-amber-400/25 px-2 py-0.5 rounded-full font-bold">
-              Guia no Celular
-            </span>
-          </div>
-          <p className="text-[11.5px] text-amber-100/90 leading-relaxed font-medium">
-            <em>&quot;Oi mãe/pai! Deixei essas dicas anotadas aqui no seu celular caso alguém tente passar um golpe em você. Não faça nada por impulso. Dá uma conferida nestes pontos nos aplicativos do seu celular antes de transferir qualquer valor ou passar códigos:&quot;</em>
+          );
+        })}
+      </div>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar overscroll-contain p-3 space-y-2.5">
+        {/* Recado curto do filho */}
+        <div className="bg-amber-500/10 border border-amber-400/25 rounded-2xl p-3">
+          <p className="text-[11.5px] text-amber-100/90 leading-relaxed">
+            <em>&quot;Mãe/pai, se alguém pedir dinheiro ou código, para tudo e confere uma dica de cada vez. Sem pressa. — Lucas&quot;</em>
           </p>
         </div>
 
-        {/* Lista de Orientações Práticas do Lucas */}
         {c.clues.map((clue, idx) => {
+          const unlocked = isUnlockedAt(idx);
           const isInspected = inspectedClueIds.includes(clue.id);
-          const isExpanded = expandedId === clue.id;
+          const isExpanded = unlocked && expandedId === clue.id;
           const hasBank = isBankClue(clue);
           const hasBrowser = isBrowserClue(clue);
 
+          if (!unlocked) {
+            return (
+              <div
+                key={clue.id}
+                className="rounded-2xl border border-dashed border-white/10 p-2.5 flex items-center gap-2.5 text-white/35"
+              >
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span className="text-[11px] font-medium">Dica #{idx + 1} — confira a anterior para liberar</span>
+              </div>
+            );
+          }
+
           return (
-            <div
+            <motion.div
               key={clue.id}
-              className={`rounded-2xl border transition-all overflow-hidden ${
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`rounded-2xl border transition-colors overflow-hidden ${
                 isExpanded
-                  ? 'bg-black/70 border-amber-400/50 shadow-lg'
+                  ? 'bg-black/60 border-amber-400/50 shadow-lg'
                   : isInspected
                   ? 'bg-white/5 border-emerald-500/30'
-                  : 'bg-white/5 border-white/10 hover:border-white/20'
+                  : 'bg-white/5 border-amber-400/30'
               }`}
             >
               <button
@@ -327,122 +430,103 @@ const NotesScreen = ({
               >
                 <span
                   className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
-                    isInspected
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'border border-white/30 text-neutral-400'
+                    isInspected ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-black'
                   }`}
                 >
                   {isInspected ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
                 </span>
-
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9.5px] font-mono text-amber-400 font-bold uppercase">
-                      Dica #{idx + 1}
-                    </span>
-                    {isInspected && (
-                      <span className="text-[8.5px] font-mono text-emerald-400 bg-emerald-400/15 px-1.5 py-0.2 rounded font-bold">
-                        ✓ Conferido (+10 XP)
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs font-semibold text-white leading-snug mt-0.5">
-                    {clue.question}
-                  </p>
+                  <span className="text-[9.5px] font-mono text-amber-400 font-bold uppercase">
+                    Dica #{idx + 1} {isInspected && <span className="text-emerald-400">• conferida</span>}
+                  </span>
+                  <p className="text-xs font-semibold text-white leading-snug mt-0.5">{clue.question}</p>
                 </div>
               </button>
 
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {isExpanded && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="px-3 pb-3 pt-1 border-t border-white/10 space-y-2.5 bg-black/40 text-[11px]"
+                    className="px-3 pb-3 pt-1 border-t border-white/10 space-y-2 text-[11px]"
                   >
-                    {/* O que o Lucas orienta checar */}
-                    <div className="space-y-1 bg-white/5 p-2 rounded-xl border border-white/10">
-                      <span className="text-[9.5px] font-mono uppercase text-amber-300 font-bold flex items-center gap-1">
-                        <Lightbulb className="w-3 h-3 text-amber-400" /> O que o Lucas recomenda checar:
-                      </span>
-                      <p className="text-neutral-200 leading-relaxed font-medium">
-                        {clue.evidenceResult.headline}
-                      </p>
-                    </div>
+                    <p className="text-neutral-200 leading-relaxed">
+                      <Lightbulb className="w-3 h-3 text-amber-400 inline mr-1 -mt-0.5" />
+                      {clue.evidenceResult.headline}
+                    </p>
 
-                    {/* Prova Real no Aparelho */}
-                    <div className="space-y-1 bg-black/60 p-2 rounded-xl border border-white/10">
-                      <span className="text-[9.5px] font-mono uppercase text-emerald-400 font-bold block">
-                        🔎 O que você encontra no aparelho (Prova Real):
-                      </span>
-                      <p className="text-white leading-relaxed font-semibold">
-                        {clue.inspection.observation}
-                      </p>
-                    </div>
-
-                    {/* Conclusão Forense / Fato */}
-                    <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/20 text-neutral-200 text-[10.5px]">
-                      <span className="text-amber-400 font-bold">💡 Fato comprovado: </span>
-                      {clue.evidenceResult.fato}
-                    </div>
-
-                    {/* Atalhos de Investigação no Aparelho */}
-                    <div className="space-y-1.5 pt-1">
-                      <span className="text-[9px] font-mono uppercase text-white/50 font-bold block">
-                        🛠️ Investigar no próprio celular:
-                      </span>
-                      {hasBank && onOpenBank && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onInspectClue?.(clue);
-                            onOpenBank();
-                          }}
-                          className="w-full py-2 px-3 rounded-xl bg-purple-600/40 hover:bg-purple-600/60 border border-purple-500/40 text-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-sm"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 text-purple-300" />
-                          <span>🏦 Abrir Meu Banco no Celular e Checar Saldo</span>
-                        </button>
-                      )}
-                      {hasBrowser && onOpenBrowser && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onInspectClue?.(clue);
-                            onOpenBrowser();
-                          }}
-                          className="w-full py-2 px-3 rounded-xl bg-sky-600/40 hover:bg-sky-600/60 border border-sky-500/40 text-sky-200 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-sm"
-                        >
-                          <Globe className="w-3.5 h-3.5 text-sky-300" />
-                          <span>🌐 Abrir Navegador e Conferir o Link</span>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onInspectClue?.(clue);
-                          onBack();
-                        }}
-                        className="w-full py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
-                      >
-                        <MessageSquare className="w-3 h-3 text-emerald-400" />
-                        <span>💬 Voltar para a conversa / chamada</span>
-                      </button>
-                    </div>
+                    {!isInspected ? (
+                      // Antes de conferir: só a ferramenta. A resposta não aparece de graça.
+                      <div className="space-y-1.5 pt-0.5">
+                        {hasBank && onOpenBank && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onInspectClue?.(clue);
+                              onOpenBank();
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-purple-600/40 hover:bg-purple-600/60 border border-purple-500/40 text-purple-100 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Conferir no app do Banco</span>
+                          </button>
+                        )}
+                        {hasBrowser && onOpenBrowser && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onInspectClue?.(clue);
+                              onOpenBrowser();
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-sky-600/40 hover:bg-sky-600/60 border border-sky-500/40 text-sky-100 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                          >
+                            <Globe className="w-3.5 h-3.5" />
+                            <span>Conferir o link no Navegador</span>
+                          </button>
+                        )}
+                        {!hasBank && !hasBrowser && (
+                          <button
+                            type="button"
+                            onClick={() => checkInPlace(clue, idx)}
+                            className="w-full py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                          >
+                            <Search className="w-3.5 h-3.5" />
+                            <span>Conferir na conversa</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      // Depois de conferir: o que você encontrou + o fato
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-1.5">
+                        <div className="bg-black/50 p-2 rounded-xl border border-white/10">
+                          <span className="text-[9.5px] font-mono uppercase text-emerald-400 font-bold block">
+                            🔎 O que você encontrou:
+                          </span>
+                          <p className="text-white leading-relaxed font-medium">{clue.inspection.observation}</p>
+                        </div>
+                        <p className="text-amber-200/90 text-[10.5px] leading-relaxed">
+                          <span className="font-bold">💡 </span>
+                          {clue.evidenceResult.fato}
+                        </p>
+                      </motion.div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
-      {/* Veredito Direto nas Notas */}
-      {!stamped && onVerdict && (
-        <div className="p-2.5 bg-[#27272a] border-t border-white/10 space-y-1.5">
-          <div className="text-[9.5px] font-mono text-center text-neutral-300 uppercase font-bold tracking-wider">
-            Após conferir as notas do Lucas e os apps, qual é a sua conclusão?
-          </div>
+      {/* Veredito: só depois de consultar ao menos uma dica */}
+      {!stamped && onVerdict && hasConsulted && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-2.5 bg-[#27272a] border-t border-white/10 space-y-1.5"
+        >
+          <div className="text-[10px] text-center text-neutral-300 font-semibold">Já tem certeza?</div>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -461,7 +545,7 @@ const NotesScreen = ({
               <span>É Seguro</span>
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -651,6 +735,8 @@ const WhatsAppScreen = ({
   onVerdict,
   onBackToHome,
   onStoryDeliveredChange,
+  canInvestigate = false,
+  canVerdict = false,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -668,6 +754,8 @@ const WhatsAppScreen = ({
   onVerdict?: (v: 'scam' | 'safe') => void;
   onBackToHome: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  canInvestigate?: boolean;
+  canVerdict?: boolean;
 }) => {
   const [isTypingPlayer, setIsTypingPlayer] = useState(false);
   const number = findContactNumber(c);
@@ -968,14 +1056,16 @@ const WhatsAppScreen = ({
         )}
       </div>
 
-      {/* Respostas Interativas Clicáveis do Jogador + Veredito (Somente após ler a mensagem!) */}
-      {!stamped && hasFinishedTyping ? (
+      {/* Rodapé progressivo: primeiro só o convite do Lucas; perguntas e veredito surgem após consultar as notas */}
+      {!stamped && hasFinishedTyping && !canVerdict ? (
+        <LucasNudge onOpenNotes={onOpenNotes} />
+      ) : !stamped && hasFinishedTyping ? (
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-[#f0f2f5] p-2 border-t border-black/10 space-y-1.5"
         >
-          {availableActions.length > 0 && !isBlocked && (
+          {canInvestigate && availableActions.length > 0 && !isBlocked && (
             <>
               <div className="text-[10px] font-mono text-[#54656f] uppercase tracking-wider font-bold px-1 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-[#008069]" /> Responder no WhatsApp:
@@ -1066,6 +1156,8 @@ const SmsScreen = ({
   onVerdict,
   onBackToHome,
   onStoryDeliveredChange,
+  canInvestigate = false,
+  canVerdict = false,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -1080,6 +1172,8 @@ const SmsScreen = ({
   onVerdict?: (v: 'scam' | 'safe') => void;
   onBackToHome: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  canInvestigate?: boolean;
+  canVerdict?: boolean;
 }) => {
   const number = findContactNumber(c);
   const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
@@ -1250,13 +1344,15 @@ const SmsScreen = ({
         </div>
       </div>
 
-      {!stamped && hasFinishedTyping ? (
+      {!stamped && hasFinishedTyping && !canVerdict ? (
+        <LucasNudge onOpenNotes={onOpenNotes} />
+      ) : !stamped && hasFinishedTyping ? (
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="p-2 bg-neutral-50 border-t border-black/10 space-y-1.5"
         >
-          {availableActions.length > 0 && (
+          {canInvestigate && availableActions.length > 0 && (
             <div className="space-y-1 max-h-28 overflow-y-auto pr-0.5">
               {availableActions.map((act) => (
                 <button
@@ -1271,7 +1367,7 @@ const SmsScreen = ({
                 >
                   <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
                   <span className="text-[9px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded shrink-0 font-bold">
-                    Auditar ➔
+                    Perguntar ➔
                   </span>
                 </button>
               ))}
@@ -1364,6 +1460,7 @@ const CallScreen = ({
   inspectedClueCount = 0,
   onBackToHome,
   onStoryDeliveredChange,
+  canVerdict = false,
 }: {
   c: ScamCase;
   onPerformAction: (action: InteractiveAction) => void;
@@ -1376,6 +1473,7 @@ const CallScreen = ({
   inspectedClueCount?: number;
   onBackToHome?: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  canVerdict?: boolean;
 }) => {
   const number = findContactNumber(c);
   const [callState, setCallState] = useState<'ringing' | 'connected' | 'ended'>('ringing');
@@ -1684,32 +1782,18 @@ const CallScreen = ({
           </motion.div>
         )}
 
-        {/* CARD DA VIRADA NARRATIVA (SURGE QUANDO O GOLPISTA SOLTA A ARMADILHA DO PIX) */}
-        {hasDeliveredTrap && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900/80 to-amber-950/60 border-2 border-amber-500/50 shadow-xl space-y-2"
+        {/* Depois de consultar o Lucas, um atalho discreto para voltar às notas (sem entregar a resposta) */}
+        {hasDeliveredTrap && canVerdict && onOpenNotes && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={onOpenNotes}
+            className="mx-auto flex items-center gap-1.5 py-1.5 px-3 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 rounded-full text-amber-300 text-[10.5px] font-bold cursor-pointer active:scale-95 transition"
           >
-            <div className="flex items-center gap-1.5 text-amber-300 font-display font-bold text-xs uppercase tracking-wider">
-              <Lightbulb className="w-4 h-4 text-amber-400" />
-              <span>O Momento da Virada: Repare no Golpe!</span>
-            </div>
-            <p className="text-[11px] text-neutral-200 leading-relaxed font-medium">
-              O atendente acabou de exigir que você faça um Pix para uma suposta &quot;Conta de Segurança&quot;. <strong>O banco NUNCA pede transferências Pix de clientes para cancelar ou estornar transações!</strong>
-            </p>
-            {onOpenNotes && (
-              <button
-                type="button"
-                onClick={onOpenNotes}
-                className="w-full py-1.5 px-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-xl text-amber-300 text-[10.5px] font-bold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition"
-              >
-                <FileText className="w-3.5 h-3.5 text-amber-400" />
-                <span>Ver Dicas do Lucas no Bloco de Notas ({inspectedClueCount}/{c.clues.length})</span>
-              </button>
-            )}
-          </motion.div>
+            <FileText className="w-3.5 h-3.5 text-amber-400" />
+            <span>Notas do Lucas ({inspectedClueCount}/{c.clues.length})</span>
+          </motion.button>
         )}
       </div>
 
@@ -1739,10 +1823,26 @@ const CallScreen = ({
           </div>
         )}
 
-        {/* Controles de Chamada e Veredito (Disponíveis após ouvir a abordagem) */}
+        {/* Convite do Lucas: depois que o golpista solta a armadilha e antes de consultar as notas */}
+        {!stamped && !canVerdict && (hasDeliveredTrap || callState === 'ended') && onOpenNotes && (
+          <button
+            type="button"
+            onClick={onOpenNotes}
+            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-500/40 cursor-pointer active:scale-98 transition text-left"
+          >
+            <span className="text-lg shrink-0">📌</span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-[11px] leading-snug text-amber-100">Pediram algo estranho? O Lucas deixou uma dica.</span>
+              <span className="block text-xs font-bold text-amber-300">Abrir Notas do Lucas</span>
+            </span>
+            <ChevronRight className="w-4 h-4 shrink-0 text-amber-300" />
+          </button>
+        )}
+
+        {/* Controles de Chamada e Veredito (veredito só após consultar o Lucas) */}
         {!stamped ? (
-          <div className="flex items-center justify-between gap-2 pt-0.5">
-            {onVerdict && (
+          <div className={`flex items-center gap-2 pt-0.5 ${canVerdict ? 'justify-between' : 'justify-center'}`}>
+            {onVerdict && canVerdict && (
               <button
                 type="button"
                 onClick={() => onVerdict('safe')}
@@ -1769,7 +1869,7 @@ const CallScreen = ({
               </div>
             )}
 
-            {onVerdict && (
+            {onVerdict && canVerdict && (
               <button
                 type="button"
                 onClick={() => onVerdict('scam')}
@@ -1801,6 +1901,9 @@ const PushScreen = ({
   stamped,
   onLinkClick,
   onVerdict,
+  onOpenNotes,
+  canInvestigate = false,
+  canVerdict = false,
 }: {
   c: ScamCase;
   onPerformAction: (action: InteractiveAction) => void;
@@ -1809,6 +1912,9 @@ const PushScreen = ({
   stamped: Verdict;
   onLinkClick: (url: string) => void;
   onVerdict?: (v: 'scam' | 'safe') => void;
+  onOpenNotes?: () => void;
+  canInvestigate?: boolean;
+  canVerdict?: boolean;
 }) => {
   const [title, ...rest] = c.messageContent.split(':');
   const body = rest.join(':').trim();
@@ -1864,9 +1970,11 @@ const PushScreen = ({
         ))}
       </div>
 
-      {!stamped && (
+      {!stamped && !canVerdict ? (
+        <LucasNudge onOpenNotes={onOpenNotes} tone="dark" />
+      ) : !stamped && (
         <div className="p-2 bg-black/40 border-t border-white/15 space-y-1.5">
-          {availableActions.length > 0 && (
+          {canInvestigate && availableActions.length > 0 && (
             <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
               {availableActions.map((act) => (
                 <button
@@ -1916,6 +2024,13 @@ const PushScreen = ({
 // ============================================================================
 // TELA INICIAL REALISTA DO CELULAR (HOME SCREEN COM APP EM DESTAQUE)
 // ============================================================================
+// Selo de cadeado para apps ainda não aprendidos
+const LockBadge = () => (
+  <span className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-slate-900 border border-white/30 flex items-center justify-center shadow">
+    <Lock className="w-2.5 h-2.5 text-white/80" />
+  </span>
+);
+
 const HomeScreen = ({
   c,
   onOpenMessaging,
@@ -1924,6 +2039,8 @@ const HomeScreen = ({
   onOpenBrowser,
   onToast,
   inspectedClueCount,
+  bankLocked = false,
+  browserLocked = false,
 }: {
   c: ScamCase;
   onOpenMessaging: () => void;
@@ -1932,6 +2049,8 @@ const HomeScreen = ({
   onOpenBrowser: () => void;
   onToast: (msg: string) => void;
   inspectedClueCount: number;
+  bankLocked?: boolean;
+  browserLocked?: boolean;
 }) => {
   const isTargetChannel = (target: string) => {
     if (c.channel === 'whatsapp' && target === 'whatsapp') return true;
@@ -2007,7 +2126,7 @@ const HomeScreen = ({
             <span className="font-bold text-xs text-sky-400">G</span>
             <span className="text-[10.5px] text-white/50">Pesquisar ou digitar link...</span>
           </div>
-          <Search className="w-3.5 h-3.5 text-white/50" />
+          {browserLocked ? <Lock className="w-3.5 h-3.5 text-white/40" /> : <Search className="w-3.5 h-3.5 text-white/50" />}
         </div>
 
         {/* Grid de Apps com o Aplicativo Alvo em Destaque Especial */}
@@ -2063,12 +2182,15 @@ const HomeScreen = ({
           >
             <div
               className={`relative w-11 h-11 rounded-2xl bg-[#820ad1] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
+                bankLocked ? 'grayscale opacity-50' : ''
+              } ${
                 isTargetChannel('bank')
                   ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(192,132,252,0.7)]'
                   : ''
               }`}
             >
               <CreditCard className="w-5 h-5" />
+              {bankLocked && <LockBadge />}
               {isTargetChannel('bank') && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
@@ -2083,7 +2205,11 @@ const HomeScreen = ({
             onClick={onOpenNotes}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+            <div
+              className={`relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform ${
+                inspectedClueCount === 0 ? 'ring-2 ring-amber-300/70 ring-offset-2 ring-offset-slate-900' : ''
+              }`}
+            >
               <FileText className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 px-1 min-w-[18px] h-4.5 rounded-full bg-amber-400 text-black font-mono text-[9.5px] font-extrabold flex items-center justify-center shadow">
                 {inspectedClueCount}/{c.clues.length}
@@ -2108,8 +2234,13 @@ const HomeScreen = ({
             onClick={onOpenBrowser}
             className="flex flex-col items-center gap-1 group cursor-pointer"
           >
-            <div className="w-11 h-11 rounded-2xl bg-white text-slate-800 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+            <div
+              className={`relative w-11 h-11 rounded-2xl bg-white text-slate-800 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform ${
+                browserLocked ? 'grayscale opacity-50' : ''
+              }`}
+            >
               <Globe className="w-5 h-5 text-sky-600" />
+              {browserLocked && <LockBadge />}
             </div>
             <span className="text-[9.5px] text-white/80 font-medium">Internet</span>
           </div>
@@ -2181,6 +2312,9 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   inspectedClueIds = [],
   onInspectClue,
   onStoryDeliveredChange,
+  unlockedSkills = [],
+  onUnlockSkill,
+  earnedXp = 0,
 }) => {
   const [activeApp, setActiveApp] = useState<'home' | 'messaging' | 'notes' | 'bank' | 'browser'>('home');
   const [previousApp, setPreviousApp] = useState<'home' | 'messaging' | 'notes'>('home');
@@ -2192,6 +2326,34 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [browserUrl, setBrowserUrl] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string>('');
   const [isBlocked, setIsBlocked] = useState(false);
+  const [skillToast, setSkillToast] = useState<Skill[] | null>(null);
+
+  // Progressão: o jogador só investiga/decide depois de consultar o Lucas neste caso
+  const hasConsultedNotes = inspectedClueIds.length > 0;
+  const canInvestigate = hasConsultedNotes && unlockedSkills.includes('question');
+  const canVerdict = hasConsultedNotes && unlockedSkills.includes('verdict');
+  const bankLocked = !unlockedSkills.includes('bank');
+  const browserLocked = !unlockedSkills.includes('browser');
+
+  // Ler/conferir uma dica ensina habilidades novas (persistem entre casos)
+  const handleInspectClue = (clue: InvestigativeClue) => {
+    onInspectClue?.(clue);
+    const gained: Skill[] = ['question', 'verdict'];
+    if (isBankClue(clue)) gained.push('bank');
+    if (isBrowserClue(clue)) gained.push('browser');
+    const fresh = gained.filter((sk) => !unlockedSkills.includes(sk));
+    if (fresh.length > 0) {
+      fresh.forEach((sk) => onUnlockSkill?.(sk));
+      sound.playSuccess();
+      setSkillToast(fresh);
+    }
+  };
+
+  useEffect(() => {
+    if (!skillToast) return;
+    const t = setTimeout(() => setSkillToast(null), 3800);
+    return () => clearTimeout(t);
+  }, [skillToast]);
 
   const onAppOpenChangeRef = useRef(onAppOpenChange);
   onAppOpenChangeRef.current = onAppOpenChange;
@@ -2269,7 +2431,12 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setActiveApp('notes');
   };
 
-  const handleOpenBank = () => {
+  // force = aberto a partir de uma dica do Lucas (é assim que se aprende a usar)
+  const handleOpenBank = (force = false) => {
+    if (bankLocked && !force) {
+      showToast('🔒 O Lucas ensina a conferir o banco nas Notas.');
+      return;
+    }
     sound.playBlip();
     if (activeApp === 'home' || activeApp === 'messaging' || activeApp === 'notes') {
       setPreviousApp(activeApp);
@@ -2277,7 +2444,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setActiveApp('bank');
   };
 
-  const handleOpenBrowser = (url?: string) => {
+  const handleOpenBrowser = (url?: string, force = false) => {
+    if (browserLocked && !force) {
+      showToast('🔒 Cuidado com links! Veja nas Notas do Lucas como conferir.');
+      return;
+    }
     sound.playBlip();
     if (activeApp === 'home' || activeApp === 'messaging' || activeApp === 'notes') {
       setPreviousApp(activeApp);
@@ -2333,6 +2504,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onVerdict={onVerdict}
             onBackToHome={() => setActiveApp('home')}
             onStoryDeliveredChange={onStoryDeliveredChange}
+            canInvestigate={canInvestigate}
+            canVerdict={canVerdict}
           />
         );
       case 'call':
@@ -2349,6 +2522,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             inspectedClueCount={inspectedClueIds.length}
             onBackToHome={() => setActiveApp('home')}
             onStoryDeliveredChange={onStoryDeliveredChange}
+            canVerdict={canVerdict}
           />
         );
       case 'push':
@@ -2361,6 +2535,9 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             stamped={stamped}
             onLinkClick={handleOpenBrowser}
             onVerdict={onVerdict}
+            onOpenNotes={handleOpenNotes}
+            canInvestigate={canInvestigate}
+            canVerdict={canVerdict}
           />
         );
       default:
@@ -2379,6 +2556,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onVerdict={onVerdict}
             onBackToHome={() => setActiveApp('home')}
             onStoryDeliveredChange={onStoryDeliveredChange}
+            canInvestigate={canInvestigate}
+            canVerdict={canVerdict}
           />
         );
     }
@@ -2396,7 +2575,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           : { x: [0, -4, 4, -4, 4, -2, 2, 0] }
       }
       transition={{ duration: stamped ? 0.4 : 0.35, ease: 'easeInOut' }}
-      className="relative mx-auto w-full max-w-full sm:max-w-[380px] h-[calc(100dvh-105px)] sm:h-[660px] flex flex-col"
+      className="relative mx-auto h-full w-full max-w-full sm:w-auto sm:max-h-[720px] sm:aspect-[19/36] flex flex-col"
     >
       {/* Moldura: Apenas no desktop (sm:). No celular real, a tela é nativa sem bordas artificiais */}
       <div className="relative w-full h-full sm:rounded-[50px] sm:bg-[#0c0e14] sm:p-[12px] sm:shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] sm:border sm:border-white/20 flex flex-col">
@@ -2447,10 +2626,12 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   c={scamCase}
                   onOpenMessaging={handleOpenAppDirectly}
                   onOpenNotes={handleOpenNotes}
-                  onOpenBank={handleOpenBank}
+                  onOpenBank={() => handleOpenBank()}
                   onOpenBrowser={() => handleOpenBrowser()}
                   onToast={showToast}
                   inspectedClueCount={inspectedClueIds.length}
+                  bankLocked={bankLocked}
+                  browserLocked={browserLocked}
                 />
               </motion.div>
             ) : activeApp === 'messaging' ? (
@@ -2476,12 +2657,13 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 <NotesScreen
                   c={scamCase}
                   inspectedClueIds={inspectedClueIds}
-                  onInspectClue={onInspectClue}
+                  onInspectClue={handleInspectClue}
                   onBack={() => setActiveApp(previousApp === 'notes' ? 'home' : previousApp)}
-                  onVerdict={onVerdict}
+                  onVerdict={canVerdict ? onVerdict : undefined}
                   stamped={stamped}
-                  onOpenBank={handleOpenBank}
-                  onOpenBrowser={handleOpenBrowser}
+                  onOpenBank={() => handleOpenBank(true)}
+                  onOpenBrowser={(url) => handleOpenBrowser(url, true)}
+                  unlockedSkills={unlockedSkills}
                 />
               </motion.div>
             ) : activeApp === 'bank' ? (
@@ -2546,6 +2728,32 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 className="absolute top-8 left-3 right-3 z-50 bg-black/90 text-white text-[11px] font-semibold py-2 px-3 rounded-xl border border-white/20 shadow-2xl text-center backdrop-blur-md"
               >
                 {toastMessage}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Aviso de habilidade nova (estilo notificação do sistema) */}
+          <AnimatePresence>
+            {skillToast && (
+              <motion.div
+                initial={{ opacity: 0, y: -24, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -24 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                onClick={() => setSkillToast(null)}
+                className="absolute top-3 sm:top-8 left-2.5 right-2.5 z-50 bg-slate-950/95 border border-amber-400/50 rounded-2xl p-3 shadow-2xl backdrop-blur-xl text-white cursor-pointer space-y-1.5"
+              >
+                {skillToast.map((sk) => (
+                  <div key={sk} className="flex items-start gap-2.5">
+                    <span className="text-lg leading-none mt-0.5">{SKILL_INFO[sk].icon}</span>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-amber-300 font-bold">
+                        🔓 Nova habilidade: {SKILL_INFO[sk].title}
+                      </div>
+                      <p className="text-[11px] text-white/80 leading-snug italic">&quot;{SKILL_INFO[sk].lucas}&quot;</p>
+                    </div>
+                  </div>
+                ))}
               </motion.div>
             )}
           </AnimatePresence>
@@ -2634,15 +2842,15 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             )}
           </AnimatePresence>
 
-          {/* CARD DE VEREDITO E FEEDBACK EMBUTIDO NO CELULAR */}
+          {/* CARD DE RESULTADO: TUDO DENTRO DO CELULAR (sem cards externos) */}
           <AnimatePresence>
             {stamped && (
               <motion.div
                 initial={{ y: 90, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 90, opacity: 0 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 320 }}
-                className="absolute bottom-6 left-2.5 right-2.5 z-40 bg-slate-900/95 border-2 border-white/30 rounded-2xl p-3 shadow-2xl backdrop-blur-xl text-white space-y-2"
+                transition={{ type: 'spring', damping: 25, stiffness: 320, delay: 0.6 }}
+                className="absolute bottom-6 left-2.5 right-2.5 z-40 max-h-[75%] overflow-y-auto overscroll-contain no-scrollbar bg-slate-900/95 border-2 border-white/25 rounded-2xl p-3 shadow-2xl backdrop-blur-xl text-white space-y-2"
               >
                 <div className="flex items-center gap-2">
                   {wasCorrect ? (
@@ -2650,18 +2858,32 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   ) : (
                     <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
                   )}
-                  <div className="font-bold text-xs">
+                  <div className="font-bold text-xs flex-1">
                     {wasCorrect
-                      ? 'Parabéns! Você acertou o veredito!'
+                      ? 'Mandou bem! Você acertou.'
                       : scamCase.isScam
-                      ? 'Atenção! Você caiu no golpe.'
-                      : 'Alarme falso! A mensagem era segura.'}
+                      ? 'Cuidado! Você caiu no golpe.'
+                      : 'Alarme falso! Era seguro.'}
                   </div>
+                  {wasCorrect && earnedXp > 0 && (
+                    <span className="font-mono font-bold text-[10px] bg-emerald-500/25 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40 shrink-0">
+                      +{earnedXp} XP
+                    </span>
+                  )}
                 </div>
 
-                <p className="text-[11px] text-neutral-200 leading-snug line-clamp-3">
+                <p className="text-[11px] text-neutral-200 leading-snug">
                   {scamCase.keyEvidenceReason || scamCase.explanation}
                 </p>
+
+                <div className="p-2 rounded-xl bg-amber-400/10 border border-amber-400/25">
+                  <div className="text-[9px] font-mono uppercase tracking-wider text-amber-300 font-bold">
+                    📌 Regra de ouro do Lucas
+                  </div>
+                  <p className="text-[11px] font-semibold text-white leading-snug mt-0.5">
+                    {scamCase.pedagogy.goldenRule}
+                  </p>
+                </div>
 
                 {onNextCase && (
                   <button
@@ -2669,7 +2891,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                     onClick={onNextCase}
                     className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
                   >
-                    <span>👉 Bora pro Próximo Caso ➔</span>
+                    <span>Próximo caso ➔</span>
                   </button>
                 )}
               </motion.div>

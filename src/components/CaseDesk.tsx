@@ -3,14 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import {
   Flame,
-  ArrowRight,
   X,
   Trophy,
   BookOpen,
-  Lightbulb,
-  ShieldAlert,
-  ShieldCheck,
-  Sparkles,
 } from 'lucide-react';
 import {
   SCAM_CASES,
@@ -24,7 +19,7 @@ import {
 } from '../data/scamsData';
 import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 import { sound } from '../utils/audio';
-import { PhoneScreen } from './PhoneScreen';
+import { PhoneScreen, type Skill } from './PhoneScreen';
 
 interface CaseDeskProps {
   onScoreUpdate: (totalXp: number, completedCount: number, allCompleted: boolean) => void;
@@ -53,6 +48,27 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   
   const [lastEarned, setLastEarned] = useState(0);
 
+  // Habilidades aprendidas com o Lucas (persistidas no navegador)
+  const [unlockedSkills, setUnlockedSkills] = useState<Skill[]>(() => {
+    try {
+      const saved = localStorage.getItem('hacklearn_unlocked_skills');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleUnlockSkill = useCallback((skill: Skill) => {
+    setUnlockedSkills((prev) => {
+      if (prev.includes(skill)) return prev;
+      const updated = [...prev, skill];
+      try {
+        localStorage.setItem('hacklearn_unlocked_skills', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
   // Badges e Modais
   const [unlockedBadgeIds, setUnlockedBadgeIds] = useState<string[]>(() => {
     try {
@@ -68,7 +84,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   const [familyGuideTab, setFamilyGuideTab] = useState<'rules' | 'glossary'>('rules');
 
   const topRef = useRef<HTMLDivElement>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
 
   const answered = finalVerdict !== null;
   const wasVerdictCorrect = answered ? (finalVerdict === 'scam') === current.isScam : null;
@@ -159,10 +174,6 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     }
 
     onScoreUpdate(newTotal, newSolved, newSolved >= SCAM_CASES.length);
-
-    setTimeout(() => {
-      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 200);
   }, [
     answered,
     current,
@@ -215,7 +226,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   
 
   return (
-    <div ref={topRef} className="scroll-mt-16 pb-16 w-full">
+    <div ref={topRef} className="h-full w-full flex flex-col overflow-hidden">
       {/* Toast de Conquista */}
       <AnimatePresence>
         {recentBadgeUnlocked && (
@@ -245,10 +256,10 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         )}
       </AnimatePresence>
 
-      {/* CONTAINER RESPONSIVO (2 COLUNAS NO DESKTOP, 1 NO MOBILE) */}
-      <div className="max-w-5xl mx-auto space-y-2 sm:space-y-4 w-full">
+      {/* CONTAINER PRINCIPAL DO JOGO (STATUS + SMARTPHONE CENTRALIZADO) */}
+      <div className="h-full max-w-5xl mx-auto flex flex-col gap-1.5 sm:gap-2.5 w-full overflow-hidden">
         {/* Barra Superior de Status do Jogo */}
-        <div className="flex items-center justify-between gap-1.5 p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-desk-2/90 border border-desk-line backdrop-blur-md shadow-lg">
+        <div className="shrink-0 flex items-center justify-between gap-1.5 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-desk-2/90 border border-desk-line backdrop-blur-md shadow-lg">
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-[11px] sm:text-xs uppercase px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-desk border border-desk-line text-white font-bold">
               Caso #{String(caseNumber).padStart(2, '0')}
@@ -291,8 +302,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         </div>
 
         {/* CELULAR CENTRALIZADO (FOCO TOTAL NA EXPERIÊNCIA DO APARELHO) */}
-        <div className="flex flex-col items-center w-full max-w-full sm:max-w-[420px] mx-auto">
-          <div className="w-full">
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full max-w-full sm:max-w-[420px] mx-auto overflow-hidden">
+          <div className="w-full h-full flex flex-col justify-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={current.id}
@@ -312,81 +323,13 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   onNextCase={nextCase}
                   inspectedClueIds={inspected}
                   onInspectClue={inspect}
+                  unlockedSkills={unlockedSkills}
+                  onUnlockSkill={handleUnlockSkill}
+                  earnedXp={lastEarned}
                 />
               </motion.div>
             </AnimatePresence>
           </div>
-          <p className="text-[10.5px] text-white/50 text-center mt-2 flex items-center justify-center gap-1.5 hidden sm:flex">
-            <Sparkles className="w-3.5 h-3.5 text-marker" />
-            <span>O celular é o foco: abra o Bloco de Notas para ver dicas e investigue nos apps</span>
-          </p>
-
-          {/* CARD DE RESULTADO / FEEDBACK PÓS-VEREDITO (SURGE QUANDO O JOGADOR DECIDE) */}
-          <AnimatePresence>
-            {answered && (
-              <motion.div
-                ref={resultRef}
-                initial={{ opacity: 0, y: 40, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-0 sm:relative sm:inset-auto sm:pt-4 max-h-[85dvh] overflow-y-auto w-full sm:max-w-[420px] mx-auto bg-desk/95 sm:bg-transparent backdrop-blur-xl sm:backdrop-blur-none border-t border-desk-line sm:border-0 shadow-2xl sm:shadow-none pb-safe"
-              >
-                <div
-                  className={`rounded-2xl p-4 sm:p-5 border-2 shadow-2xl ${
-                    wasVerdictCorrect
-                      ? 'border-safe/60 bg-safe/15 text-white'
-                      : 'border-scam/60 bg-scam/15 text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      {wasVerdictCorrect ? (
-                        <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
-                      ) : (
-                        <ShieldAlert className="w-6 h-6 text-red-400 shrink-0" />
-                      )}
-                      <h3 className="font-display font-extrabold text-base sm:text-lg">
-                        {wasVerdictCorrect
-                          ? 'Mandou Bem! Você Acertou!'
-                          : current.isScam
-                          ? 'Cuidado! Você Caiu no Golpe!'
-                          : 'Alarme Falso! A Mensagem Era Segura.'}
-                      </h3>
-                    </div>
-                    {wasVerdictCorrect && (
-                      <span className="font-mono font-bold text-xs bg-emerald-500/30 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-400/40">
-                        +{lastEarned} XP
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-xs sm:text-sm text-neutral-200 leading-relaxed font-medium mt-1">
-                    {current.keyEvidenceReason || current.explanation}
-                  </p>
-
-                  {/* Regra de Ouro Educativa */}
-                  <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                    <div className="font-mono text-[9px] uppercase tracking-wider text-marker font-bold flex items-center gap-1">
-                      <Lightbulb className="w-3.5 h-3.5 text-marker" /> Regra de Ouro da Família:
-                    </div>
-                    <p className="font-semibold text-xs sm:text-[13px] text-white leading-snug">
-                      {current.pedagogy.goldenRule}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Botão de Avançar com Destaque */}
-                <button
-                  type="button"
-                  onClick={nextCase}
-                  className="w-full py-4 px-4 rounded-2xl bg-marker hover:bg-[#ffc91f] text-ink font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_25px_rgba(255,216,74,0.4)] active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Bora pro Próximo Caso</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
 
