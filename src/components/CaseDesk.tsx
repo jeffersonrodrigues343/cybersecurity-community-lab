@@ -51,7 +51,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
 
   // Veredito Direto e Intuitivo
   const [finalVerdict, setFinalVerdict] = useState<Verdict | null>(null);
-  
+  const [isStoryDelivered, setIsStoryDelivered] = useState(false);
 
   const [streak, setStreak] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
@@ -192,6 +192,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     
     setFinalVerdict(null);
     setIsAppOpened(false);
+    setIsStoryDelivered(false);
     setOpenClue(null);
     setLastEarned(0);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -326,6 +327,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                     onNextCase={nextCase}
                     inspectedClueIds={inspected}
                     onInspectClue={inspect}
+                    onStoryDeliveredChange={(delivered) => setIsStoryDelivered(delivered)}
                   />
                 </motion.div>
               </AnimatePresence>
@@ -380,118 +382,136 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 </span>
               </div>
 
-              {/* Lista de questionamentos lógicos */}
-              <div className="space-y-2.5 pt-1">
-                {current.clues.map((clue, idx) => {
-                  const isOpen = openClue === clue.id;
-                  const seen = inspected.includes(clue.id);
-                  return (
-                    <div
-                      key={clue.id}
-                      className={`rounded-xl border transition-all overflow-hidden ${
-                        isOpen
-                          ? 'border-marker/50 bg-black/40'
-                          : seen
-                          ? 'border-emerald-500/30 bg-desk'
-                          : 'border-desk-line bg-desk hover:border-desk-line/80'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => inspect(clue)}
-                        className="w-full flex items-start gap-3 p-3 text-left hover:bg-white/5 transition cursor-pointer"
+              {/* Lista de questionamentos lógicos - revelada após o remetente concluir o envio no celular */}
+              {!isStoryDelivered ? (
+                <div className="rounded-xl border border-desk-line bg-desk/70 p-4 text-center space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-xs text-marker font-mono uppercase font-bold">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span>Acompanhe o celular: remetente digitando...</span>
+                  </div>
+                  <p className="text-xs text-neutral-300 font-medium">
+                    Foque na tela do aparelho e acompanhe a mensagem conforme ela chega. As dúvidas investigativas serão liberadas logo a seguir.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2.5 pt-1">
+                  {current.clues.map((clue, idx) => {
+                    const isOpen = openClue === clue.id;
+                    const seen = inspected.includes(clue.id);
+                    return (
+                      <div
+                        key={clue.id}
+                        className={`rounded-xl border transition-all overflow-hidden ${
+                          isOpen
+                            ? 'border-marker/50 bg-black/40'
+                            : seen
+                            ? 'border-emerald-500/30 bg-desk'
+                            : 'border-desk-line bg-desk hover:border-desk-line/80'
+                        }`}
                       >
-                        <span
-                          className={`w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold shrink-0 mt-0.5 ${
-                            seen
-                              ? 'bg-emerald-500 text-white'
-                              : 'border border-desk-line text-clip'
-                          }`}
+                        <button
+                          type="button"
+                          onClick={() => inspect(clue)}
+                          className="w-full flex items-start gap-3 p-3 text-left hover:bg-white/5 transition cursor-pointer"
                         >
-                          {seen ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
-                        </span>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono uppercase tracking-wider text-marker font-semibold">
-                              Dúvida #{idx + 1}
-                            </span>
-                            {seen && (
-                              <span className="text-[9px] font-mono text-emerald-400 font-bold bg-emerald-400/15 px-1.5 rounded">
-                                Checado +{CLUE_XP} XP
-                              </span>
-                            )}
-                          </div>
-                          <p className="font-semibold text-xs sm:text-[13px] text-white mt-0.5 leading-snug">
-                            {clue.question}
-                          </p>
-                        </div>
-
-                        <ChevronDown
-                          className={`w-4 h-4 text-clip transition-transform shrink-0 mt-1 ${
-                            isOpen ? 'rotate-180' : ''
-                          }`}
-                        />
-                      </button>
-
-                      <AnimatePresence>
-                        {isOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="px-3 pb-3 pt-1 border-t border-desk-line/50 space-y-2 bg-black/30"
+                          <span
+                            className={`w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold shrink-0 mt-0.5 ${
+                              seen
+                                ? 'bg-emerald-500 text-white'
+                                : 'border border-desk-line text-clip'
+                            }`}
                           >
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold block">
-                                🔎 Prova Real no Aparelho:
-                              </span>
-                              <p className="text-xs text-neutral-200 leading-relaxed font-medium">
-                                {clue.inspection.observation}
-                              </p>
-                            </div>
+                            {seen ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
+                          </span>
 
-                            <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-[11px] text-neutral-300">
-                              <span className="text-marker font-bold">💡 Fato: </span>
-                              {clue.evidenceResult.fato}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-mono uppercase tracking-wider text-marker font-semibold">
+                                Dúvida #{idx + 1}
+                              </span>
+                              {seen && (
+                                <span className="text-[9px] font-mono text-emerald-400 font-bold bg-emerald-400/15 px-1.5 rounded">
+                                  Checado +{CLUE_XP} XP
+                                </span>
+                              )}
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })}
-              </div>
+                            <p className="font-semibold text-xs sm:text-[13px] text-white mt-0.5 leading-snug">
+                              {clue.question}
+                            </p>
+                          </div>
+
+                          <ChevronDown
+                            className={`w-4 h-4 text-clip transition-transform shrink-0 mt-1 ${
+                              isOpen ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+
+                        <AnimatePresence>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="px-3 pb-3 pt-1 border-t border-desk-line/50 space-y-2 bg-black/30"
+                            >
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold block">
+                                  🔎 Prova Real no Aparelho:
+                                </span>
+                                <p className="text-xs text-neutral-200 leading-relaxed font-medium">
+                                  {clue.inspection.observation}
+                                </p>
+                              </div>
+
+                              <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-[11px] text-neutral-300">
+                                <span className="text-marker font-bold">💡 Fato: </span>
+                                {clue.evidenceResult.fato}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* CARD 3: Veredito Limpo e Direto */}
             {!answered ? (
-              <div className="pt-1 space-y-2">
-                <div className="text-center font-mono text-[10px] uppercase text-clip font-bold tracking-wider">
-                  Com base no que você investigou, qual é o seu veredito?
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleDirectVerdict('scam')}
-                    className="py-4 px-3 rounded-2xl bg-scam hover:bg-scam/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_20px_rgba(226,61,61,0.35)] active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/20"
-                  >
-                    <ShieldAlert className="w-6 h-6" />
-                    <span>É Golpe!</span>
-                    <span className="text-[10px] opacity-75 font-mono font-normal">tecla G</span>
-                  </button>
+              isStoryDelivered ? (
+                <div className="pt-1 space-y-2">
+                  <div className="text-center font-mono text-[10px] uppercase text-clip font-bold tracking-wider">
+                    Com base no que você investigou, qual é o seu veredito?
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleDirectVerdict('scam')}
+                      className="py-4 px-3 rounded-2xl bg-scam hover:bg-scam/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_20px_rgba(226,61,61,0.35)] active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/20"
+                    >
+                      <ShieldAlert className="w-6 h-6" />
+                      <span>É Golpe!</span>
+                      <span className="text-[10px] opacity-75 font-mono font-normal">tecla G</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDirectVerdict('safe')}
-                    className="py-4 px-3 rounded-2xl bg-safe hover:bg-safe/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_20px_rgba(31,164,99,0.35)] active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/20"
-                  >
-                    <ShieldCheck className="w-6 h-6" />
-                    <span>É Seguro</span>
-                    <span className="text-[10px] opacity-75 font-mono font-normal">tecla S</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDirectVerdict('safe')}
+                      className="py-4 px-3 rounded-2xl bg-safe hover:bg-safe/90 text-white font-display font-extrabold text-base sm:text-lg uppercase tracking-wider shadow-[0_8px_20px_rgba(31,164,99,0.35)] active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/20"
+                    >
+                      <ShieldCheck className="w-6 h-6" />
+                      <span>É Seguro</span>
+                      <span className="text-[10px] opacity-75 font-mono font-normal">tecla S</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center font-mono text-[10px] uppercase text-clip/60 font-semibold tracking-wider py-2">
+                  Leia a mensagem no celular para liberar as opções de veredito.
+                </div>
+              )
             ) : (
               /* CARD DE RESULTADO / FEEDBACK PÓS-VEREDITO */
               <AnimatePresence>

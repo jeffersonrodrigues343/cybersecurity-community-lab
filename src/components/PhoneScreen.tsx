@@ -23,7 +23,6 @@ import {
   MessageSquare,
   Bell,
   ChevronRight,
-  PhoneIncoming,
   Camera,
   Music,
   Search,
@@ -51,6 +50,7 @@ interface PhoneScreenProps {
   onNextCase?: () => void;
   inspectedClueIds?: string[];
   onInspectClue?: (clue: InvestigativeClue) => void;
+  onStoryDeliveredChange?: (delivered: boolean) => void;
 }
 
 const findContactNumber = (c: ScamCase): string | null => {
@@ -80,6 +80,122 @@ const StatusBar = ({ time, dark }: { time: string; dark?: boolean }) => (
     </div>
   </div>
 );
+
+// ============================================================================
+// TELA DE BLOQUEIO (LOCKSCREEN ESTILO IOS COM DRAG TO UNLOCK)
+// ============================================================================
+const LockScreen = ({
+  c,
+  notificationArrived,
+  onUnlock,
+  onOpenAppDirectly,
+}: {
+  c: ScamCase;
+  notificationArrived: boolean;
+  onUnlock: () => void;
+  onOpenAppDirectly: () => void;
+}) => {
+  const name = cleanName(c.sender);
+
+  const previewText =
+    c.messageContent.length > 70
+      ? c.messageContent.slice(0, 70) + '...'
+      : c.messageContent;
+
+  return (
+    <div className="relative flex flex-col h-full bg-gradient-to-b from-[#0b0f19] via-[#111827] to-[#030712] text-white select-none overflow-hidden justify-between p-4">
+      {/* Luz ambiente de fundo estilo wallpaper moderno */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/35 via-slate-900/40 to-black pointer-events-none" />
+
+      <StatusBar time={c.time} dark />
+
+      {/* Topo da LockScreen: Ícone de Cadeado & Relógio iOS */}
+      <div className="flex flex-col items-center pt-2 z-10">
+        <Lock className="w-4 h-4 text-white/70 mb-1" />
+        <div className="text-[12px] font-medium text-white/80">Sábado, 10 de outubro</div>
+        <div className="text-[52px] font-light leading-none tracking-tight font-display mt-0.5 text-white/95 drop-shadow-md">
+          {c.time}
+        </div>
+      </div>
+
+      {/* Centro: Notificação que Chega com Som de Sino iOS */}
+      <div className="flex-1 flex flex-col justify-center my-auto z-10 max-h-[300px]">
+        <AnimatePresence>
+          {notificationArrived && (
+            <motion.div
+              initial={{ y: -30, opacity: 0, scale: 0.92 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              onClick={onOpenAppDirectly}
+              className="bg-slate-900/90 hover:bg-slate-850/95 border border-white/25 rounded-2xl p-3 backdrop-blur-2xl shadow-[0_12px_32px_rgba(0,0,0,0.85)] cursor-pointer active:scale-98 transition group ring-1 ring-white/10"
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <div
+                  className={`w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-bold shadow ${
+                    c.channel === 'whatsapp'
+                      ? 'bg-[#25D366]'
+                      : c.channel === 'push'
+                      ? 'bg-[#820ad1]'
+                      : c.channel === 'call'
+                      ? 'bg-emerald-500'
+                      : 'bg-[#007aff]'
+                  }`}
+                >
+                  {c.channel === 'whatsapp' ? (
+                    <MessageSquare className="w-3 h-3" />
+                  ) : c.channel === 'call' ? (
+                    <Phone className="w-3 h-3" />
+                  ) : (
+                    <Bell className="w-3 h-3" />
+                  )}
+                </div>
+                <span className="font-semibold text-xs text-white truncate">{name}</span>
+                <span className="text-[9px] text-white/50 ml-auto font-mono">agora</span>
+              </div>
+
+              <p className="text-[12px] text-white/90 leading-tight line-clamp-2">
+                {previewText}
+              </p>
+
+              <div className="mt-2.5 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-emerald-300 font-semibold">
+                <span className="animate-pulse">👉 Toque para abrir ou arraste para cima</span>
+                <ChevronRight className="w-3.5 h-3.5 text-white/60 group-hover:translate-x-0.5 transition" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Base: Deslize para Cima para Desbloquear (Drag to Unlock) */}
+      <motion.div
+        drag="y"
+        dragConstraints={{ top: -140, bottom: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(_e, info) => {
+          if (info.offset.y < -40 || info.velocity.y < -250) {
+            onUnlock();
+          }
+        }}
+        onClick={onUnlock}
+        className="flex flex-col items-center gap-1.5 pb-2 z-10 cursor-pointer active:opacity-75 transition-opacity"
+      >
+        <motion.div
+          animate={{ y: [0, -4, 0] }}
+          transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+          className="flex flex-col items-center text-white/60 text-[11px] font-medium"
+        >
+          <span className="text-xs">▲</span>
+          <span className="text-[10px] tracking-wide font-medium mt-0.5">
+            Deslize para cima para desbloquear
+          </span>
+        </motion.div>
+        {/* Barra de desbloqueio */}
+        <div className="w-28 h-1 rounded-full bg-white/50 shadow-sm" />
+      </motion.div>
+    </div>
+  );
+};
 
 // ============================================================================
 // BLOCO DE NOTAS DO CELULAR (APP NATIVO COM AS DÚVIDAS E QUESTIONAMENTOS)
@@ -412,7 +528,7 @@ const BrowserScreen = ({
 };
 
 // ============================================================================
-// WHATSAPP INTERATIVO POINT & CLICK
+// WHATSAPP INTERATIVO COM ENTREGA GRADUAL DE MENSAGENS EM TEMPO REAL
 // ============================================================================
 const WhatsAppScreen = ({
   c,
@@ -430,6 +546,7 @@ const WhatsAppScreen = ({
   inspectedClueCount,
   onVerdict,
   onBackToHome,
+  onStoryDeliveredChange,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -446,11 +563,62 @@ const WhatsAppScreen = ({
   inspectedClueCount: number;
   onVerdict?: (v: 'scam' | 'safe') => void;
   onBackToHome: () => void;
+  onStoryDeliveredChange?: (delivered: boolean) => void;
 }) => {
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTypingPlayer, setIsTypingPlayer] = useState(false);
   const number = findContactNumber(c);
   const name = cleanName(c.sender);
   const unknown = /desconhecid|n[uú]mero novo/i.test(c.sender);
+
+  // Mensagens do caso divididas por parágrafos para simular digitação do suspeito
+  const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [isSuspectTyping, setIsSuspectTyping] = useState(true);
+  const [hasFinishedTyping, setHasFinishedTyping] = useState(false);
+
+  useEffect(() => {
+    setRevealedCount(0);
+    setIsSuspectTyping(true);
+    setHasFinishedTyping(false);
+    onStoryDeliveredChange?.(false);
+
+    let count = 0;
+    let activeTimer: ReturnType<typeof setTimeout>;
+
+    const deliverNext = () => {
+      setIsSuspectTyping(true);
+      activeTimer = setTimeout(() => {
+        count += 1;
+        setRevealedCount(count);
+        setIsSuspectTyping(false);
+        sound.playMessagePop();
+
+        if (count < messageParagraphs.length) {
+          activeTimer = setTimeout(deliverNext, 600);
+        } else {
+          setHasFinishedTyping(true);
+          onStoryDeliveredChange?.(true);
+        }
+      }, 1100);
+    };
+
+    const startTimer = setTimeout(deliverNext, 500);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(activeTimer);
+    };
+  }, [c.id, messageParagraphs.length, onStoryDeliveredChange]);
+
+  // Toque para acelerar a leitura caso o jogador não queira esperar
+  const handleFastForward = () => {
+    if (!hasFinishedTyping) {
+      setRevealedCount(messageParagraphs.length);
+      setIsSuspectTyping(false);
+      setHasFinishedTyping(true);
+      onStoryDeliveredChange?.(true);
+    }
+  };
 
   const availableActions = (c.interactiveActions || []).filter(
     (act) => !executedActionIds.includes(act.id),
@@ -458,9 +626,9 @@ const WhatsAppScreen = ({
 
   const handleActionClick = (action: InteractiveAction) => {
     sound.playKeypress();
-    setIsTyping(true);
+    setIsTypingPlayer(true);
     setTimeout(() => {
-      setIsTyping(false);
+      setIsTypingPlayer(false);
       sound.playMessagePing();
       onPerformAction(action);
     }, 650);
@@ -491,14 +659,17 @@ const WhatsAppScreen = ({
   };
 
   return (
-    <div className="flex flex-col h-full select-none">
+    <div className="flex flex-col h-full select-none" onClick={handleFastForward}>
       {/* Cabeçalho Clicável do WhatsApp */}
       <div className="bg-[#008069] text-white">
         <StatusBar time={c.time} dark />
         <div className="flex items-center gap-1.5 px-2 pb-2 pt-1">
           <button
             type="button"
-            onClick={onBackToHome}
+            onClick={(e) => {
+              e.stopPropagation();
+              onBackToHome();
+            }}
             className="p-1 hover:bg-white/10 rounded-full cursor-pointer active:scale-90 transition"
             title="Voltar à Tela Inicial"
           >
@@ -507,7 +678,10 @@ const WhatsAppScreen = ({
 
           <button
             type="button"
-            onClick={onContactClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              onContactClick();
+            }}
             className="flex items-center gap-1.5 flex-1 min-w-0 text-left cursor-pointer hover:opacity-90 active:scale-98 transition-transform"
             title="Clique para ver o perfil do contato"
           >
@@ -526,7 +700,7 @@ const WhatsAppScreen = ({
                 )}
               </div>
               <div className="text-[10px] text-white/80 truncate">
-                {isTyping ? (
+                {isTypingPlayer || isSuspectTyping ? (
                   <span className="italic font-medium text-emerald-200 animate-pulse">digitando...</span>
                 ) : isBlocked ? (
                   'bloqueado por você'
@@ -540,20 +714,30 @@ const WhatsAppScreen = ({
           </button>
 
           <div className="flex items-center gap-1.5 text-white/90 shrink-0">
-            {/* Botão de Dúvidas Suspeitas no Topo */}
-            <button
-              type="button"
-              onClick={onOpenNotes}
-              className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold px-2 py-1 rounded-full border border-white/25 cursor-pointer active:scale-95 transition shadow-sm"
-              title="Abrir Bloco de Notas do celular com dúvidas lógicas"
-            >
-              <FileText className="w-3 h-3 text-amber-300" />
-              <span>Dúvidas ({inspectedClueCount}/{c.clues.length})</span>
-            </button>
+            {/* Botão de Dúvidas Suspeitas no Topo (só surge após ler a mensagem) */}
+            {hasFinishedTyping && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenNotes();
+                }}
+                className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold px-2 py-1 rounded-full border border-white/25 cursor-pointer active:scale-95 transition shadow-sm"
+                title="Abrir Bloco de Notas do celular com dúvidas lógicas"
+              >
+                <FileText className="w-3 h-3 text-amber-300" />
+                <span>Dúvidas ({inspectedClueCount}/{c.clues.length})</span>
+              </motion.button>
+            )}
 
             <button
               type="button"
-              onClick={onCallClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCallClick();
+              }}
               className="p-1 hover:bg-white/10 rounded-full cursor-pointer active:scale-90 transition-transform"
               title="Ligar"
             >
@@ -561,7 +745,10 @@ const WhatsAppScreen = ({
             </button>
             <button
               type="button"
-              onClick={onContactClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                onContactClick();
+              }}
               className="p-1 hover:bg-white/10 rounded-full cursor-pointer active:scale-90 transition-transform"
               title="Mais opções"
             >
@@ -571,7 +758,7 @@ const WhatsAppScreen = ({
         </div>
       </div>
 
-      {/* Área da Conversa */}
+      {/* Área da Conversa com Balões Chegando em Tempo Real */}
       <div className="flex-1 wa-wallpaper overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2">
         <div className="mx-auto w-fit bg-[#ffeecd] text-[#54656f] text-[10px] px-2.5 py-1 rounded-md text-center max-w-[94%] flex items-center gap-1 shadow-sm leading-tight">
           <Lock className="w-2.5 h-2.5 flex-shrink-0" />
@@ -584,14 +771,20 @@ const WhatsAppScreen = ({
             <div className="flex justify-center gap-5 mt-1 font-semibold text-[#008069]">
               <button
                 type="button"
-                onClick={onBlockContact}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBlockContact();
+                }}
                 className="hover:underline cursor-pointer text-red-600 font-bold active:scale-95 transition-transform"
               >
                 Bloquear
               </button>
               <button
                 type="button"
-                onClick={onContactClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onContactClick();
+                }}
                 className="hover:underline cursor-pointer active:scale-95 transition-transform"
               >
                 Inspecionar
@@ -604,18 +797,34 @@ const WhatsAppScreen = ({
           HOJE
         </div>
 
-        {/* Mensagens do Contato */}
-        {c.messageContent.split(/\n\n+/).map((para, i) => (
-          <div
+        {/* Mensagens do Contato entregues aos poucos para imersão total */}
+        {messageParagraphs.slice(0, revealedCount).map((para, i) => (
+          <motion.div
             key={i}
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25 }}
             className="relative bg-white text-[#111b21] text-[13px] leading-[17px] rounded-lg rounded-tl-none px-2.5 pt-1.5 pb-3.5 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.15)] whitespace-pre-wrap group hover:ring-1 hover:ring-emerald-400/40 transition"
           >
             {renderMessageContent(para)}
             <span className="absolute right-1.5 bottom-0.5 text-[9.5px] text-[#667781] font-mono">
               {c.time}
             </span>
-          </div>
+          </motion.div>
         ))}
+
+        {/* Efeito visual de digitação do suspeito enquanto a história é contada */}
+        {isSuspectTyping && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg rounded-tl-none px-3 py-2 w-fit shadow-sm flex items-center gap-1.5"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.15s]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.3s]" />
+          </motion.div>
+        )}
 
         {/* Histórico de Mensagens Enviadas pelo Jogador */}
         {actionHistory.map((item, idx) => (
@@ -643,7 +852,7 @@ const WhatsAppScreen = ({
           </React.Fragment>
         ))}
 
-        {isTyping && (
+        {isTypingPlayer && (
           <div className="bg-white rounded-lg rounded-tl-none px-3 py-2 w-fit shadow-sm flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" />
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.15s]" />
@@ -652,9 +861,13 @@ const WhatsAppScreen = ({
         )}
       </div>
 
-      {/* Respostas Interativas Clicáveis do Jogador + Veredito */}
-      {!stamped ? (
-        <div className="bg-[#f0f2f5] p-2 border-t border-black/10 space-y-1.5">
+      {/* Respostas Interativas Clicáveis do Jogador + Veredito (Somente após ler a mensagem!) */}
+      {!stamped && hasFinishedTyping ? (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#f0f2f5] p-2 border-t border-black/10 space-y-1.5"
+        >
           {availableActions.length > 0 && !isBlocked && (
             <>
               <div className="text-[10px] font-mono text-[#54656f] uppercase tracking-wider font-bold px-1 flex items-center gap-1">
@@ -665,7 +878,10 @@ const WhatsAppScreen = ({
                   <button
                     key={act.id}
                     type="button"
-                    onClick={() => handleActionClick(act)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleActionClick(act);
+                    }}
                     className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-300 text-[#008069] rounded-lg px-2 py-1.5 text-xs font-semibold shadow-sm transition active:scale-98 cursor-pointer flex items-center justify-between gap-1.5"
                   >
                     <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
@@ -683,7 +899,10 @@ const WhatsAppScreen = ({
             <div className="pt-1 border-t border-black/5 flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => onVerdict('scam')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onVerdict('scam');
+                }}
                 className="flex-1 py-1.5 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
@@ -691,7 +910,10 @@ const WhatsAppScreen = ({
               </button>
               <button
                 type="button"
-                onClick={() => onVerdict('safe')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onVerdict('safe');
+                }}
                 className="flex-1 py-1.5 px-2 bg-[#008069] hover:bg-[#006a57] text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -699,6 +921,12 @@ const WhatsAppScreen = ({
               </button>
             </div>
           )}
+        </motion.div>
+      ) : !hasFinishedTyping ? (
+        <div className="bg-[#f0f2f5] px-3 py-2 border-t border-black/5 text-center">
+          <span className="text-[10px] text-neutral-500 font-medium italic animate-pulse">
+            Lendo conversa... (Toque no chat para acelerar)
+          </span>
         </div>
       ) : (
         <div className="bg-[#f0f2f5] px-2 py-2 flex items-center gap-2 border-t border-black/5">
@@ -715,7 +943,7 @@ const WhatsAppScreen = ({
 };
 
 // ============================================================================
-// SMS INTERATIVO POINT & CLICK
+// SMS INTERATIVO COM ENTREGA GRADUAL DE MENSAGENS EM TEMPO REAL
 // ============================================================================
 const SmsScreen = ({
   c,
@@ -730,6 +958,7 @@ const SmsScreen = ({
   inspectedClueCount,
   onVerdict,
   onBackToHome,
+  onStoryDeliveredChange,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -743,8 +972,52 @@ const SmsScreen = ({
   inspectedClueCount: number;
   onVerdict?: (v: 'scam' | 'safe') => void;
   onBackToHome: () => void;
+  onStoryDeliveredChange?: (delivered: boolean) => void;
 }) => {
   const number = findContactNumber(c);
+  const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [hasFinishedTyping, setHasFinishedTyping] = useState(false);
+
+  useEffect(() => {
+    setRevealedCount(0);
+    setHasFinishedTyping(false);
+    onStoryDeliveredChange?.(false);
+
+    let count = 0;
+    let activeTimer: ReturnType<typeof setTimeout>;
+
+    const deliverNext = () => {
+      activeTimer = setTimeout(() => {
+        count += 1;
+        setRevealedCount(count);
+        sound.playMessagePop();
+
+        if (count < messageParagraphs.length) {
+          activeTimer = setTimeout(deliverNext, 600);
+        } else {
+          setHasFinishedTyping(true);
+          onStoryDeliveredChange?.(true);
+        }
+      }, 1000);
+    };
+
+    const startTimer = setTimeout(deliverNext, 400);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(activeTimer);
+    };
+  }, [c.id, messageParagraphs.length, onStoryDeliveredChange]);
+
+  const handleFastForward = () => {
+    if (!hasFinishedTyping) {
+      setRevealedCount(messageParagraphs.length);
+      setHasFinishedTyping(true);
+      onStoryDeliveredChange?.(true);
+    }
+  };
+
   const availableActions = (c.interactiveActions || []).filter(
     (act) => !executedActionIds.includes(act.id),
   );
@@ -774,12 +1047,15 @@ const SmsScreen = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white select-none">
+    <div className="flex flex-col h-full bg-white select-none" onClick={handleFastForward}>
       <StatusBar time={c.time} />
       <div className="flex items-center justify-between px-2 pb-2 pt-1 border-b border-black/10 relative">
         <button
           type="button"
-          onClick={onBackToHome}
+          onClick={(e) => {
+            e.stopPropagation();
+            onBackToHome();
+          }}
           className="p-1 text-[#007aff] hover:bg-neutral-100 rounded-full cursor-pointer"
           title="Voltar à Tela Inicial"
         >
@@ -788,7 +1064,10 @@ const SmsScreen = ({
 
         <button
           type="button"
-          onClick={onContactClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            onContactClick();
+          }}
           className="flex flex-col items-center cursor-pointer hover:opacity-90 active:scale-95 transition-transform flex-1 min-w-0"
           title="Clique para ver o contato"
         >
@@ -804,15 +1083,22 @@ const SmsScreen = ({
           </div>
         </button>
 
-        <button
-          type="button"
-          onClick={onOpenNotes}
-          className="flex items-center gap-1 bg-neutral-100 hover:bg-neutral-200 text-[#007aff] text-[10px] font-bold px-2 py-1 rounded-full border border-neutral-300 cursor-pointer active:scale-95 transition shadow-sm"
-          title="Abrir Bloco de Notas com dúvidas lógicas"
-        >
-          <FileText className="w-3 h-3 text-amber-500" />
-          <span>Dúvidas ({inspectedClueCount}/{c.clues.length})</span>
-        </button>
+        {hasFinishedTyping && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenNotes();
+            }}
+            className="flex items-center gap-1 bg-neutral-100 hover:bg-neutral-200 text-[#007aff] text-[10px] font-bold px-2 py-1 rounded-full border border-neutral-300 cursor-pointer active:scale-95 transition shadow-sm"
+            title="Abrir Bloco de Notas com dúvidas lógicas"
+          >
+            <FileText className="w-3 h-3 text-amber-500" />
+            <span>Dúvidas ({inspectedClueCount}/{c.clues.length})</span>
+          </motion.button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2">
@@ -821,9 +1107,17 @@ const SmsScreen = ({
           <br />
           Hoje {c.time}
         </div>
-        <div className="bg-[#e9e9eb] text-black text-[13.5px] leading-[18px] rounded-[16px] rounded-bl-[4px] px-3 py-2 max-w-[88%] whitespace-pre-wrap shadow-sm">
-          {renderMessageContent(c.messageContent)}
-        </div>
+
+        {messageParagraphs.slice(0, revealedCount).map((para, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="bg-[#e9e9eb] text-black text-[13.5px] leading-[18px] rounded-[16px] rounded-bl-[4px] px-3 py-2 max-w-[88%] whitespace-pre-wrap shadow-sm"
+          >
+            {renderMessageContent(para)}
+          </motion.div>
+        ))}
 
         {actionHistory.map((item, idx) => (
           <motion.div
@@ -846,15 +1140,20 @@ const SmsScreen = ({
         </div>
       </div>
 
-      {!stamped && (
-        <div className="p-2 bg-neutral-50 border-t border-black/10 space-y-1.5">
+      {!stamped && hasFinishedTyping ? (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-2 bg-neutral-50 border-t border-black/10 space-y-1.5"
+        >
           {availableActions.length > 0 && (
             <div className="space-y-1 max-h-28 overflow-y-auto pr-0.5">
               {availableActions.map((act) => (
                 <button
                   key={act.id}
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     sound.playBlip();
                     onPerformAction(act);
                   }}
@@ -873,7 +1172,10 @@ const SmsScreen = ({
             <div className="pt-1 border-t border-black/5 flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => onVerdict('scam')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onVerdict('scam');
+                }}
                 className="flex-1 py-1.5 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
@@ -881,7 +1183,10 @@ const SmsScreen = ({
               </button>
               <button
                 type="button"
-                onClick={() => onVerdict('safe')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onVerdict('safe');
+                }}
                 className="flex-1 py-1.5 px-2 bg-[#007aff] hover:bg-blue-600 text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -889,8 +1194,14 @@ const SmsScreen = ({
               </button>
             </div>
           )}
+        </motion.div>
+      ) : !hasFinishedTyping ? (
+        <div className="p-2 bg-neutral-50 border-t border-black/10 text-center">
+          <span className="text-[10px] text-neutral-500 font-medium italic animate-pulse">
+            Recebendo SMS... (Toque para acelerar)
+          </span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
@@ -1144,7 +1455,7 @@ const PushScreen = ({
 };
 
 // ============================================================================
-// TELA INICIAL REALISTA DO CELULAR (HOME SCREEN)
+// TELA INICIAL REALISTA DO CELULAR (HOME SCREEN COM APP EM DESTAQUE)
 // ============================================================================
 const HomeScreen = ({
   c,
@@ -1163,28 +1474,13 @@ const HomeScreen = ({
   onToast: (msg: string) => void;
   inspectedClueCount: number;
 }) => {
-  const [notificationArrived, setNotificationArrived] = useState(false);
-  const number = findContactNumber(c);
-  const name = cleanName(c.sender);
-  const isCall = c.channel === 'call';
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setNotificationArrived(true);
-      sound.playPhoneVibrate();
-      if (isCall) {
-        sound.playPhoneRingtone();
-      } else {
-        sound.playMessagePing();
-      }
-    }, 600);
-    return () => clearTimeout(t);
-  }, [c.id, isCall]);
-
-  const previewText =
-    c.messageContent.length > 70
-      ? c.messageContent.slice(0, 70) + '...'
-      : c.messageContent;
+  const isTargetChannel = (target: string) => {
+    if (c.channel === 'whatsapp' && target === 'whatsapp') return true;
+    if (c.channel === 'sms' && target === 'sms') return true;
+    if (c.channel === 'push' && target === 'bank') return true;
+    if (c.channel === 'call' && target === 'call') return true;
+    return false;
+  };
 
   return (
     <div className="relative flex flex-col h-full bg-gradient-to-b from-[#111827] via-[#0f172a] to-[#030712] text-white select-none overflow-hidden">
@@ -1192,111 +1488,36 @@ const HomeScreen = ({
 
       <StatusBar time={c.time} dark />
 
-      {/* BANNER DE NOTIFICAÇÃO FLUTUANTE (Desliza do topo como no smartphone real) */}
-      <AnimatePresence>
-        {notificationArrived && !isCall && (
-          <motion.div
-            initial={{ y: -70, opacity: 0, scale: 0.92 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: -50, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 360, damping: 25 }}
-            onClick={onOpenMessaging}
-            className="absolute top-8 left-2 right-2 z-40 bg-slate-900/95 hover:bg-slate-850 border border-white/25 rounded-2xl p-2.5 backdrop-blur-2xl shadow-[0_12px_32px_rgba(0,0,0,0.85)] cursor-pointer active:scale-96 transition-all group ring-1 ring-white/10"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <div
-                className={`w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-bold shadow ${
-                  c.channel === 'whatsapp'
-                    ? 'bg-[#25D366]'
-                    : c.channel === 'push'
-                    ? 'bg-[#820ad1]'
-                    : 'bg-[#007aff]'
-                }`}
-              >
-                {c.channel === 'whatsapp' ? (
-                  <MessageSquare className="w-3 h-3" />
-                ) : (
-                  <Bell className="w-3 h-3" />
-                )}
-              </div>
-              <span className="font-semibold text-xs truncate text-white">
-                {name}
-              </span>
-              <span className="text-[9px] text-white/50 ml-auto font-mono">agora</span>
-            </div>
+      {/* Banner de Notificação no Topo da HomeScreen */}
+      <div
+        onClick={onOpenMessaging}
+        className="mx-3 mt-1.5 bg-slate-900/95 border border-emerald-400/50 rounded-2xl p-2.5 backdrop-blur-xl shadow-lg cursor-pointer active:scale-98 transition flex items-center gap-2 group ring-1 ring-emerald-400/30"
+      >
+        <div
+          className={`w-6 h-6 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shadow ${
+            c.channel === 'whatsapp'
+              ? 'bg-[#25D366]'
+              : c.channel === 'push'
+              ? 'bg-[#820ad1]'
+              : 'bg-[#007aff]'
+          }`}
+        >
+          {c.channel === 'whatsapp' ? <MessageSquare className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[11.5px] font-bold text-white truncate flex items-center gap-1.5">
+            <span>{cleanName(c.sender)}</span>
+            <span className="text-[9px] text-emerald-400 font-normal animate-pulse">• Nova mensagem</span>
+          </div>
+          <div className="text-[10.5px] text-white/70 truncate">{c.messageContent}</div>
+        </div>
+        <ChevronRight className="w-4 h-4 text-white/60 group-hover:translate-x-0.5 transition" />
+      </div>
 
-            <p className="text-[11.5px] text-white/90 leading-tight line-clamp-2">
-              {previewText}
-            </p>
-
-            <div className="mt-2 pt-1 border-t border-white/10 flex items-center justify-between text-[9.5px] text-emerald-400 font-semibold">
-              <span className="flex items-center gap-1 animate-pulse">
-                👉 Toque para abrir no aplicativo
-              </span>
-              <ChevronRight className="w-3 h-3 text-white/60 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* SE FOR LIGAÇÃO TELEFÔNICA RECEBIDA (0800 Falsa Central) */}
-      <AnimatePresence>
-        {notificationArrived && isCall && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="absolute inset-0 z-40 bg-black/95 flex flex-col items-center justify-center p-4 space-y-4"
-          >
-            <motion.div
-              animate={{ scale: [1, 1.08, 1] }}
-              transition={{ repeat: Infinity, duration: 1.4 }}
-              className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-3xl font-bold shadow-2xl border-2 border-white/20"
-            >
-              {c.sender.charAt(0)}
-            </motion.div>
-
-            <div className="text-center">
-              <div className="text-lg font-bold text-white">{name}</div>
-              <div className="text-xs text-white/60 font-mono mt-0.5">
-                {number ?? 'Número desconhecido'}
-              </div>
-              <div className="text-xs text-emerald-400 font-semibold mt-1 animate-pulse flex items-center justify-center gap-1">
-                <PhoneIncoming className="w-3.5 h-3.5" />
-                <span>Chamada recebida...</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-8 pt-4">
-              <button
-                type="button"
-                onClick={() => onToast('📴 Chamada recusada.')}
-                className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
-              >
-                <div className="w-13 h-13 rounded-full bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/40">
-                  <PhoneOff className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-[10px] text-white/80 font-medium">Recusar</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onOpenMessaging}
-                className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
-              >
-                <div className="w-13 h-13 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40 animate-bounce">
-                  <Phone className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-[10px] text-white/80 font-medium">Atender</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* CONTEÚDO DA TELA INICIAL (Uso Normal do Celular) */}
-      <div className="flex-1 flex flex-col justify-between p-3.5 z-10 pt-3">
+      {/* CONTEÚDO DA TELA INICIAL */}
+      <div className="flex-1 flex flex-col justify-between p-3.5 z-10 pt-2">
         {/* Widget de Relógio & Clima */}
-        <div className="flex flex-col items-center text-center pt-2">
+        <div className="flex flex-col items-center text-center pt-1">
           <div className="text-[44px] font-bold leading-none tracking-tight font-display text-white/95">
             {c.time}
           </div>
@@ -1309,7 +1530,7 @@ const HomeScreen = ({
         {/* Barra de Pesquisa Estilo Google */}
         <div
           onClick={onOpenBrowser}
-          className="w-full bg-white/10 hover:bg-white/15 border border-white/15 rounded-full py-1.5 px-3 flex items-center justify-between text-white/60 text-xs backdrop-blur-md transition mt-2 cursor-pointer"
+          className="w-full bg-white/10 hover:bg-white/15 border border-white/15 rounded-full py-1.5 px-3 flex items-center justify-between text-white/60 text-xs backdrop-blur-md transition mt-1 cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <span className="font-bold text-xs text-sky-400">G</span>
@@ -1318,16 +1539,22 @@ const HomeScreen = ({
           <Search className="w-3.5 h-3.5 text-white/50" />
         </div>
 
-        {/* Grid de Apps Realista */}
+        {/* Grid de Apps com o Aplicativo Alvo em Destaque Especial */}
         <div className="grid grid-cols-4 gap-y-3.5 gap-x-2 my-auto px-0.5">
           {/* 1. WhatsApp */}
           <div
             onClick={onOpenMessaging}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-11 h-11 rounded-2xl bg-[#25D366] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+            <div
+              className={`relative w-11 h-11 rounded-2xl bg-[#25D366] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
+                isTargetChannel('whatsapp')
+                  ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(52,211,153,0.7)]'
+                  : ''
+              }`}
+            >
               <MessageSquare className="w-5 h-5" />
-              {notificationArrived && c.channel === 'whatsapp' && (
+              {isTargetChannel('whatsapp') && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
@@ -1341,9 +1568,15 @@ const HomeScreen = ({
             onClick={onOpenMessaging}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-11 h-11 rounded-2xl bg-[#007aff] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+            <div
+              className={`relative w-11 h-11 rounded-2xl bg-[#007aff] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
+                isTargetChannel('sms')
+                  ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(96,165,250,0.7)]'
+                  : ''
+              }`}
+            >
               <MessageCircle className="w-5 h-5" />
-              {notificationArrived && c.channel === 'sms' && (
+              {isTargetChannel('sms') && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
@@ -1357,9 +1590,15 @@ const HomeScreen = ({
             onClick={onOpenBank}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-11 h-11 rounded-2xl bg-[#820ad1] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+            <div
+              className={`relative w-11 h-11 rounded-2xl bg-[#820ad1] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
+                isTargetChannel('bank')
+                  ? 'ring-2 ring-purple-400 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(192,132,252,0.7)]'
+                  : ''
+              }`}
+            >
               <CreditCard className="w-5 h-5" />
-              {notificationArrived && c.channel === 'push' && (
+              {isTargetChannel('bank') && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
@@ -1420,9 +1659,15 @@ const HomeScreen = ({
             onClick={onOpenMessaging}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-11 h-11 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+            <div
+              className={`relative w-11 h-11 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all ${
+                isTargetChannel('call')
+                  ? 'ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-900 animate-pulse shadow-[0_0_16px_rgba(52,211,153,0.7)]'
+                  : ''
+              }`}
+            >
               <Phone className="w-5 h-5" />
-              {notificationArrived && c.channel === 'call' && (
+              {isTargetChannel('call') && (
                 <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   !
                 </span>
@@ -1439,13 +1684,9 @@ const HomeScreen = ({
             onClick={onOpenMessaging}
             className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-center text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition"
           >
-            {notificationArrived ? (
-              <span className="flex items-center gap-1.5 text-emerald-300 animate-pulse font-bold">
-                👉 Toque para abrir a notificação
-              </span>
-            ) : (
-              <span>Você está navegando no celular...</span>
-            )}
+            <span className="flex items-center gap-1.5 text-emerald-300 animate-pulse font-bold">
+              👉 Toque no app com notificação para abrir
+            </span>
           </button>
         </div>
       </div>
@@ -1468,32 +1709,74 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   onNextCase,
   inspectedClueIds = [],
   onInspectClue,
+  onStoryDeliveredChange,
 }) => {
   const [activeApp, setActiveApp] = useState<'home' | 'messaging' | 'notes' | 'bank' | 'browser'>('home');
+  const [isLocked, setIsLocked] = useState(true);
+  const [isScreenOff, setIsScreenOff] = useState(true);
+  const [notificationArrived, setNotificationArrived] = useState(false);
   const [vibrateKey, setVibrateKey] = useState(0);
   const [activeModal, setActiveModal] = useState<'contact' | 'toast' | null>(null);
   const [browserUrl, setBrowserUrl] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string>('');
   const [isBlocked, setIsBlocked] = useState(false);
 
+  // Ciclo de Vida: toda vez que muda de caso, tela escurece e acende
   useEffect(() => {
     setIsBlocked(false);
     setActiveModal(null);
+    setIsLocked(true);
     setActiveApp('home');
+    setNotificationArrived(false);
     onAppOpenChange?.(false);
+    onStoryDeliveredChange?.(false);
     setVibrateKey((k) => k + 1);
-  }, [scamCase.id, onAppOpenChange]);
+
+    // 1. Tela apaga em preto absoluto
+    setIsScreenOff(true);
+    sound.playScreenLock();
+
+    // 2. Tela liga suavemente (OLED wake)
+    const wakeTimer = setTimeout(() => {
+      setIsScreenOff(false);
+      sound.playScreenWake();
+    }, 450);
+
+    // 3. Notificação chega na LockScreen com som de sino iOS e vibração
+    const notifTimer = setTimeout(() => {
+      setNotificationArrived(true);
+      sound.playPhoneVibrate();
+      if (scamCase.channel === 'call') {
+        sound.playPhoneRingtone();
+      } else {
+        sound.playIOSBellChime();
+      }
+    }, 1100);
+
+    return () => {
+      clearTimeout(wakeTimer);
+      clearTimeout(notifTimer);
+    };
+  }, [scamCase.id, scamCase.channel, onAppOpenChange, onStoryDeliveredChange]);
 
   useEffect(() => {
     if (stamped) {
       sound.playStampThud();
+      setIsLocked(false);
       setActiveApp('messaging');
       onAppOpenChange?.(true);
     }
   }, [stamped, onAppOpenChange]);
 
-  const handleOpenMessaging = () => {
+  const handleUnlockToHome = () => {
+    sound.playBlip();
+    setIsLocked(false);
+    setActiveApp('home');
+  };
+
+  const handleOpenAppDirectly = () => {
     sound.playKeypress();
+    setIsLocked(false);
     setActiveApp('messaging');
     onAppOpenChange?.(true);
   };
@@ -1560,6 +1843,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             inspectedClueCount={inspectedClueIds.length}
             onVerdict={onVerdict}
             onBackToHome={() => setActiveApp('home')}
+            onStoryDeliveredChange={onStoryDeliveredChange}
           />
         );
       case 'call':
@@ -1601,6 +1885,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             inspectedClueCount={inspectedClueIds.length}
             onVerdict={onVerdict}
             onBackToHome={() => setActiveApp('home')}
+            onStoryDeliveredChange={onStoryDeliveredChange}
           />
         );
     }
@@ -1623,9 +1908,40 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       {/* Moldura Realista do Celular */}
       <div className="relative rounded-[44px] sm:rounded-[50px] bg-[#0c0e14] p-[9px] sm:p-[12px] shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] border border-white/20">
         <div className="relative h-[580px] sm:h-[650px] rounded-[34px] sm:rounded-[40px] overflow-hidden font-phone select-none bg-black">
+          {/* EFEITO DE TELA APAGADA / TRANSIÇÃO OLED */}
+          <AnimatePresence>
+            {isScreenOff && (
+              <motion.div
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                className="absolute inset-0 z-50 bg-black flex items-center justify-center pointer-events-none"
+              >
+                <div className="w-16 h-1 rounded-full bg-neutral-800/60" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Roteador de Apps Dentro do Sistema Operacional do Celular */}
           <AnimatePresence mode="wait">
-            {activeApp === 'home' && (
+            {isLocked ? (
+              <motion.div
+                key={`lock-${scamCase.id}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                transition={{ duration: 0.22 }}
+                className="h-full"
+              >
+                <LockScreen
+                  c={scamCase}
+                  notificationArrived={notificationArrived}
+                  onUnlock={handleUnlockToHome}
+                  onOpenAppDirectly={handleOpenAppDirectly}
+                />
+              </motion.div>
+            ) : activeApp === 'home' ? (
               <motion.div
                 key={`home-${scamCase.id}`}
                 initial={{ opacity: 0 }}
@@ -1636,7 +1952,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               >
                 <HomeScreen
                   c={scamCase}
-                  onOpenMessaging={handleOpenMessaging}
+                  onOpenMessaging={handleOpenAppDirectly}
                   onOpenNotes={handleOpenNotes}
                   onOpenBank={handleOpenBank}
                   onOpenBrowser={() => handleOpenBrowser()}
@@ -1644,9 +1960,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   inspectedClueCount={inspectedClueIds.length}
                 />
               </motion.div>
-            )}
-
-            {activeApp === 'messaging' && (
+            ) : activeApp === 'messaging' ? (
               <motion.div
                 key={`msg-${scamCase.id}`}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -1657,9 +1971,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               >
                 {renderMessagingApp()}
               </motion.div>
-            )}
-
-            {activeApp === 'notes' && (
+            ) : activeApp === 'notes' ? (
               <motion.div
                 key={`notes-${scamCase.id}`}
                 initial={{ opacity: 0, y: 15 }}
@@ -1677,9 +1989,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   stamped={stamped}
                 />
               </motion.div>
-            )}
-
-            {activeApp === 'bank' && (
+            ) : activeApp === 'bank' ? (
               <motion.div
                 key={`bank-${scamCase.id}`}
                 initial={{ opacity: 0, y: 15 }}
@@ -1693,9 +2003,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   onBack={() => setActiveApp('home')}
                 />
               </motion.div>
-            )}
-
-            {activeApp === 'browser' && (
+            ) : (
               <motion.div
                 key={`browser-${scamCase.id}`}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -1720,16 +2028,18 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           </div>
 
           {/* BARRA DE INÍCIO PERSISTENTE (HOME BAR ESTILO IOS/ANDROID) */}
-          <div
-            className="absolute bottom-1 left-0 right-0 py-1 flex justify-center z-30 cursor-pointer group"
-            onClick={() => {
-              sound.playBlip();
-              setActiveApp('home');
-            }}
-            title="Toque para voltar à Tela Inicial do Celular"
-          >
-            <div className="w-24 h-1 rounded-full bg-white/40 group-hover:bg-white/80 active:scale-95 transition-all shadow-sm" />
-          </div>
+          {!isLocked && (
+            <div
+              className="absolute bottom-1 left-0 right-0 py-1 flex justify-center z-30 cursor-pointer group"
+              onClick={() => {
+                sound.playBlip();
+                setActiveApp('home');
+              }}
+              title="Toque para voltar à Tela Inicial do Celular"
+            >
+              <div className="w-24 h-1 rounded-full bg-white/40 group-hover:bg-white/80 active:scale-95 transition-all shadow-sm" />
+            </div>
+          )}
 
           {/* Toast Interno de Feedback do Celular */}
           <AnimatePresence>

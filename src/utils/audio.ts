@@ -99,6 +99,121 @@ class SoundEngine {
     }
   }
 
+  // Authentic iOS Bell Chime (crystal bell chord: Tri-Tone harmonic shimmer)
+  public playIOSBellChime() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      // Classic Tri-Tone bell chord: G#5 (830.6Hz), B5 (987.8Hz), E6 (1318.5Hz)
+      const notes = [
+        { freq: 830.61, time: 0, dur: 0.7, gain: 0.12 },
+        { freq: 987.77, time: 0.12, dur: 0.85, gain: 0.15 },
+        { freq: 1318.51, time: 0.24, dur: 1.1, gain: 0.18 },
+      ];
+
+      notes.forEach(({ freq, time, dur, gain: noteGain }) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + time);
+
+        gain.gain.setValueAtTime(noteGain, now + time);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + time + dur);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now + time);
+        osc.stop(now + time + dur);
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  // Realistic screen lock click (soft mechanical toggle)
+  public playScreenLock() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(120, now + 0.05);
+
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.05);
+    } catch {}
+  }
+
+  // Screen wake sound (gentle modern electronic rise)
+  public playScreenWake() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch {}
+  }
+
+  // Quick message bubble pop sound when message arrives
+  public playMessagePop() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(900, now + 0.06);
+
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.06);
+    } catch {}
+  }
+
   // Realistic phone ringing cadence (for call cases)
   public playPhoneRingtone() {
     if (!this.enabled) return;
