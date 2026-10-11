@@ -46,12 +46,12 @@ export function App() {
         onOpenInstructions={() => setIsOnboardingOpen(true)}
       />
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10 space-y-3 sm:space-y-6">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-1 sm:px-6 lg:px-8 relative z-10 space-y-2 sm:space-y-6 flex flex-col">
         {/* Hero Section Adaptada ao Novo Visual */}
         <Hero />
 
         {/* Seção Principal: Mesa Investigativa Gamificada */}
-        <section>
+        <section className="flex-1 flex flex-col">
           <CaseDesk onScoreUpdate={handleScoreUpdate} />
         </section>
 
@@ -96,8 +96,10 @@ export function App() {
         onClose={() => setIsOnboardingOpen(false)}
       />
 
-      {/* Rodapé */}
-      <Footer />
+      {/* Rodapé (exibido apenas no desktop para poupar altura no celular) */}
+      <div className="hidden sm:block">
+        <Footer />
+      </div>
     </div>
   );
 }

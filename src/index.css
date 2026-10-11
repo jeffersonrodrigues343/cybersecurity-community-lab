@@ -26,8 +26,20 @@
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+    min-height: 100%;
+    min-height: 100dvh;
   }
   ::selection { background: var(--color-marker); color: var(--color-ink); }
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* textura sutil da mesa (feltro), sem imagem externa */

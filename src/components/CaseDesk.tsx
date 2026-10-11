@@ -246,22 +246,22 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
       </AnimatePresence>
 
       {/* CONTAINER RESPONSIVO (2 COLUNAS NO DESKTOP, 1 NO MOBILE) */}
-      <div className="max-w-5xl mx-auto space-y-4">
+      <div className="max-w-5xl mx-auto space-y-2 sm:space-y-4 w-full">
         {/* Barra Superior de Status do Jogo */}
-        <div className="flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-2xl bg-desk-2/90 border border-desk-line backdrop-blur-md shadow-lg">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs uppercase px-2.5 py-1 rounded-lg bg-desk border border-desk-line text-white font-bold">
+        <div className="flex items-center justify-between gap-1.5 p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-desk-2/90 border border-desk-line backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[11px] sm:text-xs uppercase px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-desk border border-desk-line text-white font-bold">
               Caso #{String(caseNumber).padStart(2, '0')}
             </span>
-            <span className="text-xs font-semibold text-emerald-400 capitalize hidden sm:inline">
+            <span className="text-[11px] sm:text-xs font-semibold text-emerald-400 capitalize hidden sm:inline">
               {current.category}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {streak > 1 && (
-              <span className="flex items-center gap-1 font-mono text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20 font-bold animate-pulse">
-                <Flame className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-1 font-mono text-[10.5px] sm:text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20 font-bold animate-pulse">
+                <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 {streak}x Combo
               </span>
             )}
@@ -271,7 +271,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 sound.playBlip();
                 setIsBadgesModalOpen(true);
               }}
-              className="p-1.5 rounded-lg bg-desk hover:bg-desk-line text-amber-400 border border-desk-line transition cursor-pointer"
+              className="p-1.5 rounded-lg bg-desk hover:bg-desk-line text-amber-400 border border-desk-line transition cursor-pointer active:scale-95"
               title="Ver Conquistas"
             >
               <Trophy className="w-4 h-4" />
@@ -282,7 +282,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 sound.playBlip();
                 setIsFamilyGuideOpen(true);
               }}
-              className="p-1.5 rounded-lg bg-desk hover:bg-desk-line text-sky-400 border border-desk-line transition cursor-pointer"
+              className="p-1.5 rounded-lg bg-desk hover:bg-desk-line text-sky-400 border border-desk-line transition cursor-pointer active:scale-95"
               title="Cartilha de Proteção"
             >
               <BookOpen className="w-4 h-4" />
@@ -291,7 +291,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         </div>
 
         {/* CELULAR CENTRALIZADO (FOCO TOTAL NA EXPERIÊNCIA DO APARELHO) */}
-        <div className="flex flex-col items-center max-w-[420px] mx-auto">
+        <div className="flex flex-col items-center w-full max-w-full sm:max-w-[420px] mx-auto">
           <div className="w-full">
             <AnimatePresence mode="wait">
               <motion.div
@@ -316,7 +316,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
               </motion.div>
             </AnimatePresence>
           </div>
-          <p className="text-[11px] text-white/50 text-center mt-2.5 flex items-center justify-center gap-1.5">
+          <p className="text-[10.5px] text-white/50 text-center mt-2 flex items-center justify-center gap-1.5 hidden sm:flex">
             <Sparkles className="w-3.5 h-3.5 text-marker" />
             <span>O celular é o foco: abra o Bloco de Notas para ver dicas e investigue nos apps</span>
           </p>
@@ -326,10 +326,10 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
             {answered && (
               <motion.div
                 ref={resultRef}
-                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                initial={{ opacity: 0, y: 40, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 15 }}
-                className="w-full space-y-3 pt-4"
+                exit={{ opacity: 0, y: 20 }}
+                className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-0 sm:relative sm:inset-auto sm:pt-4 max-h-[85dvh] overflow-y-auto w-full sm:max-w-[420px] mx-auto bg-desk/95 sm:bg-transparent backdrop-blur-xl sm:backdrop-blur-none border-t border-desk-line sm:border-0 shadow-2xl sm:shadow-none pb-safe"
               >
                 <div
                   className={`rounded-2xl p-4 sm:p-5 border-2 shadow-2xl ${

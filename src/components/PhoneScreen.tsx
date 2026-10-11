@@ -68,7 +68,7 @@ const cleanName = (sender: string) => sender.replace(/\s*\(.*?\)\s*/g, '').trim(
 
 const StatusBar = ({ time, dark }: { time: string; dark?: boolean }) => (
   <div
-    className={`flex items-center justify-between px-5 pt-2 pb-1 text-[11px] font-semibold select-none z-20 ${
+    className={`hidden sm:flex items-center justify-between px-5 pt-2 pb-1 text-[11px] font-semibold select-none z-20 ${
       dark ? 'text-white' : 'text-black'
     }`}
   >
@@ -2396,11 +2396,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           : { x: [0, -4, 4, -4, 4, -2, 2, 0] }
       }
       transition={{ duration: stamped ? 0.4 : 0.35, ease: 'easeInOut' }}
-      className="relative mx-auto w-full max-w-[340px] sm:max-w-[370px]"
+      className="relative mx-auto w-full max-w-full sm:max-w-[380px] h-[calc(100dvh-105px)] sm:h-[660px] flex flex-col"
     >
-      {/* Moldura Realista do Celular */}
-      <div className="relative rounded-[44px] sm:rounded-[50px] bg-[#0c0e14] p-[9px] sm:p-[12px] shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] border border-white/20">
-        <div className="relative h-[580px] sm:h-[650px] rounded-[34px] sm:rounded-[40px] overflow-hidden font-phone select-none bg-black">
+      {/* Moldura: Apenas no desktop (sm:). No celular real, a tela é nativa sem bordas artificiais */}
+      <div className="relative w-full h-full sm:rounded-[50px] sm:bg-[#0c0e14] sm:p-[12px] sm:shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] sm:border sm:border-white/20 flex flex-col">
+        <div className="relative flex-1 h-full w-full rounded-2xl sm:rounded-[40px] overflow-hidden font-phone select-none bg-black flex flex-col shadow-md sm:shadow-none">
           {/* EFEITO DE TELA APAGADA / TRANSIÇÃO OLED */}
           <AnimatePresence>
             {isScreenOff && (
@@ -2516,8 +2516,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             )}
           </AnimatePresence>
 
-          {/* Notch Dinâmico no Topo do Celular */}
-          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-[82px] h-[19px] rounded-full bg-black flex items-center justify-between px-3 z-30 shadow-md border border-white/10 pointer-events-none">
+          {/* Notch Dinâmico no Topo do Celular (Apenas no desktop) */}
+          <div className="hidden sm:flex absolute top-1.5 left-1/2 -translate-x-1/2 w-[82px] h-[19px] rounded-full bg-black items-center justify-between px-3 z-30 shadow-md border border-white/10 pointer-events-none">
             <span className="w-2 h-2 rounded-full bg-[#1e293b]" />
             <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
           </div>

@@ -21,14 +21,14 @@ export const Header = ({ score, onOpenInstructions }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 h-14 bg-desk/85 backdrop-blur-xl border-b border-desk-line transition-all">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+    <header className="sticky top-0 z-50 h-11 sm:h-14 bg-desk/85 backdrop-blur-xl border-b border-desk-line transition-all">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         {/* Marca */}
-        <div className="flex items-center space-x-2.5">
-          <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-white">
+        <div className="flex items-center space-x-2">
+          <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-white/10 flex items-center justify-center text-white">
             <Shield className="w-3.5 h-3.5 text-[#2997ff]" />
           </div>
-          <span className="font-display font-extrabold text-[17px] tracking-tight text-white">HackLearn<span className="hidden sm:inline font-mono font-normal text-[11px] tracking-[0.2em] uppercase text-clip ml-3">Agência anti-golpe</span></span>
+          <span className="font-display font-extrabold text-[15px] sm:text-[17px] tracking-tight text-white">HackLearn<span className="hidden sm:inline font-mono font-normal text-[11px] tracking-[0.2em] uppercase text-clip ml-3">Agência anti-golpe</span></span>
         </div>
 
         {/* Controles mínimos: som, como jogar e XP (o único número fixo da tela) */}
