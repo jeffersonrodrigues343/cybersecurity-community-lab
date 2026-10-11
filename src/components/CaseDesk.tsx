@@ -303,9 +303,9 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
 
         {/* GRID PRINCIPAL: CELULAR À ESQUERDA + HISTÓRIA E QUESTIONAMENTOS À DIREITA */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          {/* COLUNA ESQUERDA: O CELULAR REALISTA (lg:col-span-5) */}
-          <div className="lg:col-span-5 flex flex-col items-center">
-            <div className="w-full max-w-[300px]">
+          {/* COLUNA ESQUERDA: O CELULAR REALISTA (lg:col-span-6) */}
+          <div className="lg:col-span-6 flex flex-col items-center">
+            <div className="w-full max-w-[370px]">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={current.id}
@@ -322,18 +322,22 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                     executedActionIds={executedActionIds}
                     actionHistory={actionHistory}
                     onAppOpenChange={(opened) => setIsAppOpened(opened)}
+                    onVerdict={handleDirectVerdict}
+                    onNextCase={nextCase}
+                    inspectedClueIds={inspected}
+                    onInspectClue={inspect}
                   />
                 </motion.div>
               </AnimatePresence>
             </div>
             <p className="text-[11px] text-white/50 text-center mt-2.5 flex items-center justify-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-marker" />
-              <span>Interaja com a notificação e teste as opções no aparelho</span>
+              <span>Mexa no celular: abra apps, consulte o Bloco de Notas ou decida direto no aparelho</span>
             </p>
           </div>
 
-          {/* COLUNA DIREITA: HISTÓRIA & QUESTIONAMENTOS QUE FAZEM SENTIDO (lg:col-span-7) */}
-          <div className="lg:col-span-7 space-y-4">
+          {/* COLUNA DIREITA: HISTÓRIA & QUESTIONAMENTOS QUE FAZEM SENTIDO (lg:col-span-6) */}
+          <div className="lg:col-span-6 space-y-4">
             {/* CARD 1: O Cenário & A História do Momento */}
             <div className="rounded-2xl bg-desk-2 border border-desk-line p-4 sm:p-5 shadow-lg relative overflow-hidden">
               <div className="flex items-center justify-between gap-2 mb-2">

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
   Phone,
-  Video,
   MoreVertical,
   Lock,
   PhoneOff,
@@ -13,7 +12,6 @@ import {
   ChevronLeft,
   Info,
   Mic,
-  Volume2,
   Sparkles,
   ExternalLink,
   ShieldCheck,
@@ -27,14 +25,16 @@ import {
   ChevronRight,
   PhoneIncoming,
   Camera,
-  Settings,
   Music,
   Search,
   Sun,
   MessageCircle,
   CreditCard,
+  FileText,
+  CheckCircle2,
+  Lightbulb,
 } from 'lucide-react';
-import type { ScamCase, InteractiveAction } from '../data/scamsData';
+import type { ScamCase, InteractiveAction, InvestigativeClue } from '../data/scamsData';
 import { sound } from '../utils/audio';
 
 type Verdict = 'scam' | 'safe' | null;
@@ -47,6 +47,10 @@ interface PhoneScreenProps {
   executedActionIds: string[];
   actionHistory: { player: string; reply: string }[];
   onAppOpenChange?: (open: boolean) => void;
+  onVerdict?: (v: 'scam' | 'safe') => void;
+  onNextCase?: () => void;
+  inspectedClueIds?: string[];
+  onInspectClue?: (clue: InvestigativeClue) => void;
 }
 
 const findContactNumber = (c: ScamCase): string | null => {
@@ -64,12 +68,12 @@ const cleanName = (sender: string) => sender.replace(/\s*\(.*?\)\s*/g, '').trim(
 
 const StatusBar = ({ time, dark }: { time: string; dark?: boolean }) => (
   <div
-    className={`flex items-center justify-between px-5 pt-2 pb-1 text-[11px] font-semibold ${
+    className={`flex items-center justify-between px-5 pt-2 pb-1 text-[11px] font-semibold select-none z-20 ${
       dark ? 'text-white' : 'text-black'
     }`}
   >
     <span>{time}</span>
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       <Signal className="w-3 h-3" />
       <Wifi className="w-3 h-3" />
       <BatteryFull className="w-3.5 h-3.5" />
@@ -77,7 +81,339 @@ const StatusBar = ({ time, dark }: { time: string; dark?: boolean }) => (
   </div>
 );
 
-// ---------- WhatsApp Interativo Point & Click ----------
+// ============================================================================
+// BLOCO DE NOTAS DO CELULAR (APP NATIVO COM AS DÚVIDAS E QUESTIONAMENTOS)
+// ============================================================================
+const NotesScreen = ({
+  c,
+  inspectedClueIds = [],
+  onInspectClue,
+  onBack,
+  onVerdict,
+  stamped,
+}: {
+  c: ScamCase;
+  inspectedClueIds: string[];
+  onInspectClue?: (clue: InvestigativeClue) => void;
+  onBack: () => void;
+  onVerdict?: (v: 'scam' | 'safe') => void;
+  stamped: Verdict;
+}) => {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const toggleClue = (clue: InvestigativeClue) => {
+    sound.playBlip();
+    setExpandedId((prev) => (prev === clue.id ? null : clue.id));
+    onInspectClue?.(clue);
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-[#18181b] text-white select-none">
+      <StatusBar time={c.time} dark />
+
+      {/* Header do Bloco de Notas */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-[#27272a]/90 backdrop-blur-md">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-semibold cursor-pointer active:scale-95 transition"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>Voltar</span>
+        </button>
+        <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-200">
+          <FileText className="w-3.5 h-3.5 text-amber-400" />
+          <span>Bloco de Notas</span>
+        </div>
+        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
+          {inspectedClueIds.length}/{c.clues.length} tiradas a limpo
+        </span>
+      </div>
+
+      {/* Conteúdo com anotações e dúvidas lógicas */}
+      <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-2.5">
+        <div className="bg-amber-400/10 border border-amber-400/25 rounded-2xl p-2.5">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1">
+            <Lightbulb className="w-3.5 h-3.5" /> Questionamentos que Fazem Sentido
+          </div>
+          <p className="text-[11.5px] text-neutral-300 mt-1 leading-snug font-medium">
+            Dúvidas que surgem naturalmente. Toque para checar a prova real no aparelho:
+          </p>
+        </div>
+
+        {c.clues.map((clue, idx) => {
+          const isInspected = inspectedClueIds.includes(clue.id);
+          const isExpanded = expandedId === clue.id;
+
+          return (
+            <div
+              key={clue.id}
+              className={`rounded-2xl border transition-all overflow-hidden ${
+                isExpanded
+                  ? 'bg-black/60 border-amber-400/50 shadow-md'
+                  : isInspected
+                  ? 'bg-white/5 border-emerald-500/30'
+                  : 'bg-white/5 border-white/10 hover:border-white/20'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => toggleClue(clue)}
+                className="w-full text-left p-2.5 flex items-start gap-2.5 cursor-pointer active:scale-98 transition"
+              >
+                <span
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
+                    isInspected
+                      ? 'bg-emerald-500 text-white shadow-sm'
+                      : 'border border-white/30 text-neutral-400'
+                  }`}
+                >
+                  {isInspected ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
+                </span>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9.5px] font-mono text-amber-400 font-bold uppercase">
+                      Dúvida #{idx + 1}
+                    </span>
+                    {isInspected && (
+                      <span className="text-[8.5px] font-mono text-emerald-400 bg-emerald-400/15 px-1.5 py-0.2 rounded font-bold">
+                        Checado +10 XP
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-semibold text-white leading-snug mt-0.5">
+                    {clue.question}
+                  </p>
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="px-3 pb-3 pt-1 border-t border-white/10 space-y-2 bg-black/40 text-[11px]"
+                  >
+                    <div className="space-y-0.5">
+                      <span className="text-[9.5px] font-mono uppercase text-emerald-400 font-bold block">
+                        🔎 Prova Real no Aparelho:
+                      </span>
+                      <p className="text-neutral-200 leading-relaxed font-medium">
+                        {clue.inspection.observation}
+                      </p>
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-neutral-300 text-[10.5px]">
+                      <span className="text-amber-400 font-bold">💡 Fato: </span>
+                      {clue.evidenceResult.fato}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Decisão direta no Bloco de Notas */}
+      {!stamped && onVerdict && (
+        <div className="p-2.5 bg-[#27272a] border-t border-white/10 space-y-1.5">
+          <div className="text-[9px] font-mono text-center text-neutral-400 uppercase font-bold tracking-wider">
+            Com base nessas notas, qual o seu veredito?
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onVerdict('scam')}
+              className="py-2.5 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>É Golpe!</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onVerdict('safe')}
+              className="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>É Seguro</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
+// APP MEU BANCO DIGITAL (INTERAÇÃO REALISTA COM CONTA E SEGURANÇA)
+// ============================================================================
+const BankScreen = ({
+  c,
+  onBack,
+}: {
+  c: ScamCase;
+  onBack: () => void;
+}) => {
+  return (
+    <div className="flex flex-col h-full bg-[#1e1035] text-white select-none">
+      <StatusBar time={c.time} dark />
+
+      <div className="flex items-center justify-between px-3 py-2 border-b border-purple-800/40 bg-[#2b1055]">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1 text-xs text-purple-200 hover:text-white font-semibold cursor-pointer active:scale-95 transition"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>Início</span>
+        </button>
+        <div className="flex items-center gap-1.5 font-bold text-xs text-white">
+          <CreditCard className="w-3.5 h-3.5 text-purple-300" />
+          <span>Meu Banco Digital</span>
+        </div>
+        <span className="w-4" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-3">
+        <div className="bg-gradient-to-r from-purple-700 to-indigo-700 rounded-2xl p-3 shadow-lg border border-purple-500/30">
+          <div className="text-[10px] text-purple-200 font-medium">Conta Digital • Jefferson</div>
+          <div className="text-xl font-bold font-mono mt-1">R$ 1.250,00</div>
+          <div className="text-[9.5px] text-purple-200/80 mt-1 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>Chave Pix: CPF cadastrado</span>
+          </div>
+        </div>
+
+        <div className="bg-black/40 border border-purple-500/20 rounded-xl p-2.5 space-y-1">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-amber-300 font-bold flex items-center gap-1">
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+            Alerta Oficial de Proteção
+          </div>
+          <p className="text-[11px] text-purple-100 leading-relaxed">
+            O banco <strong>NUNCA</strong> solicita transferências Pix para &quot;estornar fraudes&quot; e <strong>NUNCA</strong> liga de 0800 pedindo para você confirmar senhas ou clicar em links!
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="text-[10px] font-mono text-purple-300 uppercase font-bold">
+            Últimas Movimentações Reais:
+          </div>
+          <div className="p-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
+            <div>
+              <div className="font-semibold text-[11px]">Padaria Central</div>
+              <div className="text-[9.5px] text-white/50">Hoje • Cartão de Débito</div>
+            </div>
+            <span className="font-mono text-[11px] text-neutral-300">- R$ 14,50</span>
+          </div>
+          <div className="p-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
+            <div>
+              <div className="font-semibold text-[11px]">Supermercado</div>
+              <div className="text-[9.5px] text-white/50">Ontem • Pix</div>
+            </div>
+            <span className="font-mono text-[11px] text-neutral-300">- R$ 88,90</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-2.5 bg-[#2b1055] border-t border-purple-800/40">
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition text-center"
+        >
+          ← Voltar à Tela Inicial
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// APP NAVEGADOR FORENSE (AUDITORIA DE LINKS POINT & CLICK)
+// ============================================================================
+const BrowserScreen = ({
+  c,
+  url,
+  onBack,
+}: {
+  c: ScamCase;
+  url?: string;
+  onBack: () => void;
+}) => {
+  const displayUrl = url || 'https://pesquisa-segura.com.br';
+  const isSuspicious = c.isScam;
+
+  return (
+    <div className="flex flex-col h-full bg-[#18181b] text-white select-none">
+      <StatusBar time={c.time} dark />
+
+      <div className="px-2.5 py-2 border-b border-white/10 bg-[#27272a] space-y-1.5">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="p-1 hover:bg-white/10 rounded-full cursor-pointer text-neutral-300"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="flex-1 bg-black/60 rounded-full px-3 py-1 flex items-center gap-1.5 text-[11px] border border-white/10 truncate">
+            {isSuspicious ? (
+              <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
+            ) : (
+              <Globe className="w-3 h-3 text-emerald-400 shrink-0" />
+            )}
+            <span className="truncate font-mono text-[10px]">{displayUrl}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-3 flex flex-col justify-center items-center text-center">
+        <div
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl ${
+            isSuspicious
+              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+          }`}
+        >
+          {isSuspicious ? <ShieldAlert className="w-8 h-8" /> : <ShieldCheck className="w-8 h-8" />}
+        </div>
+
+        <div>
+          <h4 className="font-bold text-sm">
+            {isSuspicious ? '⚠️ Domínio Falso / Redirecionamento' : '✅ Conexão Criptografada e Segura'}
+          </h4>
+          <p className="text-[11px] text-neutral-300 mt-1 leading-relaxed">
+            {isSuspicious
+              ? 'O link verificado não pertence ao portal oficial e tenta capturar credenciais ou Pix!'
+              : 'O site possui certificado digital válido e pertence aos canais autênticos.'}
+          </p>
+        </div>
+
+        <div className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-left text-[10.5px] space-y-1">
+          <span className="text-[9px] font-mono text-neutral-400 uppercase font-bold block">
+            Auditoria de Domínio:
+          </span>
+          <div className="font-mono text-white text-[11px] break-all">{displayUrl}</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full py-2.5 bg-white text-black font-bold text-xs rounded-xl shadow-md cursor-pointer active:scale-95 transition"
+        >
+          ← Fechar Navegador e Voltar
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// WHATSAPP INTERATIVO POINT & CLICK
+// ============================================================================
 const WhatsAppScreen = ({
   c,
   flagged,
@@ -90,6 +426,10 @@ const WhatsAppScreen = ({
   isBlocked,
   onBlockContact,
   onCallClick,
+  onOpenNotes,
+  inspectedClueCount,
+  onVerdict,
+  onBackToHome,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -102,6 +442,10 @@ const WhatsAppScreen = ({
   isBlocked: boolean;
   onBlockContact: () => void;
   onCallClick: () => void;
+  onOpenNotes: () => void;
+  inspectedClueCount: number;
+  onVerdict?: (v: 'scam' | 'safe') => void;
+  onBackToHome: () => void;
 }) => {
   const [isTyping, setIsTyping] = useState(false);
   const number = findContactNumber(c);
@@ -154,11 +498,19 @@ const WhatsAppScreen = ({
         <div className="flex items-center gap-1.5 px-2 pb-2 pt-1">
           <button
             type="button"
+            onClick={onBackToHome}
+            className="p-1 hover:bg-white/10 rounded-full cursor-pointer active:scale-90 transition"
+            title="Voltar à Tela Inicial"
+          >
+            <ArrowLeft className="w-4 h-4 shrink-0" />
+          </button>
+
+          <button
+            type="button"
             onClick={onContactClick}
             className="flex items-center gap-1.5 flex-1 min-w-0 text-left cursor-pointer hover:opacity-90 active:scale-98 transition-transform"
             title="Clique para ver o perfil do contato"
           >
-            <ArrowLeft className="w-4 h-4 shrink-0" />
             <motion.div
               animate={{ scale: [1, 1.06, 1] }}
               transition={{ repeat: Infinity, duration: 2.5 }}
@@ -187,15 +539,18 @@ const WhatsAppScreen = ({
             </div>
           </button>
 
-          <div className="flex items-center gap-2 text-white/90 shrink-0">
+          <div className="flex items-center gap-1.5 text-white/90 shrink-0">
+            {/* Botão de Dúvidas Suspeitas no Topo */}
             <button
               type="button"
-              onClick={onCallClick}
-              className="p-1 hover:bg-white/10 rounded-full cursor-pointer active:scale-90 transition-transform"
-              title="Fazer chamada"
+              onClick={onOpenNotes}
+              className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold px-2 py-1 rounded-full border border-white/25 cursor-pointer active:scale-95 transition shadow-sm"
+              title="Abrir Bloco de Notas do celular com dúvidas lógicas"
             >
-              <Video className="w-3.5 h-3.5 opacity-90" />
+              <FileText className="w-3 h-3 text-amber-300" />
+              <span>Dúvidas ({inspectedClueCount}/{c.clues.length})</span>
             </button>
+
             <button
               type="button"
               onClick={onCallClick}
@@ -297,27 +652,53 @@ const WhatsAppScreen = ({
         )}
       </div>
 
-      {/* Respostas Interativas Clicáveis do Jogador */}
-      {!stamped && availableActions.length > 0 && !isBlocked ? (
-        <div className="bg-[#f0f2f5] p-2 border-t border-black/10 space-y-1">
-          <div className="text-[10px] font-mono text-[#54656f] uppercase tracking-wider font-bold px-1 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-[#008069]" /> Responder no WhatsApp:
-          </div>
-          <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5">
-            {availableActions.map((act) => (
+      {/* Respostas Interativas Clicáveis do Jogador + Veredito */}
+      {!stamped ? (
+        <div className="bg-[#f0f2f5] p-2 border-t border-black/10 space-y-1.5">
+          {availableActions.length > 0 && !isBlocked && (
+            <>
+              <div className="text-[10px] font-mono text-[#54656f] uppercase tracking-wider font-bold px-1 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-[#008069]" /> Responder no WhatsApp:
+              </div>
+              <div className="space-y-1 max-h-28 overflow-y-auto pr-0.5">
+                {availableActions.map((act) => (
+                  <button
+                    key={act.id}
+                    type="button"
+                    onClick={() => handleActionClick(act)}
+                    className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-300 text-[#008069] rounded-lg px-2 py-1.5 text-xs font-semibold shadow-sm transition active:scale-98 cursor-pointer flex items-center justify-between gap-1.5"
+                  >
+                    <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
+                    <span className="text-[9px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded shrink-0 font-bold">
+                      Enviar ➔
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Botões de Veredito Imediato no WhatsApp */}
+          {onVerdict && (
+            <div className="pt-1 border-t border-black/5 flex items-center gap-2">
               <button
-                key={act.id}
                 type="button"
-                onClick={() => handleActionClick(act)}
-                className="w-full text-left bg-white hover:bg-emerald-50 border border-emerald-300 text-[#008069] rounded-lg px-2 py-1.5 text-xs font-semibold shadow-sm transition active:scale-98 cursor-pointer flex items-center justify-between gap-1.5"
+                onClick={() => onVerdict('scam')}
+                className="flex-1 py-1.5 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
               >
-                <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
-                <span className="text-[9px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded shrink-0 font-bold">
-                  Enviar ➔
-                </span>
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>🚨 É Golpe!</span>
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={() => onVerdict('safe')}
+                className="flex-1 py-1.5 px-2 bg-[#008069] hover:bg-[#006a57] text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>✅ É Seguro</span>
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-[#f0f2f5] px-2 py-2 flex items-center gap-2 border-t border-black/5">
@@ -333,7 +714,9 @@ const WhatsAppScreen = ({
   );
 };
 
-// ---------- SMS Interativo Point & Click ----------
+// ============================================================================
+// SMS INTERATIVO POINT & CLICK
+// ============================================================================
 const SmsScreen = ({
   c,
   flagged,
@@ -343,6 +726,10 @@ const SmsScreen = ({
   stamped,
   onLinkClick,
   onContactClick,
+  onOpenNotes,
+  inspectedClueCount,
+  onVerdict,
+  onBackToHome,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -352,6 +739,10 @@ const SmsScreen = ({
   stamped: Verdict;
   onLinkClick: (url: string) => void;
   onContactClick: () => void;
+  onOpenNotes: () => void;
+  inspectedClueCount: number;
+  onVerdict?: (v: 'scam' | 'safe') => void;
+  onBackToHome: () => void;
 }) => {
   const number = findContactNumber(c);
   const availableActions = (c.interactiveActions || []).filter(
@@ -385,11 +776,12 @@ const SmsScreen = ({
   return (
     <div className="flex flex-col h-full bg-white select-none">
       <StatusBar time={c.time} />
-      <div className="flex flex-col items-center pb-2 pt-1 border-b border-black/10 relative">
+      <div className="flex items-center justify-between px-2 pb-2 pt-1 border-b border-black/10 relative">
         <button
           type="button"
-          onClick={onContactClick}
-          className="absolute left-2.5 top-2.5 p-1 text-[#007aff] cursor-pointer"
+          onClick={onBackToHome}
+          className="p-1 text-[#007aff] hover:bg-neutral-100 rounded-full cursor-pointer"
+          title="Voltar à Tela Inicial"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -397,19 +789,29 @@ const SmsScreen = ({
         <button
           type="button"
           onClick={onContactClick}
-          className="flex flex-col items-center cursor-pointer hover:opacity-90 active:scale-95 transition-transform"
+          className="flex flex-col items-center cursor-pointer hover:opacity-90 active:scale-95 transition-transform flex-1 min-w-0"
           title="Clique para ver o contato"
         >
           <motion.div
             animate={{ scale: [1, 1.06, 1] }}
             transition={{ repeat: Infinity, duration: 3 }}
-            className="w-10 h-10 rounded-full bg-gradient-to-b from-[#a5abb8] to-[#858994] flex items-center justify-center text-white font-semibold text-base shadow-sm"
+            className="w-8 h-8 rounded-full bg-gradient-to-b from-[#a5abb8] to-[#858994] flex items-center justify-center text-white font-semibold text-sm shadow-sm"
           >
             {c.sender.charAt(0)}
           </motion.div>
-          <div className="text-[11.5px] text-black mt-1 flex items-center gap-0.5 font-medium truncate max-w-[200px]">
+          <div className="text-[11px] text-black mt-0.5 flex items-center gap-0.5 font-medium truncate max-w-[160px]">
             {number ?? c.sender} <span className="text-[#8e8e93]">›</span>
           </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenNotes}
+          className="flex items-center gap-1 bg-neutral-100 hover:bg-neutral-200 text-[#007aff] text-[10px] font-bold px-2 py-1 rounded-full border border-neutral-300 cursor-pointer active:scale-95 transition shadow-sm"
+          title="Abrir Bloco de Notas com dúvidas lógicas"
+        >
+          <FileText className="w-3 h-3 text-amber-500" />
+          <span>Dúvidas ({inspectedClueCount}/{c.clues.length})</span>
         </button>
       </div>
 
@@ -444,36 +846,58 @@ const SmsScreen = ({
         </div>
       </div>
 
-      {!stamped && availableActions.length > 0 && (
-        <div className="p-2 bg-neutral-50 border-t border-black/10 space-y-1">
-          <div className="text-[9.5px] font-mono uppercase text-neutral-500 font-bold">
-            Auditar no Celular:
-          </div>
-          <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5">
-            {availableActions.map((act) => (
+      {!stamped && (
+        <div className="p-2 bg-neutral-50 border-t border-black/10 space-y-1.5">
+          {availableActions.length > 0 && (
+            <div className="space-y-1 max-h-28 overflow-y-auto pr-0.5">
+              {availableActions.map((act) => (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={() => {
+                    sound.playBlip();
+                    onPerformAction(act);
+                  }}
+                  className="w-full text-left bg-white hover:bg-blue-50 border border-blue-200 text-[#007aff] rounded-lg px-2 py-1.5 text-xs font-semibold shadow-sm transition cursor-pointer flex items-center justify-between gap-1.5"
+                >
+                  <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
+                  <span className="text-[9px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded shrink-0 font-bold">
+                    Auditar ➔
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {onVerdict && (
+            <div className="pt-1 border-t border-black/5 flex items-center gap-2">
               <button
-                key={act.id}
                 type="button"
-                onClick={() => {
-                  sound.playBlip();
-                  onPerformAction(act);
-                }}
-                className="w-full text-left bg-white hover:bg-blue-50 border border-blue-200 text-[#007aff] rounded-lg px-2 py-1.5 text-xs font-semibold shadow-sm transition cursor-pointer flex items-center justify-between gap-1.5"
+                onClick={() => onVerdict('scam')}
+                className="flex-1 py-1.5 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
               >
-                <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
-                <span className="text-[9px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded shrink-0 font-bold">
-                  Auditar ➔
-                </span>
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>🚨 É Golpe!</span>
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={() => onVerdict('safe')}
+                className="flex-1 py-1.5 px-2 bg-[#007aff] hover:bg-blue-600 text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>✅ É Seguro</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-// ---------- Chamada Telefônica Interativa ----------
+// ============================================================================
+// CHAMADA TELEFÔNICA INTERATIVA (0800 CENTRAL FALSA)
+// ============================================================================
 const CallScreen = ({
   c,
   onPerformAction,
@@ -481,6 +905,7 @@ const CallScreen = ({
   actionHistory,
   stamped,
   onHangup,
+  onVerdict,
 }: {
   c: ScamCase;
   onPerformAction: (action: InteractiveAction) => void;
@@ -488,6 +913,7 @@ const CallScreen = ({
   actionHistory: { player: string; reply: string }[];
   stamped: Verdict;
   onHangup: () => void;
+  onVerdict?: (v: 'scam' | 'safe') => void;
 }) => {
   const number = findContactNumber(c);
   const availableActions = (c.interactiveActions || []).filter(
@@ -498,15 +924,15 @@ const CallScreen = ({
     <div className="flex flex-col h-full bg-gradient-to-b from-[#1c1c1e] via-[#000000] to-[#1c1c1e] text-white select-none">
       <StatusBar time={c.time} dark />
 
-      <div className="flex flex-col items-center pt-6 pb-4">
+      <div className="flex flex-col items-center pt-5 pb-3">
         <motion.div
           animate={{ scale: [1, 1.08, 1] }}
           transition={{ repeat: Infinity, duration: 1.8 }}
-          className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-3xl font-bold shadow-2xl"
+          className="w-18 h-18 rounded-full bg-gradient-to-tr from-[#3a3a3c] to-[#636366] flex items-center justify-center text-3xl font-bold shadow-2xl"
         >
           {c.sender.charAt(0)}
         </motion.div>
-        <div className="text-xl font-bold mt-3 text-center px-4">{c.sender}</div>
+        <div className="text-lg font-bold mt-2.5 text-center px-4">{c.sender}</div>
         <div className="text-xs text-[#8e8e93] font-mono mt-0.5">{number ?? 'Chamada recebida'}</div>
         <div className="text-xs text-emerald-400 mt-1 font-semibold flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -541,45 +967,52 @@ const CallScreen = ({
         ))}
       </div>
 
-      {!stamped && availableActions.length > 0 ? (
-        <div className="p-2 bg-white/10 border-t border-white/15 space-y-1">
-          <div className="text-[9.5px] font-mono uppercase text-sky-400 font-bold">
-            Conduzir ligação:
-          </div>
-          <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5">
-            {availableActions.map((act) => (
-              <button
-                key={act.id}
-                type="button"
-                onClick={() => {
-                  sound.playBlip();
-                  onPerformAction(act);
-                }}
-                className="w-full text-left bg-white/15 hover:bg-white/25 border border-white/20 text-white rounded-lg px-2 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center justify-between gap-1.5"
-              >
-                <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
-                <span className="text-[9px] font-mono bg-sky-500/30 text-sky-300 px-1.5 py-0.5 rounded shrink-0 font-bold">
-                  Falar ➔
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="flex justify-around items-center px-6 pb-4 pt-1">
-          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/80">
-            <Mic className="w-4 h-4" />
-          </div>
-          <button
-            type="button"
-            onClick={onHangup}
-            className="w-12 h-12 rounded-full bg-[#ff3b30] flex items-center justify-center shadow-lg shadow-red-500/30 cursor-pointer active:scale-90 transition-transform"
-            title="Desligar na cara"
-          >
-            <PhoneOff className="w-5 h-5 text-white" />
-          </button>
-          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/80">
-            <Volume2 className="w-4 h-4" />
+      {!stamped && (
+        <div className="p-2 bg-white/10 border-t border-white/15 space-y-1.5">
+          {availableActions.length > 0 && (
+            <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
+              {availableActions.map((act) => (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={() => {
+                    sound.playBlip();
+                    onPerformAction(act);
+                  }}
+                  className="w-full text-left bg-white/15 hover:bg-white/25 border border-white/20 text-white rounded-lg px-2 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center justify-between gap-1.5"
+                >
+                  <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
+                  <span className="text-[9px] font-mono bg-sky-500/30 text-sky-300 px-1.5 py-0.5 rounded shrink-0 font-bold">
+                    Falar ➔
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-around items-center px-4 pt-1">
+            <button
+              type="button"
+              onClick={() => onVerdict?.('safe')}
+              className="px-3 py-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold text-[11px] cursor-pointer"
+            >
+              É Seguro
+            </button>
+            <button
+              type="button"
+              onClick={onHangup}
+              className="w-12 h-12 rounded-full bg-[#ff3b30] flex items-center justify-center shadow-lg shadow-red-500/30 cursor-pointer active:scale-90 transition-transform"
+              title="Desligar na cara"
+            >
+              <PhoneOff className="w-5 h-5 text-white" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onVerdict?.('scam')}
+              className="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white font-bold text-[11px] cursor-pointer"
+            >
+              É Golpe!
+            </button>
           </div>
         </div>
       )}
@@ -587,7 +1020,9 @@ const CallScreen = ({
   );
 };
 
-// ---------- Notificação Push Interativa ----------
+// ============================================================================
+// NOTIFICAÇÃO PUSH NA TELA DE BLOQUEIO
+// ============================================================================
 const PushScreen = ({
   c,
   onPerformAction,
@@ -595,6 +1030,7 @@ const PushScreen = ({
   actionHistory,
   stamped,
   onLinkClick,
+  onVerdict,
 }: {
   c: ScamCase;
   onPerformAction: (action: InteractiveAction) => void;
@@ -602,6 +1038,7 @@ const PushScreen = ({
   actionHistory: { player: string; reply: string }[];
   stamped: Verdict;
   onLinkClick: (url: string) => void;
+  onVerdict?: (v: 'scam' | 'safe') => void;
 }) => {
   const [title, ...rest] = c.messageContent.split(':');
   const body = rest.join(':').trim();
@@ -657,45 +1094,74 @@ const PushScreen = ({
         ))}
       </div>
 
-      {!stamped && availableActions.length > 0 && (
-        <div className="p-2 bg-black/40 border-t border-white/15 space-y-1">
-          <div className="text-[9.5px] font-mono uppercase text-purple-300 font-bold">
-            Checagens no Aparelho:
-          </div>
-          <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5">
-            {availableActions.map((act) => (
+      {!stamped && (
+        <div className="p-2 bg-black/40 border-t border-white/15 space-y-1.5">
+          {availableActions.length > 0 && (
+            <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
+              {availableActions.map((act) => (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={() => {
+                    sound.playBlip();
+                    onPerformAction(act);
+                  }}
+                  className="w-full text-left bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-lg px-2 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center justify-between gap-1.5"
+                >
+                  <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
+                  <span className="text-[9px] font-mono bg-purple-500 text-white px-1.5 py-0.5 rounded shrink-0 font-bold">
+                    Checar ➔
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {onVerdict && (
+            <div className="pt-1 border-t border-white/10 flex items-center gap-2">
               <button
-                key={act.id}
                 type="button"
-                onClick={() => {
-                  sound.playBlip();
-                  onPerformAction(act);
-                }}
-                className="w-full text-left bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-lg px-2 py-1.5 text-xs font-semibold transition cursor-pointer flex items-center justify-between gap-1.5"
+                onClick={() => onVerdict('scam')}
+                className="flex-1 py-1.5 px-2 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
               >
-                <span className="text-[11px] leading-[1.25] font-medium line-clamp-2">{act.label}</span>
-                <span className="text-[9px] font-mono bg-purple-500 text-white px-1.5 py-0.5 rounded shrink-0 font-bold">
-                  Checar ➔
-                </span>
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>🚨 É Golpe!</span>
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={() => onVerdict('safe')}
+                className="flex-1 py-1.5 px-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] rounded-lg shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>✅ É Seguro</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-
-// ---------- TELA INICIAL REALISTA DO CELULAR (HOME SCREEN) ----------
+// ============================================================================
+// TELA INICIAL REALISTA DO CELULAR (HOME SCREEN)
+// ============================================================================
 const HomeScreen = ({
   c,
-  onOpenApp,
-  onRejectCall,
+  onOpenMessaging,
+  onOpenNotes,
+  onOpenBank,
+  onOpenBrowser,
+  onToast,
+  inspectedClueCount,
 }: {
   c: ScamCase;
-  onOpenApp: () => void;
-  onRejectCall: () => void;
+  onOpenMessaging: () => void;
+  onOpenNotes: () => void;
+  onOpenBank: () => void;
+  onOpenBrowser: () => void;
+  onToast: (msg: string) => void;
+  inspectedClueCount: number;
 }) => {
   const [notificationArrived, setNotificationArrived] = useState(false);
   const number = findContactNumber(c);
@@ -703,7 +1169,6 @@ const HomeScreen = ({
   const isCall = c.channel === 'call';
 
   useEffect(() => {
-    // Simula a chegada da mensagem durante o uso do celular
     const t = setTimeout(() => {
       setNotificationArrived(true);
       sound.playPhoneVibrate();
@@ -717,13 +1182,12 @@ const HomeScreen = ({
   }, [c.id, isCall]);
 
   const previewText =
-    c.messageContent.length > 72
-      ? c.messageContent.slice(0, 72) + '...'
+    c.messageContent.length > 70
+      ? c.messageContent.slice(0, 70) + '...'
       : c.messageContent;
 
   return (
     <div className="relative flex flex-col h-full bg-gradient-to-b from-[#111827] via-[#0f172a] to-[#030712] text-white select-none overflow-hidden">
-      {/* Luz ambiente de papel de parede */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-900/30 via-slate-900/50 to-black pointer-events-none" />
 
       <StatusBar time={c.time} dark />
@@ -736,7 +1200,7 @@ const HomeScreen = ({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: -50, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 360, damping: 25 }}
-            onClick={onOpenApp}
+            onClick={onOpenMessaging}
             className="absolute top-8 left-2 right-2 z-40 bg-slate-900/95 hover:bg-slate-850 border border-white/25 rounded-2xl p-2.5 backdrop-blur-2xl shadow-[0_12px_32px_rgba(0,0,0,0.85)] cursor-pointer active:scale-96 transition-all group ring-1 ring-white/10"
           >
             <div className="flex items-center gap-2 mb-1">
@@ -805,7 +1269,7 @@ const HomeScreen = ({
             <div className="flex items-center gap-8 pt-4">
               <button
                 type="button"
-                onClick={onRejectCall}
+                onClick={() => onToast('📴 Chamada recusada.')}
                 className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
               >
                 <div className="w-13 h-13 rounded-full bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/40">
@@ -816,7 +1280,7 @@ const HomeScreen = ({
 
               <button
                 type="button"
-                onClick={onOpenApp}
+                onClick={onOpenMessaging}
                 className="flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition"
               >
                 <div className="w-13 h-13 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/40 animate-bounce">
@@ -833,35 +1297,38 @@ const HomeScreen = ({
       <div className="flex-1 flex flex-col justify-between p-3.5 z-10 pt-3">
         {/* Widget de Relógio & Clima */}
         <div className="flex flex-col items-center text-center pt-2">
-          <div className="text-[42px] font-bold leading-none tracking-tight font-display text-white/95">
+          <div className="text-[44px] font-bold leading-none tracking-tight font-display text-white/95">
             {c.time}
           </div>
           <div className="text-[11px] text-white/70 font-medium flex items-center gap-1.5 mt-1">
-            <Sun className="w-3 h-3 text-amber-400" />
+            <Sun className="w-3.5 h-3.5 text-amber-400" />
             <span>Sábado, 10 de out • 26°C Ensolarado</span>
           </div>
         </div>
 
         {/* Barra de Pesquisa Estilo Google */}
-        <div className="w-full bg-white/10 hover:bg-white/15 border border-white/15 rounded-full py-1.5 px-3 flex items-center justify-between text-white/60 text-xs backdrop-blur-md transition mt-2">
+        <div
+          onClick={onOpenBrowser}
+          className="w-full bg-white/10 hover:bg-white/15 border border-white/15 rounded-full py-1.5 px-3 flex items-center justify-between text-white/60 text-xs backdrop-blur-md transition mt-2 cursor-pointer"
+        >
           <div className="flex items-center gap-2">
             <span className="font-bold text-xs text-sky-400">G</span>
-            <span className="text-[10.5px] text-white/50">Pesquisar...</span>
+            <span className="text-[10.5px] text-white/50">Pesquisar ou digitar link...</span>
           </div>
-          <Search className="w-3 h-3 text-white/50" />
+          <Search className="w-3.5 h-3.5 text-white/50" />
         </div>
 
         {/* Grid de Apps Realista */}
         <div className="grid grid-cols-4 gap-y-3.5 gap-x-2 my-auto px-0.5">
-          {/* WhatsApp */}
+          {/* 1. WhatsApp */}
           <div
-            onClick={c.channel === 'whatsapp' ? onOpenApp : undefined}
+            onClick={onOpenMessaging}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-10 h-10 rounded-2xl bg-[#25D366] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <MessageSquare className="w-4.5 h-4.5" />
+            <div className="relative w-11 h-11 rounded-2xl bg-[#25D366] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <MessageSquare className="w-5 h-5" />
               {notificationArrived && c.channel === 'whatsapp' && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-bounce shadow">
+                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
               )}
@@ -869,15 +1336,15 @@ const HomeScreen = ({
             <span className="text-[9.5px] text-white/80 font-medium">WhatsApp</span>
           </div>
 
-          {/* Mensagens SMS */}
+          {/* 2. Mensagens SMS */}
           <div
-            onClick={c.channel === 'sms' ? onOpenApp : undefined}
+            onClick={onOpenMessaging}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-10 h-10 rounded-2xl bg-[#007aff] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <MessageCircle className="w-4.5 h-4.5" />
+            <div className="relative w-11 h-11 rounded-2xl bg-[#007aff] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <MessageCircle className="w-5 h-5" />
               {notificationArrived && c.channel === 'sms' && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-bounce shadow">
+                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
               )}
@@ -885,15 +1352,15 @@ const HomeScreen = ({
             <span className="text-[9.5px] text-white/80 font-medium">Mensagens</span>
           </div>
 
-          {/* Banco Digital */}
+          {/* 3. Meu Banco */}
           <div
-            onClick={c.channel === 'push' ? onOpenApp : undefined}
+            onClick={onOpenBank}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-10 h-10 rounded-2xl bg-[#820ad1] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <CreditCard className="w-4.5 h-4.5" />
+            <div className="relative w-11 h-11 rounded-2xl bg-[#820ad1] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <CreditCard className="w-5 h-5" />
               {notificationArrived && c.channel === 'push' && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-bounce shadow">
+                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   1
                 </span>
               )}
@@ -901,47 +1368,62 @@ const HomeScreen = ({
             <span className="text-[9.5px] text-white/80 font-medium">Meu Banco</span>
           </div>
 
-          {/* Galeria */}
-          <div className="flex flex-col items-center gap-1 group cursor-pointer">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <Camera className="w-4.5 h-4.5" />
+          {/* 4. BLOCO DE NOTAS (Dúvidas & Pistas) */}
+          <div
+            onClick={onOpenNotes}
+            className="flex flex-col items-center gap-1 group cursor-pointer relative"
+          >
+            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <FileText className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 px-1 min-w-[18px] h-4.5 rounded-full bg-amber-400 text-black font-mono text-[9.5px] font-extrabold flex items-center justify-center shadow">
+                {inspectedClueCount}/{c.clues.length}
+              </span>
             </div>
-            <span className="text-[9.5px] text-white/80 font-medium">Galeria</span>
+            <span className="text-[9.5px] text-white/80 font-medium">Notas</span>
           </div>
 
-          {/* Música */}
-          <div className="flex flex-col items-center gap-1 group cursor-pointer">
-            <div className="w-10 h-10 rounded-2xl bg-[#1db954] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <Music className="w-4.5 h-4.5" />
+          {/* 5. Música */}
+          <div
+            onClick={() => onToast('🎵 Tocando música favorita em segundo plano.')}
+            className="flex flex-col items-center gap-1 group cursor-pointer"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-[#1db954] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <Music className="w-5 h-5" />
             </div>
             <span className="text-[9.5px] text-white/80 font-medium">Música</span>
           </div>
 
-          {/* Internet */}
-          <div className="flex flex-col items-center gap-1 group cursor-pointer">
-            <div className="w-10 h-10 rounded-2xl bg-white text-slate-800 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <Globe className="w-4.5 h-4.5 text-sky-600" />
+          {/* 6. Internet */}
+          <div
+            onClick={onOpenBrowser}
+            className="flex flex-col items-center gap-1 group cursor-pointer"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-white text-slate-800 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <Globe className="w-5 h-5 text-sky-600" />
             </div>
             <span className="text-[9.5px] text-white/80 font-medium">Internet</span>
           </div>
 
-          {/* Ajustes */}
-          <div className="flex flex-col items-center gap-1 group cursor-pointer">
-            <div className="w-10 h-10 rounded-2xl bg-slate-700 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <Settings className="w-4.5 h-4.5" />
+          {/* 7. Galeria */}
+          <div
+            onClick={() => onToast('📸 Fotos salvas protegidas no aparelho.')}
+            className="flex flex-col items-center gap-1 group cursor-pointer"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <Camera className="w-5 h-5" />
             </div>
-            <span className="text-[9.5px] text-white/80 font-medium">Ajustes</span>
+            <span className="text-[9.5px] text-white/80 font-medium">Galeria</span>
           </div>
 
-          {/* Telefone */}
+          {/* 8. Telefone */}
           <div
-            onClick={c.channel === 'call' ? onOpenApp : undefined}
+            onClick={onOpenMessaging}
             className="flex flex-col items-center gap-1 group cursor-pointer relative"
           >
-            <div className="relative w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <Phone className="w-4.5 h-4.5" />
+            <div className="relative w-11 h-11 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+              <Phone className="w-5 h-5" />
               {notificationArrived && c.channel === 'call' && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-bounce shadow">
+                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-mono text-[9.5px] font-bold flex items-center justify-center animate-bounce shadow">
                   !
                 </span>
               )}
@@ -954,11 +1436,11 @@ const HomeScreen = ({
         <div className="pt-2">
           <button
             type="button"
-            onClick={onOpenApp}
-            className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-center text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition"
+            onClick={onOpenMessaging}
+            className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-center text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 transition"
           >
             {notificationArrived ? (
-              <span className="flex items-center gap-1 text-emerald-300 animate-pulse">
+              <span className="flex items-center gap-1.5 text-emerald-300 animate-pulse font-bold">
                 👉 Toque para abrir a notificação
               </span>
             ) : (
@@ -971,7 +1453,9 @@ const HomeScreen = ({
   );
 };
 
-// ---------- Componente Principal do Celular Interativo ----------
+// ============================================================================
+// COMPONENTE PRINCIPAL DO CELULAR (PHONE SCREEN HUB COM APP SWITCHER)
+// ============================================================================
 export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   scamCase,
   stamped,
@@ -980,17 +1464,22 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   executedActionIds,
   actionHistory,
   onAppOpenChange,
+  onVerdict,
+  onNextCase,
+  inspectedClueIds = [],
+  onInspectClue,
 }) => {
+  const [activeApp, setActiveApp] = useState<'home' | 'messaging' | 'notes' | 'bank' | 'browser'>('home');
   const [vibrateKey, setVibrateKey] = useState(0);
-  const [activeModal, setActiveModal] = useState<'link' | 'contact' | 'toast' | null>(null);
-  const [modalData, setModalData] = useState<{ url?: string; message?: string }>({});
+  const [activeModal, setActiveModal] = useState<'contact' | 'toast' | null>(null);
+  const [browserUrl, setBrowserUrl] = useState<string>('');
+  const [toastMessage, setToastMessage] = useState<string>('');
   const [isBlocked, setIsBlocked] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(false);
 
   useEffect(() => {
     setIsBlocked(false);
     setActiveModal(null);
-    setIsUnlocked(false);
+    setActiveApp('home');
     onAppOpenChange?.(false);
     setVibrateKey((k) => k + 1);
   }, [scamCase.id, onAppOpenChange]);
@@ -998,108 +1487,124 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   useEffect(() => {
     if (stamped) {
       sound.playStampThud();
-      setIsUnlocked(true);
+      setActiveApp('messaging');
       onAppOpenChange?.(true);
     }
   }, [stamped, onAppOpenChange]);
 
-  const handleOpenApp = () => {
+  const handleOpenMessaging = () => {
     sound.playKeypress();
-    setIsUnlocked(true);
+    setActiveApp('messaging');
     onAppOpenChange?.(true);
   };
 
-  const handleLinkClick = (url: string) => {
+  const handleOpenNotes = () => {
     sound.playBlip();
-    setModalData({ url });
-    setActiveModal('link');
+    setActiveApp('notes');
   };
 
-  const handleContactClick = () => {
+  const handleOpenBank = () => {
     sound.playBlip();
-    setActiveModal('contact');
+    setActiveApp('bank');
+  };
+
+  const handleOpenBrowser = (url?: string) => {
+    sound.playBlip();
+    setBrowserUrl(url || 'https://pesquisa-segura.com.br');
+    setActiveApp('browser');
+  };
+
+  const showToast = (message: string) => {
+    sound.playBlip();
+    setToastMessage(message);
+    setActiveModal('toast');
+    setTimeout(() => setActiveModal(null), 2500);
   };
 
   const handleBlockContact = () => {
     sound.playStampThud();
     setIsBlocked(true);
-    setActiveModal('toast');
-    setModalData({ message: '🚫 Contato bloqueado com sucesso!' });
-    setTimeout(() => setActiveModal(null), 2500);
+    showToast('🚫 Contato bloqueado com sucesso!');
   };
 
   const handleCallClick = () => {
     sound.playBlip();
-    setActiveModal('toast');
-    setModalData({ message: '📞 Chamada não atendida pelo remetente.' });
-    setTimeout(() => setActiveModal(null), 2500);
+    showToast('📞 Chamada não atendida pelo remetente.');
   };
 
   const handleHangup = () => {
     sound.playBlip();
-    setActiveModal('toast');
-    setModalData({ message: '📴 Chamada encerrada na cara do golpista!' });
-    setTimeout(() => setActiveModal(null), 2500);
+    showToast('📴 Chamada encerrada na cara do golpista!');
   };
 
   const flagged = stamped !== null && scamCase.isScam;
-  let screen: React.ReactNode;
-  switch (scamCase.channel) {
-    case 'whatsapp':
-      screen = (
-        <WhatsAppScreen
-          c={scamCase}
-          flagged={flagged}
-          onPerformAction={onPerformAction}
-          executedActionIds={executedActionIds}
-          actionHistory={actionHistory}
-          stamped={stamped}
-          onLinkClick={handleLinkClick}
-          onContactClick={handleContactClick}
-          isBlocked={isBlocked}
-          onBlockContact={handleBlockContact}
-          onCallClick={handleCallClick}
-        />
-      );
-      break;
-    case 'call':
-      screen = (
-        <CallScreen
-          c={scamCase}
-          onPerformAction={onPerformAction}
-          executedActionIds={executedActionIds}
-          actionHistory={actionHistory}
-          stamped={stamped}
-          onHangup={handleHangup}
-        />
-      );
-      break;
-    case 'push':
-      screen = (
-        <PushScreen
-          c={scamCase}
-          onPerformAction={onPerformAction}
-          executedActionIds={executedActionIds}
-          actionHistory={actionHistory}
-          stamped={stamped}
-          onLinkClick={handleLinkClick}
-        />
-      );
-      break;
-    default:
-      screen = (
-        <SmsScreen
-          c={scamCase}
-          flagged={flagged}
-          onPerformAction={onPerformAction}
-          executedActionIds={executedActionIds}
-          actionHistory={actionHistory}
-          stamped={stamped}
-          onLinkClick={handleLinkClick}
-          onContactClick={handleContactClick}
-        />
-      );
-  }
+
+  // Render do app de mensagens conforme canal
+  const renderMessagingApp = () => {
+    switch (scamCase.channel) {
+      case 'whatsapp':
+        return (
+          <WhatsAppScreen
+            c={scamCase}
+            flagged={flagged}
+            onPerformAction={onPerformAction}
+            executedActionIds={executedActionIds}
+            actionHistory={actionHistory}
+            stamped={stamped}
+            onLinkClick={handleOpenBrowser}
+            onContactClick={() => setActiveModal('contact')}
+            isBlocked={isBlocked}
+            onBlockContact={handleBlockContact}
+            onCallClick={handleCallClick}
+            onOpenNotes={handleOpenNotes}
+            inspectedClueCount={inspectedClueIds.length}
+            onVerdict={onVerdict}
+            onBackToHome={() => setActiveApp('home')}
+          />
+        );
+      case 'call':
+        return (
+          <CallScreen
+            c={scamCase}
+            onPerformAction={onPerformAction}
+            executedActionIds={executedActionIds}
+            actionHistory={actionHistory}
+            stamped={stamped}
+            onHangup={handleHangup}
+            onVerdict={onVerdict}
+          />
+        );
+      case 'push':
+        return (
+          <PushScreen
+            c={scamCase}
+            onPerformAction={onPerformAction}
+            executedActionIds={executedActionIds}
+            actionHistory={actionHistory}
+            stamped={stamped}
+            onLinkClick={handleOpenBrowser}
+            onVerdict={onVerdict}
+          />
+        );
+      default:
+        return (
+          <SmsScreen
+            c={scamCase}
+            flagged={flagged}
+            onPerformAction={onPerformAction}
+            executedActionIds={executedActionIds}
+            actionHistory={actionHistory}
+            stamped={stamped}
+            onLinkClick={handleOpenBrowser}
+            onContactClick={() => setActiveModal('contact')}
+            onOpenNotes={handleOpenNotes}
+            inspectedClueCount={inspectedClueIds.length}
+            onVerdict={onVerdict}
+            onBackToHome={() => setActiveApp('home')}
+          />
+        );
+    }
+  };
 
   const number = findContactNumber(scamCase);
 
@@ -1113,44 +1618,117 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           : { x: [0, -4, 4, -4, 4, -2, 2, 0] }
       }
       transition={{ duration: stamped ? 0.4 : 0.35, ease: 'easeInOut' }}
-      className="relative mx-auto w-full max-w-[285px] sm:max-w-[300px]"
+      className="relative mx-auto w-full max-w-[340px] sm:max-w-[370px]"
     >
       {/* Moldura Realista do Celular */}
-      <div className="relative rounded-[40px] sm:rounded-[46px] bg-[#0c0e14] p-[8px] sm:p-[10px] shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] border border-white/20">
-        <div className="relative h-[510px] sm:h-[600px] max-h-[72vh] sm:max-h-[82vh] min-h-[440px] rounded-[32px] sm:rounded-[38px] overflow-hidden font-phone select-none bg-black">
+      <div className="relative rounded-[44px] sm:rounded-[50px] bg-[#0c0e14] p-[9px] sm:p-[12px] shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] border border-white/20">
+        <div className="relative h-[580px] sm:h-[650px] rounded-[34px] sm:rounded-[40px] overflow-hidden font-phone select-none bg-black">
+          {/* Roteador de Apps Dentro do Sistema Operacional do Celular */}
           <AnimatePresence mode="wait">
-            {!isUnlocked && !stamped ? (
+            {activeApp === 'home' && (
               <motion.div
-                key={`lock-${scamCase.id}`}
+                key={`home-${scamCase.id}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.22 }}
                 className="h-full"
               >
                 <HomeScreen
                   c={scamCase}
-                  onOpenApp={handleOpenApp}
-                  onRejectCall={handleHangup}
+                  onOpenMessaging={handleOpenMessaging}
+                  onOpenNotes={handleOpenNotes}
+                  onOpenBank={handleOpenBank}
+                  onOpenBrowser={() => handleOpenBrowser()}
+                  onToast={showToast}
+                  inspectedClueCount={inspectedClueIds.length}
                 />
               </motion.div>
-            ) : (
+            )}
+
+            {activeApp === 'messaging' && (
               <motion.div
-                key={`app-${scamCase.id}`}
+                key={`msg-${scamCase.id}`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.25 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.22 }}
                 className="h-full"
               >
-                {screen}
+                {renderMessagingApp()}
+              </motion.div>
+            )}
+
+            {activeApp === 'notes' && (
+              <motion.div
+                key={`notes-${scamCase.id}`}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 15 }}
+                transition={{ duration: 0.22 }}
+                className="h-full"
+              >
+                <NotesScreen
+                  c={scamCase}
+                  inspectedClueIds={inspectedClueIds}
+                  onInspectClue={onInspectClue}
+                  onBack={() => setActiveApp('messaging')}
+                  onVerdict={onVerdict}
+                  stamped={stamped}
+                />
+              </motion.div>
+            )}
+
+            {activeApp === 'bank' && (
+              <motion.div
+                key={`bank-${scamCase.id}`}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 15 }}
+                transition={{ duration: 0.22 }}
+                className="h-full"
+              >
+                <BankScreen
+                  c={scamCase}
+                  onBack={() => setActiveApp('home')}
+                />
+              </motion.div>
+            )}
+
+            {activeApp === 'browser' && (
+              <motion.div
+                key={`browser-${scamCase.id}`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.22 }}
+                className="h-full"
+              >
+                <BrowserScreen
+                  c={scamCase}
+                  url={browserUrl}
+                  onBack={() => setActiveApp('messaging')}
+                />
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Notch Dinâmico no Topo do Celular */}
-          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-[76px] h-[18px] rounded-full bg-black flex items-center justify-between px-2.5 z-30 shadow-md border border-white/10">
+          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-[82px] h-[19px] rounded-full bg-black flex items-center justify-between px-3 z-30 shadow-md border border-white/10 pointer-events-none">
             <span className="w-2 h-2 rounded-full bg-[#1e293b]" />
             <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+          </div>
+
+          {/* BARRA DE INÍCIO PERSISTENTE (HOME BAR ESTILO IOS/ANDROID) */}
+          <div
+            className="absolute bottom-1 left-0 right-0 py-1 flex justify-center z-30 cursor-pointer group"
+            onClick={() => {
+              sound.playBlip();
+              setActiveApp('home');
+            }}
+            title="Toque para voltar à Tela Inicial do Celular"
+          >
+            <div className="w-24 h-1 rounded-full bg-white/40 group-hover:bg-white/80 active:scale-95 transition-all shadow-sm" />
           </div>
 
           {/* Toast Interno de Feedback do Celular */}
@@ -1162,86 +1740,12 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 exit={{ opacity: 0, y: -20 }}
                 className="absolute top-8 left-3 right-3 z-50 bg-black/90 text-white text-[11px] font-semibold py-2 px-3 rounded-xl border border-white/20 shadow-2xl text-center backdrop-blur-md"
               >
-                {modalData.message}
+                {toastMessage}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* MODAL 1: Navegador Seguro (Inspeção de Links Point & Click) */}
-          <AnimatePresence>
-            {activeModal === 'link' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute inset-0 z-50 bg-[#1c1c1e] text-white flex flex-col p-3"
-              >
-                {/* Barra do Navegador */}
-                <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                  <div className="flex items-center gap-1.5 flex-1 bg-black/50 py-1 px-2.5 rounded-full text-[10px] text-neutral-300 truncate mr-2">
-                    {scamCase.isScam ? (
-                      <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" />
-                    ) : (
-                      <Globe className="w-3 h-3 text-emerald-400 shrink-0" />
-                    )}
-                    <span className="truncate">{modalData.url}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveModal(null)}
-                    className="p-1 hover:bg-white/10 rounded-full cursor-pointer text-neutral-400 hover:text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Conteúdo Forense da Página Inspecionada */}
-                <div className="flex-1 flex flex-col justify-center items-center text-center p-3 space-y-3">
-                  <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg ${
-                      scamCase.isScam
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    }`}
-                  >
-                    {scamCase.isScam ? (
-                      <ShieldAlert className="w-8 h-8" />
-                    ) : (
-                      <ShieldCheck className="w-8 h-8" />
-                    )}
-                  </div>
-
-                  <div>
-                    <h4 className="font-bold text-sm">
-                      {scamCase.isScam ? '⚠️ Link Perigoso Detectado' : '✅ Conexão Segura'}
-                    </h4>
-                    <p className="text-[11px] text-neutral-300 mt-1 leading-relaxed">
-                      {scamCase.isScam
-                        ? 'O link tenta simular uma página autêntica, mas possui redirecionamento para servidor desconhecido!'
-                        : 'O domínio pertence ao servidor oficial autenticado com certificado SSL válido.'}
-                    </p>
-                  </div>
-
-                  <div className="bg-black/60 p-2.5 rounded-xl border border-white/10 w-full text-left text-[10.5px] space-y-1">
-                    <div className="text-neutral-400 font-mono text-[9px] uppercase">
-                      Auditoria Forense do Link:
-                    </div>
-                    <div className="text-white font-medium break-all">{modalData.url}</div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveModal(null)}
-                    className="w-full py-2 bg-white text-black font-bold text-xs rounded-xl shadow-md cursor-pointer active:scale-95 transition"
-                  >
-                    ← Voltar ao Aplicativo
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* MODAL 2: Perfil do Contato (Point & Click no Remetente) */}
+          {/* MODAL: Perfil do Contato (Point & Click no Remetente) */}
           <AnimatePresence>
             {activeModal === 'contact' && (
               <motion.div
@@ -1324,10 +1828,52 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* CARD DE VEREDITO E FEEDBACK EMBUTIDO NO CELULAR */}
+          <AnimatePresence>
+            {stamped && (
+              <motion.div
+                initial={{ y: 90, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 90, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 320 }}
+                className="absolute bottom-6 left-2.5 right-2.5 z-40 bg-slate-900/95 border-2 border-white/30 rounded-2xl p-3 shadow-2xl backdrop-blur-xl text-white space-y-2"
+              >
+                <div className="flex items-center gap-2">
+                  {wasCorrect ? (
+                    <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                  ) : (
+                    <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
+                  )}
+                  <div className="font-bold text-xs">
+                    {wasCorrect
+                      ? 'Parabéns! Você acertou o veredito!'
+                      : scamCase.isScam
+                      ? 'Atenção! Você caiu no golpe.'
+                      : 'Alarme falso! A mensagem era segura.'}
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-neutral-200 leading-snug line-clamp-3">
+                  {scamCase.keyEvidenceReason || scamCase.explanation}
+                </p>
+
+                {onNextCase && (
+                  <button
+                    type="button"
+                    onClick={onNextCase}
+                    className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5"
+                  >
+                    <span>👉 Bora pro Próximo Caso ➔</span>
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Carimbo de Veredito */}
+      {/* Carimbo de Veredito com rotação realista */}
       <AnimatePresence>
         {stamped && (
           <motion.div
@@ -1338,7 +1884,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             className="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
           >
             <div
-              className={`stamp px-6 py-2.5 text-[40px] leading-none bg-white/90 backdrop-blur-[2px] shadow-2xl ${
+              className={`stamp px-6 py-2.5 text-[38px] leading-none bg-white/95 backdrop-blur-[2px] shadow-2xl ${
                 stamped === 'scam' ? 'text-scam' : 'text-safe'
               }`}
             >
