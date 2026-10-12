@@ -902,12 +902,25 @@ const NotesScreen = ({
 // ============================================================================
 const BankScreen = ({
   c,
+  inspectedClueIds = [],
+  hasOpenedScamMessage = false,
+  onInspectClue,
   onBack,
 }: {
   c: ScamCase;
+  inspectedClueIds?: string[];
+  hasOpenedScamMessage?: boolean;
+  onInspectClue?: (clue: InvestigativeClue) => void;
   onBack: () => void;
 }) => {
   const isCase3Legitimate = c.id === 'case-3-compra-aprovada';
+  const bankClue = c.clues.find(
+    (k) =>
+      k.category === 'system' ||
+      k.inspection.type === 'official' ||
+      k.id.includes('fatura') ||
+      k.id.includes('banco')
+  );
 
   return (
     <div className="flex flex-col h-full bg-[#130b24] text-white select-none">
@@ -1060,6 +1073,38 @@ const BankScreen = ({
               <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[10.5px] text-purple-200 leading-relaxed">
                 💡 <strong>Análise Investigativa:</strong> Se a mensagem que você recebeu alegou que uma compra suspeita ocorreu agora ou pediu Pix urgente, compare com este extrato. Como a última transação foi há 3 dias, a alegação é totalmente falsa!
               </div>
+            </div>
+          )}
+
+          {/* Botão de Anotação Manual de Evidência Bancária */}
+          {bankClue && (
+            <div className="pt-1">
+              <button
+                type="button"
+                disabled={!hasOpenedScamMessage}
+                onClick={() => {
+                  if (!hasOpenedScamMessage) return;
+                  if (!inspectedClueIds.includes(bankClue.id)) {
+                    onInspectClue?.(bankClue);
+                  }
+                }}
+                className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition ${
+                  !hasOpenedScamMessage
+                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                    : inspectedClueIds.includes(bankClue.id)
+                    ? 'bg-emerald-600/80 hover:bg-emerald-600 text-white cursor-pointer active:scale-95'
+                    : 'bg-purple-600 hover:bg-purple-500 text-white cursor-pointer active:scale-95'
+                }`}
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>
+                  {!hasOpenedScamMessage
+                    ? 'Aguardando leitura da mensagem suspeita...'
+                    : inspectedClueIds.includes(bankClue.id)
+                    ? '✓ Evidência do Extrato anotada no Bloco de Notas'
+                    : 'Anotar Evidência no Bloco de Notas (Extrato Conferido)'}
+                </span>
+              </button>
             </div>
           )}
         </div>
@@ -4140,6 +4185,9 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               >
                 <BankScreen
                   c={scamCase}
+                  inspectedClueIds={inspectedClueIds}
+                  hasOpenedScamMessage={hasOpenedScamMessage}
+                  onInspectClue={handleInspectClue}
                   onBack={() => setActiveApp(previousApp)}
                 />
               </motion.div>
