@@ -30,6 +30,8 @@ import {
   FileText,
   Check,
   CheckCircle,
+  Copy,
+  Zap,
   Lightbulb,
   AlertTriangle,
   Send,
@@ -904,16 +906,20 @@ const BankScreen = ({
   c,
   inspectedClueIds = [],
   hasOpenedScamMessage = false,
+  copiedPixKey = null,
   onInspectClue,
   onBack,
 }: {
   c: ScamCase;
   inspectedClueIds?: string[];
   hasOpenedScamMessage?: boolean;
+  copiedPixKey?: string | null;
   onInspectClue?: (clue: InvestigativeClue) => void;
   onBack: () => void;
 }) => {
-  const isCase3Legitimate = c.id === 'case-3-compra-aprovada';
+  const pixClue = c.clues.find(
+    (k) => k.category === 'pix' || k.inspection.type === 'pix'
+  );
   const bankClue = c.clues.find(
     (k) =>
       k.category === 'system' ||
@@ -921,6 +927,33 @@ const BankScreen = ({
       k.id.includes('fatura') ||
       k.id.includes('banco')
   );
+
+  const [activeTab, setActiveTab] = useState<'pix' | 'statement'>(() => {
+    return pixClue ? 'pix' : 'statement';
+  });
+
+  const [enteredKey, setEnteredKey] = useState<string>(() => copiedPixKey || '');
+  const [hasQueriedPix, setHasQueriedPix] = useState<boolean>(() => Boolean(copiedPixKey));
+
+  // Sincroniza se a chave copiada mudar externamente
+  useEffect(() => {
+    if (copiedPixKey) {
+      setEnteredKey(copiedPixKey);
+      setHasQueriedPix(true);
+    }
+  }, [copiedPixKey]);
+
+  // Dados do Pix extraídos dinamicamente do caso
+  const pixTargetName = pixClue?.inspection.field2Value || 'Valdir dos Santos';
+  const pixBankName = pixClue?.inspection.field3Value || 'Pessoa Física - Nu Pagamentos S.A.';
+  const pixAmount = c.clues[0]?.inspection?.field3Value?.includes('R$')
+    ? c.clues[0].inspection.field3Value
+    : 'R$ 1.850,00';
+
+  const isPixInspected = Boolean(pixClue && inspectedClueIds.includes(pixClue.id));
+  const isBankInspected = Boolean(bankClue && inspectedClueIds.includes(bankClue.id));
+
+  const isCaseLegitimate = !c.isScam;
 
   return (
     <div className="flex flex-col h-full bg-[#130b24] text-white select-none">
@@ -945,7 +978,7 @@ const BankScreen = ({
 
       <div className="flex-1 overflow-y-auto no-scrollbar p-3.5 space-y-3">
         {/* Card de Conta e Saldo */}
-        <div className="bg-gradient-to-r from-purple-800 to-indigo-800 rounded-2xl p-3.5 shadow-lg border border-purple-500/30">
+        <div className="bg-gradient-to-r from-purple-850 to-indigo-900 rounded-2xl p-3.5 shadow-lg border border-purple-500/30">
           <div className="flex justify-between items-center text-[10px] text-purple-200">
             <span>Conta Corrente Digital • Jefferson</span>
             <span className="font-mono">Agência 0001 • C/C 84920-1</span>
@@ -960,154 +993,265 @@ const BankScreen = ({
           </div>
         </div>
 
-        {/* Alerta Institucional de Segurança do Banco */}
-        <div className="bg-black/40 border border-purple-500/20 rounded-xl p-2.5 space-y-1">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-amber-300 font-bold flex items-center gap-1">
-            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-            Norma Oficial de Segurança Bancária
-          </div>
-          <p className="text-[11px] text-purple-100/90 leading-relaxed">
-            O banco <strong>NUNCA</strong> faz ligações de 0800 pedindo para você realizar Pix de estorno, cancelar transferências por link ou transferir para &quot;contas de segurança&quot;.
-          </p>
+        {/* Seletor de Abas: Área Pix vs Extrato */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/40 rounded-xl border border-purple-500/20">
+          <button
+            type="button"
+            onClick={() => setActiveTab('pix')}
+            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 ${
+              activeTab === 'pix'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-purple-300 hover:text-white'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Área Pix</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('statement')}
+            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 ${
+              activeTab === 'statement'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-purple-300 hover:text-white'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Extrato</span>
+          </button>
         </div>
 
-        {/* EXTRATO BANCÁRIO DETALHADO (AUDITORIA TEMPORAL REALISTA) */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono text-purple-300 uppercase font-bold px-0.5">
-            <span>Extrato Oficial de Movimentações</span>
-            <span className="text-purple-400">Tempo Real</span>
-          </div>
-
-          {isCase3Legitimate ? (
-            /* Caso 3: A compra na Padaria Estrela de R$ 34,90 às 08:44 realmente aconteceu */
-            <div className="space-y-2">
-              <div className="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="font-bold text-xs text-white">Padaria Estrela</div>
-                  <span className="font-mono text-xs text-emerald-300 font-bold">- R$ 34,90</span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-white/60">
-                  <span>Hoje, 10 de outubro às 08:44</span>
-                  <span>Débito por Aproximação</span>
-                </div>
-                <div className="text-[10px] text-emerald-400 font-medium pt-0.5">
-                  ✓ Transação legítima confirmada pelo chip do seu cartão físico.
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-xs text-white/90">Supermercado Central</div>
-                  <span className="font-mono text-xs text-neutral-300">- R$ 112,40</span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-white/50">
-                  <span>07 de outubro às 19:12 (há 3 dias)</span>
-                  <span>Cartão de Débito</span>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-xs text-white/90">Farmácia Bem Estar</div>
-                  <span className="font-mono text-xs text-neutral-300">- R$ 45,00</span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-white/50">
-                  <span>05 de outubro às 14:00 (há 5 dias)</span>
-                  <span>Transferência Pix</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Casos de Golpe: Mostra que a última transação foi há 3 dias (07/10) e NADA hoje */
-            <div className="space-y-2">
-              {/* Destaque Forense: Nenhuma transação hoje */}
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-400/30 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10.5px] font-mono font-bold text-amber-300 flex items-center gap-1">
-                    <span>🗓️</span> Hoje, 10 de outubro • Horário: {c.time}
-                  </span>
-                  <span className="text-[9px] bg-amber-400/20 text-amber-300 font-mono px-1.5 py-0.5 rounded">
-                    Sem Lançamentos
-                  </span>
-                </div>
-                <p className="text-[11px] text-amber-100/90 leading-snug">
-                  <strong>Nenhuma movimentação registrada hoje.</strong> Não há compras aprovadas, bloqueios de segurança ou transferências Pix pendentes no sistema do seu banco.
-                </p>
-              </div>
-
-              {/* Histórico Anterior Real */}
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-xs text-white/90">Supermercado Bom Preço</div>
-                  <span className="font-mono text-xs text-neutral-300">- R$ 88,90</span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-white/50">
-                  <span className="text-amber-200/80 font-medium">07 de outubro às 18:24 (última compra, há 3 dias)</span>
-                  <span>Cartão de Débito</span>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-xs text-white/90">Posto Shell</div>
-                  <span className="font-mono text-xs text-neutral-300">- R$ 120,00</span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-white/50">
-                  <span>06 de outubro às 12:15 (há 4 dias)</span>
-                  <span>Cartão de Crédito</span>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-xs text-white/90">Padaria Central</div>
-                  <span className="font-mono text-xs text-neutral-300">- R$ 14,50</span>
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-white/50">
-                  <span>04 de outubro às 10:30 (há 6 dias)</span>
-                  <span>Cartão de Débito</span>
-                </div>
-              </div>
-
-              {/* Prova forense explícita */}
-              <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[10.5px] text-purple-200 leading-relaxed">
-                💡 <strong>Análise Investigativa:</strong> Se a mensagem que você recebeu alegou que uma compra suspeita ocorreu agora ou pediu Pix urgente, compare com este extrato. Como a última transação foi há 3 dias, a alegação é totalmente falsa!
-              </div>
-            </div>
-          )}
-
-          {/* Botão de Anotação Manual de Evidência Bancária */}
-          {bankClue && (
-            <div className="pt-1">
-              <button
-                type="button"
-                disabled={!hasOpenedScamMessage}
-                onClick={() => {
-                  if (!hasOpenedScamMessage) return;
-                  if (!inspectedClueIds.includes(bankClue.id)) {
-                    onInspectClue?.(bankClue);
-                  }
-                }}
-                className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition ${
-                  !hasOpenedScamMessage
-                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                    : inspectedClueIds.includes(bankClue.id)
-                    ? 'bg-emerald-600/80 hover:bg-emerald-600 text-white cursor-pointer active:scale-95'
-                    : 'bg-purple-600 hover:bg-purple-500 text-white cursor-pointer active:scale-95'
-                }`}
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>
-                  {!hasOpenedScamMessage
-                    ? 'Aguardando leitura da mensagem suspeita...'
-                    : inspectedClueIds.includes(bankClue.id)
-                    ? '✓ Evidência do Extrato anotada no Bloco de Notas'
-                    : 'Anotar Evidência no Bloco de Notas (Extrato Conferido)'}
+        {/* ================= ABA 1: ÁREA PIX ================= */}
+        {activeTab === 'pix' && (
+          <div className="space-y-3">
+            {/* Input e Simulação de Chave */}
+            <div className="p-3 rounded-2xl bg-black/30 border border-purple-500/20 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  Transferir via Chave Pix
                 </span>
-              </button>
+                <span className="text-[10px] text-purple-300 font-mono">Bacen DICT</span>
+              </div>
+
+              {/* Botão de colar chave copiada se houver */}
+              {copiedPixKey && enteredKey !== copiedPixKey && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEnteredKey(copiedPixKey);
+                    setHasQueriedPix(true);
+                  }}
+                  className="w-full py-1.5 px-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 rounded-lg text-emerald-300 text-xs font-bold flex items-center justify-between cursor-pointer active:scale-95 transition"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Copy className="w-3 h-3" />
+                    Colar chave copiada: {copiedPixKey}
+                  </span>
+                  <span className="text-[10px] uppercase font-mono">Colar</span>
+                </button>
+              )}
+
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={enteredKey}
+                  onChange={(e) => setEnteredKey(e.target.value)}
+                  placeholder="Cole ou digite a chave Pix..."
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-purple-400 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (enteredKey.trim()) setHasQueriedPix(true);
+                  }}
+                  className="px-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition shrink-0"
+                >
+                  Consultar
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Tela de Confirmação Oficial do Pix */}
+            {hasQueriedPix && (
+              <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/40 space-y-3 shadow-lg">
+                <div className="flex items-center justify-between border-b border-purple-800/40 pb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-purple-300 font-bold">
+                    Dados do Destinatário no Banco Central
+                  </span>
+                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                    DICT ✓
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-purple-300/80">Valor solicitado:</span>
+                    <span className="font-mono font-bold text-white text-sm">{pixAmount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-purple-300/80">Chave Pix:</span>
+                    <span className="font-mono text-purple-200">{enteredKey || pixClue?.inspection.field1Value}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-purple-300/80">Favorecido (Titular):</span>
+                    <span className="font-bold text-amber-300 font-mono">{pixTargetName}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-purple-300/80">Instituição:</span>
+                    <span className="font-semibold text-neutral-300">{pixBankName}</span>
+                  </div>
+                </div>
+
+                {/* Dica Investigativa Sutil (Sem Spoilers) */}
+                <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/30 space-y-1">
+                  <div className="text-[10px] font-mono uppercase tracking-wide text-amber-300 font-bold flex items-center gap-1">
+                    <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                    Dica de Segurança
+                  </div>
+                  <p className="text-[11px] text-amber-100/90 leading-relaxed">
+                    Observe com atenção o nome completo do titular que apareceu na tela. Esse nome bate com a pessoa ou instituição que conversou com você? Se não for quem você conhece, desconfie imediatamente.
+                  </p>
+                </div>
+
+                {/* Botão Manual de Auditoria */}
+                {pixClue && (
+                  <button
+                    type="button"
+                    disabled={!hasOpenedScamMessage}
+                    onClick={() => {
+                      if (!hasOpenedScamMessage) return;
+                      if (!isPixInspected) {
+                        onInspectClue?.(pixClue);
+                      }
+                    }}
+                    className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition ${
+                      !hasOpenedScamMessage
+                        ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                        : isPixInspected
+                        ? 'bg-emerald-600/80 hover:bg-emerald-600 text-white cursor-pointer active:scale-95'
+                        : 'bg-purple-600 hover:bg-purple-500 text-white cursor-pointer active:scale-95'
+                    }`}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>
+                      {!hasOpenedScamMessage
+                        ? 'Aguardando leitura da mensagem suspeita...'
+                        : isPixInspected
+                        ? '✓ Dados do favorecido já anotados nas Notas'
+                        : 'Anotar Dados do Titular no Bloco de Notas'}
+                    </span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================= ABA 2: EXTRATO ================= */}
+        {activeTab === 'statement' && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[10px] font-mono text-purple-300 uppercase font-bold px-0.5">
+              <span>Extrato Oficial de Movimentações</span>
+              <span className="text-purple-400">Tempo Real</span>
+            </div>
+
+            {isCaseLegitimate ? (
+              /* Caso Legítimo (ex: Compra na padaria às 08:44) */
+              <div className="space-y-2">
+                <div className="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-xs text-white">Padaria Estrela</div>
+                    <span className="font-mono text-xs text-emerald-300 font-bold">- R$ 34,90</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-white/60">
+                    <span>Hoje, 10 de outubro às 08:44</span>
+                    <span>Débito por Aproximação</span>
+                  </div>
+                  <div className="text-[10px] text-emerald-400 font-medium pt-0.5">
+                    ✓ Transação confirmada pelo chip do seu cartão físico.
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-xs text-white/90">Supermercado Central</div>
+                    <span className="font-mono text-xs text-neutral-300">- R$ 112,40</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-white/50">
+                    <span>07 de outubro às 19:12 (há 3 dias)</span>
+                    <span>Cartão de Débito</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Casos de Golpe: Mostra que hoje NÃO houve movimentação nenhuma */
+              <div className="space-y-2">
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-400/30 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-mono font-bold text-amber-300 flex items-center gap-1">
+                      <span>🗓️</span> Hoje, 10 de outubro • Horário: {c.time}
+                    </span>
+                    <span className="text-[9px] bg-amber-400/20 text-amber-300 font-mono px-1.5 py-0.5 rounded">
+                      Sem Lançamentos
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-100/90 leading-snug">
+                    Nenhuma movimentação registrada hoje. Não há compras aprovadas, bloqueios de segurança ou transferências Pix pendentes no sistema.
+                  </p>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-xs text-white/90">Supermercado Bom Preço</div>
+                    <span className="font-mono text-xs text-neutral-300">- R$ 88,90</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-white/50">
+                    <span className="text-amber-200/80 font-medium">07 de outubro às 18:24 (última compra, há 3 dias)</span>
+                    <span>Cartão de Débito</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Dica Investigativa Sutil no Extrato */}
+            <div className="p-2.5 rounded-xl bg-black/40 border border-purple-500/30 text-[10.5px] text-purple-200 leading-relaxed">
+              💡 <strong>Dica de Segurança:</strong> Confira as movimentações da data de hoje. Se alguém alegou por mensagem ou ligação que seu cartão passou agora, essa compra realmente aparece listada no extrato?
+            </div>
+
+            {/* Botão Manual de Auditoria do Extrato */}
+            {bankClue && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  disabled={!hasOpenedScamMessage}
+                  onClick={() => {
+                    if (!hasOpenedScamMessage) return;
+                    if (!isBankInspected) {
+                      onInspectClue?.(bankClue);
+                    }
+                  }}
+                  className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition ${
+                    !hasOpenedScamMessage
+                      ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                      : isBankInspected
+                      ? 'bg-emerald-600/80 hover:bg-emerald-600 text-white cursor-pointer active:scale-95'
+                      : 'bg-purple-600 hover:bg-purple-500 text-white cursor-pointer active:scale-95'
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>
+                    {!hasOpenedScamMessage
+                      ? 'Aguardando leitura da mensagem suspeita...'
+                      : isBankInspected
+                      ? '✓ Situação do Extrato anotada nas Notas'
+                      : 'Anotar Situação do Extrato no Bloco de Notas'}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Botão de Retorno */}
@@ -1777,7 +1921,7 @@ const WhatsAppScreen = ({
   onLinkClick,
   onContactClick,
   isBlocked,
-  onBlockContact,
+  onBlockContact: _onBlockContact,
   onCallClick,
   onBackToHome,
   onOpenNotes: _onOpenNotes,
@@ -1789,6 +1933,7 @@ const WhatsAppScreen = ({
   inspectedClueIds = [],
   onInspectClue,
   onOpenBank: _onOpenBank,
+  onCopyPixKey,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -1811,7 +1956,11 @@ const WhatsAppScreen = ({
   inspectedClueIds?: string[];
   onInspectClue?: (clue: InvestigativeClue) => void;
   onOpenBank?: () => void;
+  onCopyPixKey?: (key: string) => void;
 }) => {
+  const pixClue = c.clues.find(
+    (k) => k.category === 'pix' || k.inspection.type === 'pix'
+  );
   const [isTypingPlayer, setIsTypingPlayer] = useState(false);
   const number = findContactNumber(c);
   const name = cleanName(c.sender);
@@ -2046,21 +2195,11 @@ const WhatsAppScreen = ({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onBlockContact();
-                }}
-                className="hover:underline cursor-pointer text-red-600 font-bold active:scale-95 transition-transform"
-              >
-                Bloquear
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
                   onContactClick();
                 }}
                 className="hover:underline cursor-pointer active:scale-95 transition-transform"
               >
-                Inspecionar
+                Inspecionar Perfil
               </button>
             </div>
           </div>
@@ -2080,6 +2219,24 @@ const WhatsAppScreen = ({
             className="relative bg-white text-[#111b21] text-[13px] leading-[17px] rounded-lg rounded-tl-none px-2.5 pt-1.5 pb-3.5 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.15)] whitespace-pre-wrap group hover:ring-1 hover:ring-emerald-400/40 transition"
           >
             {renderMessageContent(para)}
+
+            {/* Botão diegético de copiar chave Pix para usar no banco */}
+            {pixClue && (para.toLowerCase().includes('pix') || para.includes(pixClue.inspection.field1Value) || i === messageParagraphs.length - 1) && onCopyPixKey && (
+              <div className="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCopyPixKey(pixClue.inspection.field1Value);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-[#008069] text-[11px] font-bold border border-emerald-300/60 cursor-pointer active:scale-95 transition"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>Copiar Chave Pix ({pixClue.inspection.field1Value})</span>
+                </button>
+              </div>
+            )}
+
             <span className="absolute right-1.5 bottom-0.5 text-[9.5px] text-[#667781] font-mono">
               {c.time}
             </span>
@@ -2238,6 +2395,7 @@ const SmsScreen = ({
   inspectedClueIds = [],
   onInspectClue,
   onOpenBank: _onOpenBank,
+  onCopyPixKey,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -2257,7 +2415,11 @@ const SmsScreen = ({
   inspectedClueIds?: string[];
   onInspectClue?: (clue: InvestigativeClue) => void;
   onOpenBank?: () => void;
+  onCopyPixKey?: (key: string) => void;
 }) => {
+  const pixClue = c.clues.find(
+    (k) => k.category === 'pix' || k.inspection.type === 'pix'
+  );
   const number = findContactNumber(c);
   const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
   const [revealedCount, setRevealedCount] = useState(0);
@@ -2431,6 +2593,23 @@ const SmsScreen = ({
             className="bg-[#e9e9eb] text-black text-[13.5px] leading-[18px] rounded-[16px] rounded-bl-[4px] px-3 py-2 max-w-[88%] whitespace-pre-wrap shadow-sm"
           >
             {renderMessageContent(para)}
+
+            {/* Botão diegético de copiar chave Pix para usar no banco */}
+            {pixClue && (para.toLowerCase().includes('pix') || para.includes(pixClue.inspection.field1Value) || i === messageParagraphs.length - 1) && onCopyPixKey && (
+              <div className="mt-2 pt-1 border-t border-black/10 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCopyPixKey(pixClue.inspection.field1Value);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white hover:bg-neutral-50 text-[#007aff] text-[11px] font-bold border border-neutral-300 cursor-pointer active:scale-95 transition"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>Copiar Chave Pix ({pixClue.inspection.field1Value})</span>
+                </button>
+              </div>
+            )}
           </motion.div>
         ))}
 
@@ -3293,15 +3472,32 @@ const HomeScreen = ({
             <span className="text-[11px] text-white/90 font-medium">Dicas</span>
           </div>
 
-          {/* 6. Internet */}
+          {/* 6. Google */}
           <div
             onClick={onOpenBrowser}
             className="flex flex-col items-center gap-1 group cursor-pointer"
           >
-            <div className="relative w-12 h-12 rounded-2xl bg-white text-slate-800 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <Globe className="w-6 h-6 text-sky-600" />
+            <div className="relative w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform border border-slate-200">
+              <svg className="w-6 h-6" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
+              </svg>
             </div>
-            <span className="text-[11px] text-white/90 font-medium">Internet</span>
+            <span className="text-[11px] text-white/90 font-medium">Google</span>
           </div>
 
           {/* 7. Galeria */}
@@ -3442,6 +3638,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [skillToast, setSkillToast] = useState<Skill[] | null>(null);
   const [isTipsModalOpen, setIsTipsModalOpen] = useState(false);
   const [isPixDoubtModalOpen, setIsPixDoubtModalOpen] = useState(false);
+  const [copiedPixKey, setCopiedPixKey] = useState<string | null>(null);
 
   const levelText = levelIndex ? `Nível ${levelIndex} / ${totalLevels || 9}` : undefined;
 
@@ -3513,6 +3710,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setUserHypothesisIndex(null);
     setIsTipsModalOpen(false);
     setIsPixDoubtModalOpen(false);
+    setCopiedPixKey(null);
     onAppOpenChangeRef.current?.(false);
     onStoryDeliveredChangeRef.current?.(false);
     setVibrateKey((k) => k + 1);
@@ -3695,6 +3893,15 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setActiveModal('contact');
   };
 
+  const handleCopyPixKey = (key: string) => {
+    try {
+      navigator.clipboard?.writeText(key);
+    } catch {}
+    setCopiedPixKey(key);
+    sound.playKeypress();
+    showToast(`📋 Chave Pix copiada: ${key}`);
+  };
+
   const flagged = stamped !== null && scamCase.isScam;
 
   // Render do app de mensagens conforme canal
@@ -3724,6 +3931,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             inspectedClueIds={inspectedClueIds}
             onInspectClue={handleInspectClue}
             onOpenBank={handleOpenBank}
+            onCopyPixKey={handleCopyPixKey}
           />
         );
       case 'call':
@@ -3770,6 +3978,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             inspectedClueIds={inspectedClueIds}
             onInspectClue={handleInspectClue}
             onOpenBank={handleOpenBank}
+            onCopyPixKey={handleCopyPixKey}
           />
         );
     }
@@ -4187,6 +4396,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   c={scamCase}
                   inspectedClueIds={inspectedClueIds}
                   hasOpenedScamMessage={hasOpenedScamMessage}
+                  copiedPixKey={copiedPixKey}
                   onInspectClue={handleInspectClue}
                   onBack={() => setActiveApp(previousApp)}
                 />
@@ -4401,21 +4611,6 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                         </button>
                       )}
 
-                      {!isBlocked ? (
-                        <button
-                          type="button"
-                          onClick={handleBlockContact}
-                          className="w-full py-2 bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition"
-                        >
-                          <UserX className="w-4 h-4" />
-                          <span>Bloquear este Contato</span>
-                        </button>
-                      ) : (
-                        <div className="py-2 bg-neutral-800 text-neutral-400 font-semibold text-xs rounded-xl">
-                          ✓ Contato já está bloqueado
-                        </div>
-                      )}
-
                       <button
                         type="button"
                         onClick={() => setActiveModal(null)}
@@ -4553,6 +4748,23 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                     {scamCase.pedagogy.goldenRule}
                   </p>
                 </div>
+
+                {/* Ação de Bloqueio Liberada no Final para Casos de Golpe */}
+                {scamCase.isScam && !isBlocked && (
+                  <button
+                    type="button"
+                    onClick={handleBlockContact}
+                    className="w-full py-2 bg-red-600/85 hover:bg-red-600 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition"
+                  >
+                    <UserX className="w-4 h-4" />
+                    <span>Bloquear e Denunciar este Número aos Órgãos</span>
+                  </button>
+                )}
+                {scamCase.isScam && isBlocked && (
+                  <div className="py-2 bg-red-950/60 border border-red-500/30 text-red-300 font-bold text-xs rounded-xl text-center">
+                    ✓ Número bloqueado e denunciado com sucesso!
+                  </div>
+                )}
 
                 {/* Botão de Avançar para o Próximo Desafio */}
                 {onNextCase && (
