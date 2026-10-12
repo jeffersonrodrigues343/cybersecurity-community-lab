@@ -30,8 +30,6 @@ import {
   FileText,
   Check,
   CheckCircle,
-  UserCheck,
-  Building,
   Lightbulb,
   AlertTriangle,
   Send,
@@ -620,8 +618,6 @@ const getClueGuide = (clue: InvestigativeClue) => {
         'Toque no nome ou na foto do contato no topo da conversa.',
         'Confira o DDD (prefixo regional) e há quanto tempo o chip foi ativado.',
       ],
-      actionLabel: 'Inspecionar Contato (Checar DDD)',
-      actionType: 'contact' as const,
     };
   }
   if (clue.category === 'pix' || clue.inspection.type === 'pix') {
@@ -632,8 +628,6 @@ const getClueGuide = (clue: InvestigativeClue) => {
         'Consulte o nome do titular e banco registrados no Banco Central.',
         'Confira se a conta é de uma pessoa desconhecida (laranja).',
       ],
-      actionLabel: 'Simular Pix (Auditar Titular no Bacen)',
-      actionType: 'pix' as const,
     };
   }
   if (clue.category === 'whois' || clue.inspection.type === 'link') {
@@ -644,8 +638,6 @@ const getClueGuide = (clue: InvestigativeClue) => {
         'Confira o domínio final (veja se é o site oficial verdadeiro ou página falsa).',
         'Nunca digite senhas ou dados bancários em links suspeitos.',
       ],
-      actionLabel: 'Inspecionar Link no Navegador',
-      actionType: 'link' as const,
     };
   }
   if (clue.category === 'system' || clue.inspection.type === 'official' || clue.name.toLowerCase().includes('banco')) {
@@ -656,8 +648,6 @@ const getClueGuide = (clue: InvestigativeClue) => {
         'Confira o histórico de compras e extrato bancário real.',
         'Veja se a cobrança ou compra alegada na mensagem realmente existe.',
       ],
-      actionLabel: 'Conferir no Meu Banco',
-      actionType: 'bank' as const,
     };
   }
   return {
@@ -667,41 +657,30 @@ const getClueGuide = (clue: InvestigativeClue) => {
       'Nunca faça transferências sem ouvir a voz real da pessoa.',
       'Desconfie de desculpas como "microfone quebrado" ou "estou ocupado".',
     ],
-    actionLabel: 'Exigir Prova de Voz / Ligar',
-    actionType: 'behavior' as const,
   };
 };
 
 const NotesScreen = ({
   c,
   inspectedClueIds = [],
+  hasOpenedScamMessage = false,
   onBack,
   onOpenVerdict,
   onOpenTips,
-  onInspectClue,
-  onSimulatePix,
-  onRequestAudio,
-  onInspectContact,
-  onInspectBank,
-  onInspectBrowser,
 }: {
   c: ScamCase;
   inspectedClueIds: string[];
-  onInspectClue?: (clue: InvestigativeClue) => void;
+  hasOpenedScamMessage?: boolean;
   onBack: () => void;
   onOpenVerdict?: () => void;
   onOpenTips?: () => void;
-  onSimulatePix?: (clue: InvestigativeClue) => void;
-  onRequestAudio?: (clue: InvestigativeClue) => void;
-  onInspectContact?: () => void;
-  onInspectBank?: () => void;
-  onInspectBrowser?: (url?: string) => void;
 }) => {
   const isStepChecked = (idx: number) => {
     return Boolean(c.clues[idx] && inspectedClueIds.includes(c.clues[idx].id));
   };
 
   const isStepUnlocked = (idx: number) => {
+    if (!hasOpenedScamMessage) return false;
     if (idx === 0) return true;
     if (idx === 1) return isStepChecked(0);
     if (idx === 2) return isStepChecked(0) && isStepChecked(1);
@@ -758,6 +737,16 @@ const NotesScreen = ({
           </h2>
         </div>
 
+        {/* Alerta de espera se a mensagem do suspeito ainda não foi recebida e aberta */}
+        {!hasOpenedScamMessage && (
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-amber-200 text-xs flex items-center gap-2.5">
+            <span className="text-base">⏳</span>
+            <div className="leading-snug">
+              <strong>Aguardando mensagem suspeita:</strong> Quando receber a mensagem do golpista, abra a conversa para analisar o caso e liberar o checklist.
+            </div>
+          </div>
+        )}
+
         {/* Os 3 Passos de Verificação Específicos do Caso Atual */}
         <div className="space-y-2.5">
           {c.clues.slice(0, 3).map((clue, idx) => {
@@ -781,7 +770,9 @@ const NotesScreen = ({
                         Passo {idx + 1} • Bloqueado 🔒
                       </span>
                       <p className="text-xs font-semibold text-white/50 leading-snug mt-0.5">
-                        Faça o Passo {idx} primeiro para liberar esta etapa
+                        {!hasOpenedScamMessage
+                          ? 'Aguardando a mensagem do golpista chegar e ser analisada 🔒'
+                          : `Faça o Passo ${idx} primeiro para liberar esta etapa 🔒`}
                       </p>
                       <p className="text-[10.5px] text-white/30 mt-1 italic">
                         Siga as orientações uma por uma com calma para não cair em pegadinha.
@@ -847,70 +838,6 @@ const NotesScreen = ({
                                 <span>{stepText}</span>
                               </div>
                             ))}
-                          </div>
-
-                          {/* Ação de verificação rápida */}
-                          <div className="pt-1">
-                            {guide.actionType === 'contact' ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (onInspectContact) onInspectContact();
-                                  else if (onInspectClue) onInspectClue(clue);
-                                }}
-                                className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                              >
-                                <UserCheck className="w-3.5 h-3.5" />
-                                <span>{guide.actionLabel}</span>
-                              </button>
-                            ) : guide.actionType === 'pix' ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (onSimulatePix) onSimulatePix(clue);
-                                  else if (onInspectClue) onInspectClue(clue);
-                                }}
-                                className="w-full py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                              >
-                                <span>💸 {guide.actionLabel}</span>
-                              </button>
-                            ) : guide.actionType === 'link' ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (onInspectBrowser) onInspectBrowser(clue.inspection.field1Value);
-                                  else if (onInspectClue) onInspectClue(clue);
-                                }}
-                                className="w-full py-2 px-3 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                <span>{guide.actionLabel}</span>
-                              </button>
-                            ) : guide.actionType === 'bank' ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (onInspectBank) onInspectBank();
-                                  else if (onInspectClue) onInspectClue(clue);
-                                }}
-                                className="w-full py-2 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                              >
-                                <Building className="w-3.5 h-3.5" />
-                                <span>{guide.actionLabel}</span>
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (onRequestAudio) onRequestAudio(clue);
-                                  else if (onInspectClue) onInspectClue(clue);
-                                }}
-                                className="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                              >
-                                <Mic className="w-3.5 h-3.5" />
-                                <span>{guide.actionLabel}</span>
-                              </button>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -3458,6 +3385,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   });
   const [lucasNotificationArrived, setLucasNotificationArrived] = useState(false);
   const [notificationArrived, setNotificationArrived] = useState(false);
+  const [hasOpenedScamMessage, setHasOpenedScamMessage] = useState(false);
   const [scamCountdown, setScamCountdown] = useState(30);
   const [isVerdictModalOpen, setIsVerdictModalOpen] = useState(false);
   const [userHypothesisIndex, setUserHypothesisIndex] = useState<number | null>(null);
@@ -3534,6 +3462,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setPreviousApp('home');
     setLucasNotificationArrived(false);
     setNotificationArrived(false);
+    setHasOpenedScamMessage(false);
     setScamCountdown(30);
     setIsVerdictModalOpen(false);
     setUserHypothesisIndex(null);
@@ -3628,6 +3557,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setIsLocked(false);
     setActiveApp('messaging');
     setPreviousApp('home');
+    setHasOpenedScamMessage(true);
     onAppOpenChange?.(true);
   };
 
@@ -3692,34 +3622,6 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     }, 600);
   };
 
-  const handleRequestAudioInChat = (audioClue: InvestigativeClue) => {
-    const playerMsg = `Filha, me manda um áudio de 5 segundos falando meu nome. Não vou transferir nada sem ouvir a sua voz.`;
-    const replyMsg = `Mãe, já falei que a tela caiu de cara no chão e queimou o microfone! O áudio fica só xiado! Para de desconfiar de mim e me ajuda pelo amor de Deus, faltam 10 minutos!`;
-
-    setActiveApp('messaging');
-    sound.playKeyboardClick();
-
-    setTimeout(() => {
-      sound.playMessagePing();
-      sound.playTensionPulse();
-      handleInspectClue(audioClue);
-      onPerformAction({
-        id: `act-${scamCase.id}-audio-confront`,
-        label: 'Pedir Áudio ao Remetente',
-        actionType: 'investigation',
-        playerMessage: playerMsg,
-        replyMessage: replyMsg,
-        evidenceDiscovered: {
-          id: `ev-${scamCase.id}-audio-recusa`,
-          title: 'Recusa de Áudio e Desculpa de Microfone',
-          description: 'O golpista recusa enviar áudio para não revelar a voz real.',
-          status: 'suspicious',
-          forensicFact: 'Regra de ouro: Nunca transfira sem ouvir a voz real do familiar no número antigo.',
-        },
-      });
-    }, 600);
-  };
-
   const showToast = (message: string) => {
     sound.playBlip();
     setToastMessage(message);
@@ -3746,13 +3648,6 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const handleOpenContactModal = () => {
     sound.playBlip();
     setActiveModal('contact');
-    const contactClue = scamCase.clues.find(
-      (k) => k.category === 'phone' || k.inspection.type === 'contact'
-    );
-    if (contactClue && !inspectedClueIds.includes(contactClue.id)) {
-      handleInspectClue(contactClue);
-      showToast('🔍 DDD e dados da operadora inspecionados!');
-    }
   };
 
   const flagged = stamped !== null && scamCase.isScam;
@@ -4228,15 +4123,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 <NotesScreen
                   c={scamCase}
                   inspectedClueIds={inspectedClueIds}
-                  onInspectClue={handleInspectClue}
+                  hasOpenedScamMessage={hasOpenedScamMessage}
                   onBack={() => setActiveApp(previousApp === 'notes' ? 'home' : previousApp)}
                   onOpenVerdict={() => setIsVerdictModalOpen(true)}
                   onOpenTips={() => setIsTipsModalOpen(true)}
-                  onSimulatePix={handleConfrontPixInChat}
-                  onRequestAudio={handleRequestAudioInChat}
-                  onInspectContact={handleOpenContactModal}
-                  onInspectBank={handleOpenBank}
-                  onInspectBrowser={handleOpenBrowser}
                 />
               </motion.div>
             ) : activeApp === 'bank' ? (
@@ -4435,17 +4325,31 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                       {contactClue && (
                         <button
                           type="button"
+                          disabled={!hasOpenedScamMessage}
                           onClick={() => {
+                            if (!hasOpenedScamMessage) return;
                             if (!inspectedClueIds.includes(contactClue.id)) {
                               handleInspectClue(contactClue);
                             }
                             setActiveModal(null);
                             setActiveApp('messaging');
                           }}
-                          className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition"
+                          className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition ${
+                            !hasOpenedScamMessage
+                              ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                              : inspectedClueIds.includes(contactClue.id)
+                              ? 'bg-emerald-600/80 hover:bg-emerald-600 text-white cursor-pointer active:scale-95'
+                              : 'bg-sky-600 hover:bg-sky-500 text-white cursor-pointer active:scale-95'
+                          }`}
                         >
                           <CheckCircle className="w-4 h-4" />
-                          <span>Confrontar no Chat (Evidência Pronta)</span>
+                          <span>
+                            {!hasOpenedScamMessage
+                              ? 'Aguardando leitura da mensagem suspeita...'
+                              : inspectedClueIds.includes(contactClue.id)
+                              ? '✓ Evidência já anotada nas Notas'
+                              : 'Anotar Evidência da Linha (Conferir DDD)'}
+                          </span>
                         </button>
                       )}
 
