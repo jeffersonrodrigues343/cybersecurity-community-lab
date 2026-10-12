@@ -31,7 +31,6 @@ import {
   Check,
   CheckCircle,
   Copy,
-  Zap,
   Lightbulb,
   AlertTriangle,
   Send,
@@ -609,6 +608,173 @@ const PixDoubtModal = ({
 };
 
 // ============================================================================
+// MODAL DE EXIGÊNCIA DE PROVA DE VOZ (CHAMADA OU ÁUDIO)
+// ============================================================================
+const VoiceProofModal = ({
+  isOpen,
+  onClose,
+  c: _c,
+  onStartCall,
+  onRequestAudio,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  c: ScamCase;
+  onStartCall: () => void;
+  onRequestAudio: () => void;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-md animate-fadeIn"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 15 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm bg-[#1c1c1e] border border-white/15 rounded-3xl p-4 text-white space-y-3.5 shadow-2xl"
+      >
+        <div className="flex items-center justify-between pb-2 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-purple-600/30 text-purple-300 flex items-center justify-center">
+              <Mic className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-white">Exigir Prova de Voz</h3>
+              <p className="text-[10px] text-neutral-400">Validar identidade antes de decidir</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="text-xs text-neutral-300 leading-relaxed">
+          Criminosos usam fotos roubadas e números descartáveis, mas <b>não possuem a voz da pessoa</b> e costumam fugir de ligações telefônicas.
+        </p>
+
+        <div className="space-y-2 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onStartCall();
+            }}
+            className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-semibold text-white flex items-center justify-between cursor-pointer active:scale-95 transition shadow-sm"
+          >
+            <span className="flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              Ligar para o Contato
+            </span>
+            <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded font-mono">Chamada ➔</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onRequestAudio();
+            }}
+            className="w-full py-2.5 px-3 bg-purple-600 hover:bg-purple-500 rounded-xl text-xs font-semibold text-white flex items-center justify-between cursor-pointer active:scale-95 transition shadow-sm"
+          >
+            <span className="flex items-center gap-2">
+              <Mic className="w-4 h-4" />
+              Pedir Áudio no Chat (5 segundos)
+            </span>
+            <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded font-mono">Gravação ➔</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-1.5 text-xs text-neutral-400 hover:text-white font-medium cursor-pointer text-center"
+        >
+          Cancelar
+        </button>
+      </motion.div>
+    </div>
+  );
+};
+
+// ============================================================================
+// OVERLAY DE CHAMADA TELEFÔNICA (PROVA DE VOZ)
+// ============================================================================
+const VoiceCallOverlay = ({
+  state,
+  c,
+  onEndCall,
+}: {
+  state: 'calling' | 'rejected' | 'connected' | null;
+  c: ScamCase;
+  onEndCall: () => void;
+}) => {
+  if (!state) return null;
+  const number = findContactNumber(c);
+
+  return (
+    <div className="absolute inset-0 z-50 bg-[#121214] text-white flex flex-col justify-between p-6 select-none animate-fadeIn">
+      <div className="text-center pt-10 space-y-3">
+        <motion.div
+          animate={state === 'calling' ? { scale: [1, 1.08, 1] } : {}}
+          transition={{ repeat: Infinity, duration: 1.5 }}
+          className="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-neutral-700 to-neutral-500 flex items-center justify-center text-3xl font-bold shadow-2xl border-2 border-white/20"
+        >
+          {cleanName(c.sender).charAt(0)}
+        </motion.div>
+        <div>
+          <h3 className="text-base font-bold text-white tracking-wide">{cleanName(c.sender)}</h3>
+          <p className="text-xs text-neutral-400 font-mono mt-0.5">{number || 'Chamada de Voz'}</p>
+        </div>
+
+        <div className="pt-2">
+          {state === 'calling' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-xs text-neutral-300 font-medium animate-pulse">
+              <Phone className="w-3.5 h-3.5 text-emerald-400" /> Chamando...
+            </span>
+          )}
+          {state === 'rejected' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-xs text-red-400 font-medium border border-red-500/30">
+              <PhoneOff className="w-3.5 h-3.5" /> Chamada Recusada pelo Contato
+            </span>
+          )}
+          {state === 'connected' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-xs text-emerald-400 font-medium border border-emerald-500/30">
+              <Phone className="w-3.5 h-3.5" /> Conectado (00:03)
+            </span>
+          )}
+        </div>
+      </div>
+
+      {state === 'connected' && (
+        <div className="bg-black/40 border border-white/10 rounded-2xl p-3.5 text-xs text-neutral-200 text-center mx-auto max-w-xs">
+          &quot;Alô? Sim, sou eu mesmo! Pode prosseguir com a verificação.&quot;
+        </div>
+      )}
+
+      <div className="pb-8 flex justify-center">
+        <button
+          type="button"
+          onClick={onEndCall}
+          className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-2xl transition cursor-pointer"
+          title="Encerrar Chamada"
+        >
+          <PhoneOff className="w-6 h-6" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // BLOCO DE NOTAS COM DESBLOQUEIO PROGRESSIVO (PASSO 1 -> 2 -> 3)
 // ============================================================================
 const getClueGuide = (clue: InvestigativeClue) => {
@@ -956,193 +1122,157 @@ const BankScreen = ({
   const isCaseLegitimate = !c.isScam;
 
   return (
-    <div className="flex flex-col h-full bg-[#130b24] text-white select-none">
+    <div className="flex flex-col h-full bg-[#0d0914] text-white select-none">
       <StatusBar time={c.time} dark />
 
-      {/* Topo do App do Banco */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-purple-800/40 bg-[#241142]">
+      {/* Topo Limpo do Banco */}
+      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/5 bg-[#140e21]">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1 text-xs text-purple-200 hover:text-white font-semibold cursor-pointer active:scale-95 transition"
+          className="flex items-center gap-1 text-xs text-purple-300 hover:text-white font-medium cursor-pointer active:scale-95 transition"
         >
           <ChevronLeft className="w-4 h-4" />
-          <span>Início</span>
+          <span>Voltar</span>
         </button>
-        <div className="flex items-center gap-1.5 font-bold text-xs text-white">
+        <div className="flex items-center gap-1.5 font-semibold text-xs text-white tracking-wide">
           <CreditCard className="w-3.5 h-3.5 text-purple-300" />
-          <span>Meu Banco Digital</span>
+          <span>Meu Banco</span>
         </div>
-        <span className="w-4" />
+        <span className="w-6" />
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar p-3.5 space-y-3">
-        {/* Card de Conta e Saldo */}
-        <div className="bg-gradient-to-r from-purple-850 to-indigo-900 rounded-2xl p-3.5 shadow-lg border border-purple-500/30">
-          <div className="flex justify-between items-center text-[10px] text-purple-200">
-            <span>Conta Corrente Digital • Jefferson</span>
-            <span className="font-mono">Agência 0001 • C/C 84920-1</span>
-          </div>
-          <div className="text-2xl font-bold font-mono mt-1.5">R$ 1.250,00</div>
-          <div className="text-[10px] text-purple-200/80 mt-1 flex items-center justify-between">
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>Chave Pix: CPF cadastrado</span>
-            </span>
-            <span className="text-emerald-300 font-semibold font-mono">Cartão Ativo</span>
-          </div>
+      <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-3">
+        {/* Card de Saldo Minimalista */}
+        <div className="bg-[#181126] rounded-2xl p-3.5 border border-purple-500/15 shadow-sm">
+          <span className="text-[11px] text-purple-300/70 font-medium">Saldo disponível</span>
+          <div className="text-2xl font-bold font-mono tracking-tight mt-0.5 text-white">R$ 1.250,00</div>
         </div>
 
-        {/* Seletor de Abas: Área Pix vs Extrato */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/40 rounded-xl border border-purple-500/20">
+        {/* Abas Limpas */}
+        <div className="grid grid-cols-2 gap-1 p-1 bg-white/5 rounded-xl border border-white/5 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab('pix')}
-            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 ${
+            className={`py-1.5 rounded-lg transition cursor-pointer active:scale-95 ${
               activeTab === 'pix'
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'text-purple-300 hover:text-white'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <Zap className="w-3.5 h-3.5" />
-            <span>Área Pix</span>
+            Área Pix
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('statement')}
-            className={`py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 ${
+            className={`py-1.5 rounded-lg transition cursor-pointer active:scale-95 ${
               activeTab === 'statement'
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'text-purple-300 hover:text-white'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Extrato</span>
+            Extrato
           </button>
         </div>
 
         {/* ================= ABA 1: ÁREA PIX ================= */}
         {activeTab === 'pix' && (
-          <div className="space-y-3">
-            {/* Input e Simulação de Chave */}
-            <div className="p-3 rounded-2xl bg-black/30 border border-purple-500/20 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-400" />
-                  Transferir via Chave Pix
-                </span>
-                <span className="text-[10px] text-purple-300 font-mono">Bacen DICT</span>
-              </div>
-
-              {/* Botão de colar chave copiada se houver */}
-              {copiedPixKey && enteredKey !== copiedPixKey && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEnteredKey(copiedPixKey);
-                    setHasQueriedPix(true);
-                  }}
-                  className="w-full py-1.5 px-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 rounded-lg text-emerald-300 text-xs font-bold flex items-center justify-between cursor-pointer active:scale-95 transition"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Copy className="w-3 h-3" />
-                    Colar chave copiada: {copiedPixKey}
-                  </span>
-                  <span className="text-[10px] uppercase font-mono">Colar</span>
-                </button>
-              )}
-
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={enteredKey}
-                  onChange={(e) => setEnteredKey(e.target.value)}
-                  placeholder="Cole ou digite a chave Pix..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-purple-400 font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (enteredKey.trim()) setHasQueriedPix(true);
-                  }}
-                  className="px-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition shrink-0"
-                >
-                  Consultar
-                </button>
-              </div>
-            </div>
-
-            {/* Tela de Confirmação Oficial do Pix */}
-            {hasQueriedPix && (
-              <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/40 space-y-3 shadow-lg">
-                <div className="flex items-center justify-between border-b border-purple-800/40 pb-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-purple-300 font-bold">
-                    Dados do Destinatário no Banco Central
-                  </span>
-                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono font-bold">
-                    DICT ✓
-                  </span>
+          <div className="space-y-2.5">
+            {hasQueriedPix ? (
+              /* Tela de Conferência Limpa */
+              <div className="bg-[#181126] rounded-2xl p-3.5 border border-purple-500/15 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-white/5 text-xs">
+                  <span className="text-purple-300 font-medium">Dados da Transferência</span>
+                  <span className="text-[10px] text-emerald-400 font-mono">DICT Bacen ✓</span>
                 </div>
 
                 <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-purple-300/80">Valor solicitado:</span>
-                    <span className="font-mono font-bold text-white text-sm">{pixAmount}</span>
+                  <div>
+                    <span className="text-[10px] text-neutral-400 block">Valor solicitado</span>
+                    <span className="text-base font-bold font-mono text-white">{pixAmount}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-purple-300/80">Chave Pix:</span>
-                    <span className="font-mono text-purple-200">{enteredKey || pixClue?.inspection.field1Value}</span>
+                  <div>
+                    <span className="text-[10px] text-neutral-400 block">Favorecido (Titular da Conta)</span>
+                    <span className="text-sm font-bold font-mono text-amber-300">{pixTargetName}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-purple-300/80">Favorecido (Titular):</span>
-                    <span className="font-bold text-amber-300 font-mono">{pixTargetName}</span>
+                  <div className="flex justify-between items-center pt-1 border-t border-white/5">
+                    <span className="text-neutral-400">Chave Pix</span>
+                    <span className="font-mono text-neutral-200">{enteredKey || pixClue?.inspection.field1Value}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-purple-300/80">Instituição:</span>
-                    <span className="font-semibold text-neutral-300">{pixBankName}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-400">Instituição</span>
+                    <span className="text-neutral-200">{pixBankName}</span>
                   </div>
                 </div>
 
-                {/* Dica Investigativa Sutil (Sem Spoilers) */}
-                <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/30 space-y-1">
-                  <div className="text-[10px] font-mono uppercase tracking-wide text-amber-300 font-bold flex items-center gap-1">
-                    <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-                    Dica de Segurança
-                  </div>
-                  <p className="text-[11px] text-amber-100/90 leading-relaxed">
-                    Observe com atenção o nome completo do titular que apareceu na tela. Esse nome bate com a pessoa ou instituição que conversou com você? Se não for quem você conhece, desconfie imediatamente.
-                  </p>
-                </div>
+                <p className="text-[11px] text-purple-200/80 bg-purple-900/20 rounded-xl p-2.5 border border-purple-500/15 leading-relaxed">
+                  💡 Confira se o titular registrado acima realmente bate com quem conversou com você.
+                </p>
 
-                {/* Botão Manual de Auditoria */}
                 {pixClue && (
                   <button
                     type="button"
                     disabled={!hasOpenedScamMessage}
                     onClick={() => {
                       if (!hasOpenedScamMessage) return;
-                      if (!isPixInspected) {
-                        onInspectClue?.(pixClue);
-                      }
+                      if (!isPixInspected) onInspectClue?.(pixClue);
                     }}
-                    className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition ${
+                    className={`w-full py-2.5 text-xs font-semibold rounded-xl transition cursor-pointer active:scale-95 ${
                       !hasOpenedScamMessage
                         ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
                         : isPixInspected
-                        ? 'bg-emerald-600/80 hover:bg-emerald-600 text-white cursor-pointer active:scale-95'
-                        : 'bg-purple-600 hover:bg-purple-500 text-white cursor-pointer active:scale-95'
+                        ? 'bg-emerald-600/80 text-white'
+                        : 'bg-purple-600 hover:bg-purple-500 text-white'
                     }`}
                   >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>
-                      {!hasOpenedScamMessage
-                        ? 'Aguardando leitura da mensagem suspeita...'
-                        : isPixInspected
-                        ? '✓ Dados do favorecido já anotados nas Notas'
-                        : 'Anotar Dados do Titular no Bloco de Notas'}
-                    </span>
+                    {!hasOpenedScamMessage
+                      ? 'Aguardando leitura da mensagem...'
+                      : isPixInspected
+                      ? '✓ Titular anotado nas Notas'
+                      : 'Salvar Titular nas Notas'}
                   </button>
                 )}
+              </div>
+            ) : (
+              /* Entrada de Chave Limpa */
+              <div className="bg-[#181126] rounded-2xl p-3.5 border border-purple-500/15 space-y-2.5">
+                <span className="text-xs font-medium text-neutral-300 block">Informe a Chave Pix</span>
+
+                {copiedPixKey && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEnteredKey(copiedPixKey);
+                      setHasQueriedPix(true);
+                    }}
+                    className="w-full py-2 px-2.5 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-xl text-purple-200 text-xs font-medium flex items-center justify-between cursor-pointer active:scale-95 transition"
+                  >
+                    <span className="flex items-center gap-1.5 truncate">
+                      <Copy className="w-3.5 h-3.5 shrink-0" />
+                      Colar chave copiada: {copiedPixKey}
+                    </span>
+                    <span className="text-[10px] text-purple-300 font-bold ml-1">Colar ➔</span>
+                  </button>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={enteredKey}
+                    onChange={(e) => setEnteredKey(e.target.value)}
+                    placeholder="Cole ou digite a chave..."
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-purple-400 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (enteredKey.trim()) setHasQueriedPix(true);
+                    }}
+                    className="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl cursor-pointer active:scale-95 transition"
+                  >
+                    Consultar
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1150,118 +1280,76 @@ const BankScreen = ({
 
         {/* ================= ABA 2: EXTRATO ================= */}
         {activeTab === 'statement' && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-[10px] font-mono text-purple-300 uppercase font-bold px-0.5">
-              <span>Extrato Oficial de Movimentações</span>
-              <span className="text-purple-400">Tempo Real</span>
+          <div className="bg-[#181126] rounded-2xl p-3.5 border border-purple-500/15 space-y-3">
+            <span className="text-xs font-medium text-neutral-300 block">Movimentações Recentes</span>
+
+            <div className="space-y-2.5 text-xs divide-y divide-white/5">
+              {isCaseLegitimate ? (
+                <div className="pt-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-white">Padaria Estrela</span>
+                    <span className="font-mono font-bold text-white">- R$ 34,90</span>
+                  </div>
+                  <span className="text-[10px] text-neutral-400 block mt-0.5">Hoje, 08:44 • Débito</span>
+                </div>
+              ) : (
+                <div className="pt-1">
+                  <div className="flex justify-between items-center text-neutral-300">
+                    <span>Hoje ({c.time})</span>
+                    <span className="text-[10px] text-neutral-400 font-mono">Sem lançamentos</span>
+                  </div>
+                  <span className="text-[10px] text-neutral-500 block mt-0.5">Nenhuma compra ou débito foi realizado hoje.</span>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <div className="flex justify-between items-center text-neutral-300">
+                  <span>Supermercado Central</span>
+                  <span className="font-mono text-neutral-400">- R$ 112,40</span>
+                </div>
+                <span className="text-[10px] text-neutral-500 block mt-0.5">07 de outubro • Débito</span>
+              </div>
             </div>
 
-            {isCaseLegitimate ? (
-              /* Caso Legítimo (ex: Compra na padaria às 08:44) */
-              <div className="space-y-2">
-                <div className="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="font-bold text-xs text-white">Padaria Estrela</div>
-                    <span className="font-mono text-xs text-emerald-300 font-bold">- R$ 34,90</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-white/60">
-                    <span>Hoje, 10 de outubro às 08:44</span>
-                    <span>Débito por Aproximação</span>
-                  </div>
-                  <div className="text-[10px] text-emerald-400 font-medium pt-0.5">
-                    ✓ Transação confirmada pelo chip do seu cartão físico.
-                  </div>
-                </div>
+            <p className="text-[11px] text-purple-200/80 bg-purple-900/20 rounded-xl p-2.5 border border-purple-500/15 leading-relaxed">
+              💡 Verifique se a compra mencionada na mensagem realmente existe no extrato de hoje.
+            </p>
 
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-xs text-white/90">Supermercado Central</div>
-                    <span className="font-mono text-xs text-neutral-300">- R$ 112,40</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-white/50">
-                    <span>07 de outubro às 19:12 (há 3 dias)</span>
-                    <span>Cartão de Débito</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Casos de Golpe: Mostra que hoje NÃO houve movimentação nenhuma */
-              <div className="space-y-2">
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-400/30 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10.5px] font-mono font-bold text-amber-300 flex items-center gap-1">
-                      <span>🗓️</span> Hoje, 10 de outubro • Horário: {c.time}
-                    </span>
-                    <span className="text-[9px] bg-amber-400/20 text-amber-300 font-mono px-1.5 py-0.5 rounded">
-                      Sem Lançamentos
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-amber-100/90 leading-snug">
-                    Nenhuma movimentação registrada hoje. Não há compras aprovadas, bloqueios de segurança ou transferências Pix pendentes no sistema.
-                  </p>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-xs text-white/90">Supermercado Bom Preço</div>
-                    <span className="font-mono text-xs text-neutral-300">- R$ 88,90</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-white/50">
-                    <span className="text-amber-200/80 font-medium">07 de outubro às 18:24 (última compra, há 3 dias)</span>
-                    <span>Cartão de Débito</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Dica Investigativa Sutil no Extrato */}
-            <div className="p-2.5 rounded-xl bg-black/40 border border-purple-500/30 text-[10.5px] text-purple-200 leading-relaxed">
-              💡 <strong>Dica de Segurança:</strong> Confira as movimentações da data de hoje. Se alguém alegou por mensagem ou ligação que seu cartão passou agora, essa compra realmente aparece listada no extrato?
-            </div>
-
-            {/* Botão Manual de Auditoria do Extrato */}
             {bankClue && (
-              <div className="pt-1">
-                <button
-                  type="button"
-                  disabled={!hasOpenedScamMessage}
-                  onClick={() => {
-                    if (!hasOpenedScamMessage) return;
-                    if (!isBankInspected) {
-                      onInspectClue?.(bankClue);
-                    }
-                  }}
-                  className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition ${
-                    !hasOpenedScamMessage
-                      ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                      : isBankInspected
-                      ? 'bg-emerald-600/80 hover:bg-emerald-600 text-white cursor-pointer active:scale-95'
-                      : 'bg-purple-600 hover:bg-purple-500 text-white cursor-pointer active:scale-95'
-                  }`}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>
-                    {!hasOpenedScamMessage
-                      ? 'Aguardando leitura da mensagem suspeita...'
-                      : isBankInspected
-                      ? '✓ Situação do Extrato anotada nas Notas'
-                      : 'Anotar Situação do Extrato no Bloco de Notas'}
-                  </span>
-                </button>
-              </div>
+              <button
+                type="button"
+                disabled={!hasOpenedScamMessage}
+                onClick={() => {
+                  if (!hasOpenedScamMessage) return;
+                  if (!isBankInspected) onInspectClue?.(bankClue);
+                }}
+                className={`w-full py-2.5 text-xs font-semibold rounded-xl transition cursor-pointer active:scale-95 ${
+                  !hasOpenedScamMessage
+                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                    : isBankInspected
+                    ? 'bg-emerald-600/80 text-white'
+                    : 'bg-purple-600 hover:bg-purple-500 text-white'
+                }`}
+              >
+                {!hasOpenedScamMessage
+                  ? 'Aguardando leitura da mensagem...'
+                  : isBankInspected
+                  ? '✓ Extrato anotado nas Notas'
+                  : 'Salvar Extrato nas Notas'}
+              </button>
             )}
           </div>
         )}
       </div>
 
       {/* Botão de Retorno */}
-      <div className="p-2.5 bg-[#241142] border-t border-purple-800/40">
+      <div className="p-2.5 bg-[#140e21] border-t border-white/5">
         <button
           type="button"
           onClick={onBack}
-          className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl cursor-pointer active:scale-95 transition text-center"
+          className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs rounded-xl cursor-pointer active:scale-95 transition text-center"
         >
-          ← Voltar à Tela Inicial
+          ← Voltar ao Celular
         </button>
       </div>
     </div>
@@ -1934,6 +2022,8 @@ const WhatsAppScreen = ({
   onInspectClue,
   onOpenBank: _onOpenBank,
   onCopyPixKey,
+  onRequestVoiceProof,
+  onRequestVoiceAudio,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -1957,6 +2047,8 @@ const WhatsAppScreen = ({
   onInspectClue?: (clue: InvestigativeClue) => void;
   onOpenBank?: () => void;
   onCopyPixKey?: (key: string) => void;
+  onRequestVoiceProof?: () => void;
+  onRequestVoiceAudio?: () => void;
 }) => {
   const pixClue = c.clues.find(
     (k) => k.category === 'pix' || k.inspection.type === 'pix'
@@ -2157,10 +2249,14 @@ const WhatsAppScreen = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onCallClick();
+                if (onRequestVoiceProof) {
+                  onRequestVoiceProof();
+                } else {
+                  onCallClick();
+                }
               }}
               className="p-1 hover:bg-white/10 rounded-full cursor-pointer active:scale-90 transition-transform"
-              title="Ligar"
+              title="Ligar (Exigir Prova de Voz)"
             >
               <Phone className="w-3.5 h-3.5 opacity-90" />
             </button>
@@ -2190,7 +2286,7 @@ const WhatsAppScreen = ({
         {unknown && !isBlocked && (
           <div className="mx-auto w-full bg-white rounded-lg text-center text-[10.5px] text-[#54656f] py-1.5 px-2 shadow-sm border border-emerald-100">
             Número fora da sua lista de contatos
-            <div className="flex justify-center gap-5 mt-1 font-semibold text-[#008069]">
+            <div className="flex justify-center gap-4 mt-1 font-semibold text-[#008069]">
               <button
                 type="button"
                 onClick={(e) => {
@@ -2201,6 +2297,18 @@ const WhatsAppScreen = ({
               >
                 Inspecionar Perfil
               </button>
+              {onRequestVoiceProof && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRequestVoiceProof();
+                  }}
+                  className="hover:underline cursor-pointer active:scale-95 transition-transform text-purple-700 font-bold flex items-center gap-1"
+                >
+                  <Mic className="w-3 h-3" /> Exigir Prova de Voz
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -2337,12 +2445,20 @@ const WhatsAppScreen = ({
                   <Paperclip className="w-4 h-4 text-neutral-400 shrink-0" />
                   <Camera className="w-4 h-4 text-neutral-400 shrink-0" />
                 </div>
-                <div
-                  className="w-10 h-10 rounded-full bg-[#00a884] text-white flex items-center justify-center shadow-xs shrink-0 opacity-80"
-                  title="Mensagem de voz"
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onRequestVoiceAudio) {
+                      onRequestVoiceAudio();
+                    } else if (onRequestVoiceProof) {
+                      onRequestVoiceProof();
+                    }
+                  }}
+                  className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#008f6f] text-white flex items-center justify-center shadow-xs shrink-0 active:scale-95 transition cursor-pointer"
+                  title="Pedir Mensagem de Voz (Prova de Voz)"
                 >
                   <Mic className="w-5 h-5" />
-                </div>
+                </button>
               </>
             )}
           </div>
@@ -2396,6 +2512,8 @@ const SmsScreen = ({
   onInspectClue,
   onOpenBank: _onOpenBank,
   onCopyPixKey,
+  onCallClick,
+  onRequestVoiceProof,
 }: {
   c: ScamCase;
   flagged: boolean;
@@ -2416,6 +2534,8 @@ const SmsScreen = ({
   onInspectClue?: (clue: InvestigativeClue) => void;
   onOpenBank?: () => void;
   onCopyPixKey?: (key: string) => void;
+  onCallClick?: () => void;
+  onRequestVoiceProof?: () => void;
 }) => {
   const pixClue = c.clues.find(
     (k) => k.category === 'pix' || k.inspection.type === 'pix'
@@ -2563,19 +2683,38 @@ const SmsScreen = ({
           </div>
         </button>
 
-        {onOpenTips && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenTips();
-            }}
-            className="p-1 text-amber-500 hover:bg-amber-50 rounded-full cursor-pointer"
-            title="Dicas de Investigação"
-          >
-            <Lightbulb className="w-4 h-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-1 text-[#007aff]">
+          {(onRequestVoiceProof || onCallClick) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onRequestVoiceProof) {
+                  onRequestVoiceProof();
+                } else if (onCallClick) {
+                  onCallClick();
+                }
+              }}
+              className="p-1 hover:bg-neutral-100 rounded-full cursor-pointer active:scale-90 transition-transform"
+              title="Ligar (Exigir Prova de Voz)"
+            >
+              <Phone className="w-4 h-4" />
+            </button>
+          )}
+          {onOpenTips && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenTips();
+              }}
+              className="p-1 text-amber-500 hover:bg-amber-50 rounded-full cursor-pointer"
+              title="Dicas de Investigação"
+            >
+              <Lightbulb className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2">
@@ -3639,6 +3778,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   const [isTipsModalOpen, setIsTipsModalOpen] = useState(false);
   const [isPixDoubtModalOpen, setIsPixDoubtModalOpen] = useState(false);
   const [copiedPixKey, setCopiedPixKey] = useState<string | null>(null);
+  const [isVoiceProofModalOpen, setIsVoiceProofModalOpen] = useState(false);
+  const [voiceCallOverlayState, setVoiceCallOverlayState] = useState<'calling' | 'rejected' | 'connected' | null>(null);
 
   const levelText = levelIndex ? `Nível ${levelIndex} / ${totalLevels || 9}` : undefined;
 
@@ -3711,6 +3852,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setIsTipsModalOpen(false);
     setIsPixDoubtModalOpen(false);
     setCopiedPixKey(null);
+    setIsVoiceProofModalOpen(false);
+    setVoiceCallOverlayState(null);
     onAppOpenChangeRef.current?.(false);
     onStoryDeliveredChangeRef.current?.(false);
     setVibrateKey((k) => k + 1);
@@ -3878,9 +4021,160 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     showToast('🚫 Contato bloqueado com sucesso!');
   };
 
-  const handleCallClick = () => {
-    sound.playBlip();
-    showToast('📞 Chamada não atendida pelo remetente.');
+  const handleStartVoiceCall = () => {
+    setIsVoiceProofModalOpen(false);
+    setVoiceCallOverlayState('calling');
+    sound.playPhoneRingtone();
+    sound.playPhoneVibrate();
+
+    const behaviorClue = scamCase.clues.find(
+      (k) => k.category === 'behavior' || k.id.includes('behavior') || k.inspection.type === 'security'
+    );
+
+    if (scamCase.isScam) {
+      setTimeout(() => {
+        sound.playCallHangup();
+        setVoiceCallOverlayState('rejected');
+
+        setTimeout(() => {
+          setVoiceCallOverlayState(null);
+          sound.playMessagePing();
+          sound.playTensionPulse();
+
+          const isRelative = /mãe|pai|filho|filha|primo|tio|irmã|irmão/i.test(scamCase.title + scamCase.sender);
+          const replyText = isRelative
+            ? `Pai/Mãe, não consigo atender ligação agora! O microfone do celular quebrou quando caiu no chão. Por favor não desconfia de mim e me ajuda pelo texto!`
+            : `Atenção: Por protocolo de segurança, este canal opera exclusivamente via mensagens criptografadas e não aceita chamadas de voz. Favor responder por aqui.`;
+
+          if (behaviorClue) {
+            handleInspectClue(behaviorClue);
+          }
+
+          onPerformAction({
+            id: `act-${scamCase.id}-call-attempt`,
+            label: 'Ligar para o Contato (Chamada de Voz)',
+            actionType: 'investigation',
+            playerMessage: `[Tentativa de Chamada de Voz - Recusada pelo Contato]`,
+            replyMessage: replyText,
+            evidenceDiscovered: {
+              id: `ev-${scamCase.id}-call-refusal`,
+              title: 'Recusa Sistemática de Chamada de Voz',
+              description: 'O contato rejeitou a chamada telefônica e deu desculpa para só falar por texto.',
+              status: 'suspicious',
+              forensicFact: 'Golpistas evitam ligações porque não possuem a voz real da vítima.',
+            },
+          });
+
+          showToast('📞 Chamada recusada! Golpistas evitam atender por voz.');
+        }, 1200);
+      }, 2500);
+    } else {
+      setTimeout(() => {
+        sound.playCallPickup();
+        setVoiceCallOverlayState('connected');
+
+        setTimeout(() => {
+          setVoiceCallOverlayState(null);
+          sound.playSuccess();
+
+          if (behaviorClue) {
+            handleInspectClue(behaviorClue);
+          }
+
+          onPerformAction({
+            id: `act-${scamCase.id}-call-attempt`,
+            label: 'Ligar para o Contato (Chamada de Voz)',
+            actionType: 'investigation',
+            playerMessage: `[Chamada Telefônica de Confirmação]`,
+            replyMessage: `Alô? Olá, sou eu mesmo! Estou confirmando as informações diretamente com você.`,
+            evidenceDiscovered: {
+              id: `ev-${scamCase.id}-call-success`,
+              title: 'Voz Autêntica Confirmada',
+              description: 'O contato atendeu normalmente e confirmou sua identidade.',
+              status: 'clean',
+              forensicFact: 'Canais e pessoas legítimas atendem ligações ou autorizam contato oficial.',
+            },
+          });
+
+          showToast('📞 Chamada atendida! Identidade confirmada por voz.');
+        }, 2000);
+      }, 2000);
+    }
+  };
+
+  const handleRequestVoiceAudio = () => {
+    setIsVoiceProofModalOpen(false);
+    sound.playKeyboardClick();
+
+    const behaviorClue = scamCase.clues.find(
+      (k) => k.category === 'behavior' || k.id.includes('behavior') || k.inspection.type === 'security'
+    );
+
+    const playerMsg = 'Manda um áudio de 5 segundos falando meu nome para eu ouvir sua voz.';
+
+    if (scamCase.isScam) {
+      setTimeout(() => {
+        sound.playMessagePing();
+        sound.playTensionPulse();
+
+        const isRelative = /mãe|pai|filho|filha|primo|tio|irmã|irmão/i.test(scamCase.title + scamCase.sender);
+        const replyText = isRelative
+          ? `Já falei que não dá pra gravar áudio agora, meu microfone tá queimado! Poxa, você não confia em mim?! Por favor me manda o Pix logo!`
+          : `Sistema automático: Envio e recebimento de notas de voz desabilitados neste canal corporativo. Prossiga por texto.`;
+
+        if (behaviorClue) {
+          handleInspectClue(behaviorClue);
+        }
+
+        onPerformAction({
+          id: `act-${scamCase.id}-audio-request`,
+          label: 'Pedir Áudio de 5s Falando seu Nome',
+          actionType: 'investigation',
+          playerMessage: playerMsg,
+          replyMessage: replyText,
+          evidenceDiscovered: {
+            id: `ev-${scamCase.id}-audio-refusal`,
+            title: 'Desculpa para Fugir do Áudio de Voz',
+            description: 'O contato se recusou a enviar um áudio de voz e usou desculpas evasivas.',
+            status: 'suspicious',
+            forensicFact: 'Golpistas usam fotos roubadas, mas não têm a voz real da pessoa.',
+          },
+        });
+
+        showToast('🎙️ Desculpa para não mandar áudio! Pista anotada.');
+      }, 1000);
+    } else {
+      setTimeout(() => {
+        sound.playMessagePing();
+        sound.playSuccess();
+
+        if (behaviorClue) {
+          handleInspectClue(behaviorClue);
+        }
+
+        onPerformAction({
+          id: `act-${scamCase.id}-audio-request`,
+          label: 'Pedir Áudio de 5s Falando seu Nome',
+          actionType: 'investigation',
+          playerMessage: playerMsg,
+          replyMessage: `[Áudio de Voz 0:04] "Oi! Sou eu sim, pode ficar tranquilo(a)!"`,
+          evidenceDiscovered: {
+            id: `ev-${scamCase.id}-audio-success`,
+            title: 'Áudio de Voz Autêntico',
+            description: 'A pessoa enviou mensagem de voz legítima comprovando quem é.',
+            status: 'clean',
+            forensicFact: 'Pessoas reais não têm medo de mandar áudio rápido.',
+          },
+        });
+
+        showToast('🎙️ Áudio de voz autêntico recebido!');
+      }, 1000);
+    }
+  };
+
+  const handleEndVoiceCall = () => {
+    sound.playCallHangup();
+    setVoiceCallOverlayState(null);
   };
 
   const handleHangup = () => {
@@ -3920,7 +4214,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onContactClick={handleOpenContactModal}
             isBlocked={isBlocked}
             onBlockContact={handleBlockContact}
-            onCallClick={handleCallClick}
+            onCallClick={handleStartVoiceCall}
             onBackToHome={() => setActiveApp('home')}
             onOpenNotes={handleOpenNotes}
             onStoryDeliveredChange={onStoryDeliveredChange}
@@ -3932,6 +4226,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onInspectClue={handleInspectClue}
             onOpenBank={handleOpenBank}
             onCopyPixKey={handleCopyPixKey}
+            onRequestVoiceProof={() => setIsVoiceProofModalOpen(true)}
+            onRequestVoiceAudio={handleRequestVoiceAudio}
           />
         );
       case 'call':
@@ -3979,6 +4275,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onInspectClue={handleInspectClue}
             onOpenBank={handleOpenBank}
             onCopyPixKey={handleCopyPixKey}
+            onCallClick={handleStartVoiceCall}
+            onRequestVoiceProof={() => setIsVoiceProofModalOpen(true)}
           />
         );
     }
@@ -4643,6 +4941,22 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               setIsPixDoubtModalOpen(false);
               showToast('✓ Favorecido desconhecido anotado nas notas!');
             }}
+          />
+
+          {/* MODAL DE EXIGÊNCIA DE PROVA DE VOZ */}
+          <VoiceProofModal
+            isOpen={isVoiceProofModalOpen}
+            onClose={() => setIsVoiceProofModalOpen(false)}
+            c={scamCase}
+            onStartCall={handleStartVoiceCall}
+            onRequestAudio={handleRequestVoiceAudio}
+          />
+
+          {/* OVERLAY DE CHAMADA TELEFÔNICA (PROVA DE VOZ) */}
+          <VoiceCallOverlay
+            state={voiceCallOverlayState}
+            c={scamCase}
+            onEndCall={handleEndVoiceCall}
           />
 
           {/* MODAL DO TRIBUNAL PERICIAL COM REVALIDAÇÃO FORENSE (O PORQUÊ) */}
