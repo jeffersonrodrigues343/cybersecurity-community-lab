@@ -8,7 +8,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import {
-  SCAM_CASES,
+  CANONICAL_CASES,
   BADGES,
   FAMILY_GOLDEN_RULES,
   GLOSSARY_ITEMS,
@@ -21,18 +21,8 @@ import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 import { sound } from '../utils/audio';
 import { PhoneScreen, type Skill } from './PhoneScreen';
 
-// Ordem Curada da Campanha Principal dos 9 Níveis (GDD Indie Triple-A)
-export const CAMPAIGN_CASES: ScamCase[] = [
-  SCAM_CASES.find((c) => c.id === 'case-1-whatsapp') || SCAM_CASES[0],
-  SCAM_CASES.find((c) => c.id === 'case-2-correios') || SCAM_CASES[1],
-  SCAM_CASES.find((c) => c.id === 'case-3-compra-aprovada') || SCAM_CASES[2],
-  SCAM_CASES.find((c) => c.id === 'case-4-falsa-central') || SCAM_CASES[3],
-  SCAM_CASES.find((c) => c.id === 'case-6-sms-seguranca-real') || SCAM_CASES[5], // Caso controle 2FA
-  SCAM_CASES.find((c) => c.id === 'case-5-loja-falsa-promocao') || SCAM_CASES[4],
-  SCAM_CASES.find((c) => c.id === 'case-7-vaga-tarefas') || SCAM_CASES[6],
-  SCAM_CASES.find((c) => c.id === 'case-8-receita-ecac') || SCAM_CASES[7],
-  SCAM_CASES.find((c) => c.id === 'case-9-mao-fantasma-suporte') || SCAM_CASES[8], // Boss case
-];
+// 4 Fases Canônicas dos Golpes Mais Comuns no Smartphone
+export const CAMPAIGN_CASES: ScamCase[] = CANONICAL_CASES;
 
 export const getCaseForLevel = (levelIndex: number): ScamCase => {
   if (levelIndex < CAMPAIGN_CASES.length) {
@@ -207,7 +197,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     setSolved(newSolved);
     
 
-    if (newSolved >= 6) {
+    if (newSolved >= 4) {
       unlockBadge('badge-grand-master');
     }
 
@@ -228,6 +218,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     const nextIdx = solved;
     setCurrent(getCaseForLevel(nextIdx));
     setCaseNumber((n) => n + 1);
+    setInspected([]);
     setExecutedActionIds([]);
     setActionHistory([]);
     setFinalVerdict(null);
@@ -298,8 +289,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-[11px] sm:text-xs uppercase px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-desk border border-desk-line text-white font-bold">
               {caseNumber <= CAMPAIGN_CASES.length
-                ? `Nível ${caseNumber} / ${CAMPAIGN_CASES.length}`
-                : `Caso #${String(caseNumber).padStart(2, '0')} (Modo Infinito)`}
+                ? `Fase ${caseNumber} de ${CAMPAIGN_CASES.length}`
+                : `Fase #${String(caseNumber).padStart(2, '0')}`}
             </span>
             <span className="text-[11px] sm:text-xs font-semibold text-emerald-400 capitalize hidden sm:inline">
               {current.category}

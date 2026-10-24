@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, ShieldAlert, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ChevronRight, Sparkles, X } from 'lucide-react';
 import { sound } from '../utils/audio';
 
 interface OnboardingModalProps {
@@ -56,7 +56,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           {/* Corpo Rolável dos 3 Passos */}
           <div className="flex-1 overflow-y-auto overscroll-contain space-y-2.5 py-3 pr-1 text-xs">
             <p className="text-[11.5px] sm:text-xs text-ink-soft pb-0.5">
-              Você vai analisar casos reais que circulam no Brasil. Siga este passo a passo simples:
+              Você vai encarar as 4 fases com os golpes mais perigosos que circulam em smartphones no Brasil. Siga a metodologia dos peritos:
             </p>
 
             {/* Passo 1 */}
@@ -69,7 +69,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                   Analise o Celular com Calma
                 </h4>
                 <p className="text-[11.5px] sm:text-xs text-ink-soft leading-relaxed">
-                  Atenda a ligação suspeita ou leia as mensagens que chegaram no WhatsApp e SMS.
+                  Receba mensagens no WhatsApp ou SMS e atenda chamadas telefônicas sem cair na armadilha da pressa.
                 </p>
               </div>
             </div>
@@ -81,10 +81,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
               <div className="space-y-0.5 flex-1 min-w-0">
                 <h4 className="text-xs sm:text-sm font-display font-bold text-ink">
-                  Consulte as Notas do Lucas 📌
+                  Investigue com seu Dossiê 📋
                 </h4>
                 <p className="text-[11.5px] sm:text-xs text-ink-soft leading-relaxed">
-                  Abra o Bloco de Notas para ver dicas e use os atalhos para investigar nos apps do celular (Meu Banco, Navegador de links).
+                  Abra o aplicativo <strong>Meu Banco</strong> para auditar extratos e chaves Pix, use o <strong>Google</strong> para checar links e faça testes de voz por telefone.
                 </p>
               </div>
             </div>
@@ -96,17 +96,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
               <div className="space-y-0.5 flex-1 min-w-0">
                 <h4 className="text-xs sm:text-sm font-display font-bold text-ink">
-                  Dê o seu Veredito
+                  Veredito com Prova Material (2 Chances)
                 </h4>
                 <p className="text-[11.5px] sm:text-xs text-ink-soft leading-relaxed flex flex-wrap items-center gap-1.5 pt-0.5">
-                  Decida com segurança entre
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-scam/15 text-scam font-bold font-mono text-[10.5px] border border-scam/30">
-                    <ShieldAlert className="w-3 h-3" /> É GOLPE
-                  </span>
-                  ou
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-safe/15 text-safe font-bold font-mono text-[10.5px] border border-safe/30">
-                    <ShieldCheck className="w-3 h-3" /> É SEGURO
-                  </span>.
+                  Você pode julgar a qualquer momento, mas tem que provar apontando a evidência concreta. Se errar 2 vezes, terá que auditar todos os 3 pontos do Dossiê para liberar o veredito!
                 </p>
               </div>
             </div>
