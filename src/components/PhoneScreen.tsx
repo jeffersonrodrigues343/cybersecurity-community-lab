@@ -169,10 +169,10 @@ const LockScreen = ({
           {notificationArrived && (
             <motion.div
               key="lockscreen-case-notif"
-              initial={{ y: -25, opacity: 0, scale: 0.94 }}
+              initial={{ y: -45, opacity: 0, scale: 0.92 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 26, mass: 0.9 }}
               onClick={() => {
                 onUnlock();
                 onOpenMessaging();
@@ -2185,6 +2185,10 @@ const WhatsAppScreen = ({
     ? 'text-[14px] leading-[19px]'
     : 'text-[13px] leading-[17.5px]';
 
+  // Blindagem anti-replay: mensagens e histórico prévios não reanimam ao alternar de aplicativo
+  const initialMountRevealedCount = useRef(revealedCount);
+  const initialMountHistoryCount = useRef(actionHistory.length);
+
   // Rolagem suave apenas quando chegam novas mensagens ou opções
   useEffect(() => {
     const el = chatScrollRef.current;
@@ -2325,7 +2329,7 @@ const WhatsAppScreen = ({
           HOJE
         </div>
 
-        {/* Bolhas recebidas gradualmente (estáticas após reveladas para zero flicker) */}
+        {/* Bolhas recebidas gradualmente com física suave do Telegram e blindagem anti-replay */}
         {messageParagraphs.slice(0, revealedCount).map((para, i) => {
           const hasPixKeyInBubble =
             pixClue &&
@@ -2333,10 +2337,15 @@ const WhatsAppScreen = ({
             (para.includes(pixClue.inspection.field1Value) ||
               (i === messageParagraphs.length - 1 && para.toLowerCase().includes('pix')));
 
+          const isNewlyArrived = i >= initialMountRevealedCount.current;
+
           return (
-            <div
+            <motion.div
               key={i}
-              className={`relative bg-white text-[#111b21] ${bubbleTextClass} rounded-lg rounded-tl-none px-2.5 pt-1.5 pb-4 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.12)] whitespace-pre-wrap`}
+              initial={isNewlyArrived ? { opacity: 0, scale: 0.88, y: 16 } : false}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 26, mass: 0.8 }}
+              className={`relative bg-white text-[#111b21] ${bubbleTextClass} rounded-lg rounded-tl-none px-2.5 pt-1.5 pb-4 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.12)] whitespace-pre-wrap origin-bottom-left`}
             >
               {renderMessageContent(para)}
 
@@ -2359,65 +2368,106 @@ const WhatsAppScreen = ({
               <span className="absolute right-2 bottom-0.5 text-[9.5px] text-[#667781]">
                 {c.time}
               </span>
-            </div>
+            </motion.div>
           );
         })}
 
-        {/* Indicador de digitação suave do contato */}
+        {/* Indicador de digitação suave estilo Telegram (onda suave, sem bounce seco) */}
         {isSuspectTyping && (
-          <div className="bg-white rounded-lg rounded-tl-none px-3 py-2.5 w-fit shadow-2xs flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8696a0] animate-bounce" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8696a0] animate-bounce [animation-delay:0.15s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8696a0] animate-bounce [animation-delay:0.3s]" />
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="bg-white rounded-lg rounded-tl-none px-3 py-2.5 w-fit shadow-2xs flex items-center gap-1.5"
+          >
+            {[0, 1, 2].map((dotIndex) => (
+              <motion.span
+                key={dotIndex}
+                className="w-1.5 h-1.5 rounded-full bg-[#8696a0]"
+                animate={{ y: [0, -3.5, 0], opacity: [0.35, 1, 0.35] }}
+                transition={{
+                  duration: 0.85,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: dotIndex * 0.18,
+                }}
+              />
+            ))}
+          </motion.div>
         )}
 
         {/* Mensagens enviadas pelo jogador e respostas do contato */}
-        {actionHistory.map((item, idx) => (
-          <React.Fragment key={idx}>
-            <div
-              className={`ml-auto bg-[#d9fdd3] text-[#111b21] ${bubbleTextClass} rounded-lg rounded-tr-none px-2.5 pt-1.5 pb-4 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.12)] relative`}
-            >
-              <div>{item.player}</div>
-              <span className="absolute right-2 bottom-0.5 text-[9.5px] text-[#53bdeb] font-bold">
-                {c.time} ✓✓
-              </span>
-            </div>
+        {actionHistory.map((item, idx) => {
+          const isNewAction = idx >= initialMountHistoryCount.current;
+          return (
+            <React.Fragment key={idx}>
+              <motion.div
+                initial={isNewAction ? { opacity: 0, scale: 0.9, y: 12 } : false}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 26, mass: 0.8 }}
+                className={`ml-auto bg-[#d9fdd3] text-[#111b21] ${bubbleTextClass} rounded-lg rounded-tr-none px-2.5 pt-1.5 pb-4 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.12)] relative origin-bottom-right`}
+              >
+                <div>{item.player}</div>
+                <span className="absolute right-2 bottom-0.5 text-[9.5px] text-[#53bdeb] font-bold">
+                  {c.time} ✓✓
+                </span>
+              </motion.div>
 
-            <div
-              className={`mr-auto bg-white text-[#111b21] ${bubbleTextClass} rounded-lg rounded-tl-none px-2.5 pt-1.5 pb-4 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.12)] relative`}
-            >
-              <div>{renderMessageContent(item.reply)}</div>
-              <span className="absolute right-2 bottom-0.5 text-[9.5px] text-[#667781]">
-                {c.time}
-              </span>
-            </div>
-          </React.Fragment>
-        ))}
+              <motion.div
+                initial={isNewAction ? { opacity: 0, scale: 0.9, y: 12 } : false}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 26, mass: 0.8 }}
+                className={`mr-auto bg-white text-[#111b21] ${bubbleTextClass} rounded-lg rounded-tl-none px-2.5 pt-1.5 pb-4 max-w-[88%] shadow-[0_1px_1px_rgba(11,20,26,0.12)] relative origin-bottom-left`}
+              >
+                <div>{renderMessageContent(item.reply)}</div>
+                <span className="absolute right-2 bottom-0.5 text-[9.5px] text-[#667781]">
+                  {c.time}
+                </span>
+              </motion.div>
+            </React.Fragment>
+          );
+        })}
 
         {isTypingReply && (
-          <div className="bg-white rounded-lg rounded-tl-none px-3 py-2.5 w-fit shadow-2xs flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8696a0] animate-bounce" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8696a0] animate-bounce [animation-delay:0.15s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8696a0] animate-bounce [animation-delay:0.3s]" />
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg rounded-tl-none px-3 py-2.5 w-fit shadow-2xs flex items-center gap-1.5"
+          >
+            {[0, 1, 2].map((dotIndex) => (
+              <motion.span
+                key={dotIndex}
+                className="w-1.5 h-1.5 rounded-full bg-[#8696a0]"
+                animate={{ y: [0, -3.5, 0], opacity: [0.35, 1, 0.35] }}
+                transition={{
+                  duration: 0.85,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: dotIndex * 0.18,
+                }}
+              />
+            ))}
+          </motion.div>
         )}
       </div>
 
-      {/* Sugestões de Resposta do Dia a Dia (Aparecem aos poucos, 1 por 1, sem poluir a tela) */}
+      {/* Sugestões de Resposta do Dia a Dia (Aparecem aos poucos, 1 por 1, com entrada fluida) */}
       {hasFinishedTyping && !stamped && !isBlocked && pendingChoices.length > 0 && (
         <div className="px-2 pt-1.5 pb-1 bg-[#efeae2] border-t border-black/5 space-y-1 shrink-0">
           {pendingChoices.map(({ clue, act }) => (
-            <button
+            <motion.button
               key={clue.id}
               type="button"
+              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
               disabled={isTypingReply}
               onClick={() => handleActionClick(act, clue)}
               className="w-full text-left px-3 py-1.5 rounded-full bg-white hover:bg-[#e7fce3] border border-[#00a884]/40 text-[#111b21] text-[11.5px] font-medium transition cursor-pointer flex items-center justify-between gap-2 shadow-2xs disabled:opacity-50"
             >
               <span className="truncate">{act.label}</span>
               <Send className="w-3.5 h-3.5 text-[#008069] shrink-0" />
-            </button>
+            </motion.button>
           ))}
         </div>
       )}
@@ -2527,6 +2577,10 @@ const SmsScreen = ({
   const bubbleTextClass = isSenior
     ? 'text-[14px] leading-[19.5px]'
     : 'text-[13px] leading-[18px]';
+
+  // Blindagem anti-replay para SMS: histórico prévio não reanima ao alternar de app
+  const initialMountRevealedCount = useRef(revealedCount);
+  const initialMountHistoryCount = useRef(actionHistory.length);
 
   useEffect(() => {
     const el = chatScrollRef.current;
@@ -2658,44 +2712,87 @@ const SmsScreen = ({
           Hoje {c.time}
         </div>
 
-        {messageParagraphs.slice(0, revealedCount).map((para, i) => (
-          <div
-            key={i}
-            className={`bg-[#e9e9eb] text-black ${bubbleTextClass} rounded-2xl rounded-bl-xs px-3 py-2 max-w-[88%] whitespace-pre-wrap`}
-          >
-            {renderMessageContent(para)}
-          </div>
-        ))}
+        {messageParagraphs.slice(0, revealedCount).map((para, i) => {
+          const isNewlyArrived = i >= initialMountRevealedCount.current;
+          return (
+            <motion.div
+              key={i}
+              initial={isNewlyArrived ? { opacity: 0, scale: 0.88, y: 16 } : false}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 26, mass: 0.8 }}
+              className={`bg-[#e9e9eb] text-black ${bubbleTextClass} rounded-2xl rounded-bl-xs px-3 py-2 max-w-[88%] whitespace-pre-wrap origin-bottom-left`}
+            >
+              {renderMessageContent(para)}
+            </motion.div>
+          );
+        })}
 
         {!hasFinishedTyping && (
-          <div className="bg-[#e9e9eb] rounded-2xl rounded-bl-xs px-3 py-2.5 w-fit flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8e8e93] animate-bounce" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8e8e93] animate-bounce [animation-delay:0.15s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8e8e93] animate-bounce [animation-delay:0.3s]" />
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#e9e9eb] rounded-2xl rounded-bl-xs px-3 py-2.5 w-fit flex items-center gap-1.5"
+          >
+            {[0, 1, 2].map((dotIndex) => (
+              <motion.span
+                key={dotIndex}
+                className="w-1.5 h-1.5 rounded-full bg-[#8e8e93]"
+                animate={{ y: [0, -3.5, 0], opacity: [0.35, 1, 0.35] }}
+                transition={{
+                  duration: 0.85,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: dotIndex * 0.18,
+                }}
+              />
+            ))}
+          </motion.div>
         )}
 
-        {actionHistory.map((item, idx) => (
-          <React.Fragment key={idx}>
-            <div
-              className={`ml-auto bg-[#007aff] text-white ${bubbleTextClass} rounded-2xl rounded-br-xs px-3 py-2 max-w-[86%]`}
-            >
-              {item.player}
-            </div>
-            <div
-              className={`mr-auto bg-[#e9e9eb] text-black ${bubbleTextClass} rounded-2xl rounded-bl-xs px-3 py-2 max-w-[88%]`}
-            >
-              {renderMessageContent(item.reply)}
-            </div>
-          </React.Fragment>
-        ))}
+        {actionHistory.map((item, idx) => {
+          const isNewAction = idx >= initialMountHistoryCount.current;
+          return (
+            <React.Fragment key={idx}>
+              <motion.div
+                initial={isNewAction ? { opacity: 0, scale: 0.9, y: 12 } : false}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 26, mass: 0.8 }}
+                className={`ml-auto bg-[#007aff] text-white ${bubbleTextClass} rounded-2xl rounded-br-xs px-3 py-2 max-w-[86%] origin-bottom-right`}
+              >
+                {item.player}
+              </motion.div>
+              <motion.div
+                initial={isNewAction ? { opacity: 0, scale: 0.9, y: 12 } : false}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 26, mass: 0.8 }}
+                className={`mr-auto bg-[#e9e9eb] text-black ${bubbleTextClass} rounded-2xl rounded-bl-xs px-3 py-2 max-w-[88%] origin-bottom-left`}
+              >
+                {renderMessageContent(item.reply)}
+              </motion.div>
+            </React.Fragment>
+          );
+        })}
 
         {isSendingSms && (
-          <div className="bg-[#e9e9eb] rounded-2xl rounded-bl-xs px-3 py-2.5 w-fit flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8e8e93] animate-bounce" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8e8e93] animate-bounce [animation-delay:0.15s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8e8e93] animate-bounce [animation-delay:0.3s]" />
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#e9e9eb] rounded-2xl rounded-bl-xs px-3 py-2.5 w-fit flex items-center gap-1.5"
+          >
+            {[0, 1, 2].map((dotIndex) => (
+              <motion.span
+                key={dotIndex}
+                className="w-1.5 h-1.5 rounded-full bg-[#8e8e93]"
+                animate={{ y: [0, -3.5, 0], opacity: [0.35, 1, 0.35] }}
+                transition={{
+                  duration: 0.85,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: dotIndex * 0.18,
+                }}
+              />
+            ))}
+          </motion.div>
         )}
       </div>
 
@@ -2703,16 +2800,19 @@ const SmsScreen = ({
       {hasFinishedTyping && !stamped && pendingChoices.length > 0 && (
         <div className="px-2.5 pt-1.5 pb-1 bg-white border-t border-black/5 space-y-1 shrink-0">
           {pendingChoices.map(({ clue, act }) => (
-            <button
+            <motion.button
               key={clue.id}
               type="button"
+              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
               disabled={isSendingSms}
               onClick={() => handleSmsOptionClick(clue, act)}
               className="w-full text-left px-3 py-1.5 rounded-full bg-blue-50/70 hover:bg-blue-100/80 border border-[#007aff]/30 text-slate-900 text-[11.5px] font-medium transition cursor-pointer flex items-center justify-between gap-2 disabled:opacity-50"
             >
               <span className="truncate">{act.label}</span>
               <Send className="w-3.5 h-3.5 text-[#007aff] shrink-0" />
-            </button>
+            </motion.button>
           ))}
         </div>
       )}
@@ -3782,15 +3882,16 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     };
   }, [scamCase.id]);
 
-  // Chegada orgânica da mensagem do caso (1.5s após prontidão)
+  // Chegada orgânica da mensagem do caso na LockScreen (+10s calmo e calibrado pela idade)
   useEffect(() => {
     if (bootStage !== 'ready' || notificationArrived) return;
+    const notifDelay = ageGroup === 'senior' ? 26000 : ageGroup === 'adult' ? 24000 : 20000;
     const notifTimer = setTimeout(() => {
       triggerNotificationArrival();
-    }, 1500);
+    }, notifDelay);
 
     return () => clearTimeout(notifTimer);
-  }, [bootStage, notificationArrived, triggerNotificationArrival]);
+  }, [bootStage, notificationArrived, triggerNotificationArrival, ageGroup]);
 
   // Persistência absoluta da entrega de bolhas (não reseta ao trocar de aplicativo!)
   useEffect(() => {
@@ -3805,8 +3906,9 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     }
 
     setIsContactTyping(true);
-    const baseDelay = ageGroup === 'senior' ? 1950 : ageGroup === 'adult' ? 1650 : 1400;
-    const delay = revealedBubblesCount === 0 ? 750 : baseDelay;
+    const initialBubbleDelay = ageGroup === 'senior' ? 10000 : ageGroup === 'adult' ? 8000 : 6000;
+    const subsequentBubbleDelay = ageGroup === 'senior' ? 24000 : ageGroup === 'adult' ? 20000 : 16000;
+    const delay = revealedBubblesCount === 0 ? initialBubbleDelay : subsequentBubbleDelay;
 
     const timer = setTimeout(() => {
       const nextCount = revealedBubblesCount + 1;
@@ -3826,13 +3928,16 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   useEffect(() => {
     if (!hasDeliveredStory || revealedChoicesCount >= 3) return;
 
-    const delay = revealedChoicesCount === 0 ? 1200 : 850;
+    const initialPause = ageGroup === 'senior' ? 20000 : ageGroup === 'adult' ? 16000 : 12000;
+    const stepInterval = ageGroup === 'senior' ? 6500 : ageGroup === 'adult' ? 5000 : 3500;
+    const delay = revealedChoicesCount === 0 ? initialPause : stepInterval;
+
     const timer = setTimeout(() => {
       setRevealedChoicesCount((prev) => Math.min(3, prev + 1));
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [hasDeliveredStory, revealedChoicesCount]);
+  }, [hasDeliveredStory, revealedChoicesCount, ageGroup]);
 
   useEffect(() => {
     if (stamped) {
