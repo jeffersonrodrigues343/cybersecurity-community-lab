@@ -286,7 +286,7 @@ export const SCAM_CASES: ScamCase[] = [
     time: '11:05',
     preview: 'Correios: Encomenda retida na fiscalizacao. Pague a taxa...',
     messageContent:
-      'CORREIOS AVISO: Seu pacote com codigo NL8392019BR foi retido na fiscalizacao aduaneira por pendencia de taxa de importacao (R$ 27,90).\n\nPrazo final hoje para evitar devolucao ao remetente. Regularize via Pix no link: https://correios-taxas-alfandega.online/pagar',
+      'CORREIOS AVISO: Seu pacote internacional com codigo NL8392019BR foi retido na fiscalizacao aduaneira.\n\nMotivo: Pendencia de regularizacao da Taxa de Despacho Postal no valor de R$ 27,90.\n\nPrazo final hoje para evitar devolucao ao remetente. Pague via Pix no link: https://correios-taxas-alfandega.online/pagar',
     clues: [
       {
         id: 'clue-2-url',
@@ -559,7 +559,7 @@ export const SCAM_CASES: ScamCase[] = [
     time: '15:42',
     preview: 'MAGALU: Compra aprovada de R$ 3.890,00 no Cartão Virtual...',
     messageContent:
-      'MAGALU: Compra aprovada de R$ 3.890,00 no Cartão Virtual em 24/10 às 15:42.\n\nCaso você NÃO reconheça esta transação, ligue imediatamente para nossa Central de Prevenção a Fraudes no 0800 729 0001.',
+      'MAGALU ALERTA: Compra aprovada no valor de R$ 3.890,00 no seu Cartão Virtual.\n\nEstabelecimento: Magazine Luiza S/A (Hoje às 15:42).\n\nCaso você NÃO reconheça esta transação, ligue imediatamente para nossa Central de Prevenção a Fraudes: 0800 729 0001.',
     clues: [
       {
         id: 'clue-3-extrato',

@@ -137,7 +137,10 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     if (executedActionIds.includes(action.id)) return;
 
     setExecutedActionIds((prev) => [...prev, action.id]);
-    setActionHistory((prev) => [...prev, { player: action.label, reply: action.replyMessage }]);
+    setActionHistory((prev) => [
+      ...prev,
+      { player: action.playerMessage || action.label, reply: action.replyMessage },
+    ]);
 
     if (action.evidenceDiscovered) {
       unlockBadge('badge-first-clue');
