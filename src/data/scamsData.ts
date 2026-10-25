@@ -146,7 +146,7 @@ export const SCAM_CASES: ScamCase[] = [
     time: '14:22',
     preview: 'Oi mãe, anota meu número novo! O celular quebrou...',
     messageContent:
-      'Oi mãe! Salva meu número novo aí, por favor. O meu celular antigo caiu no chão e quebrou a tela. Tô usando esse provisório.\n\nPreciso muito de um favor urgente: tenho que pagar uma conta da faculdade até às 15h e meu app do banco ainda não autorizou nesse aparelho. Consegue me transferir um Pix de R$ 480 agora? Te devolvo assim que chegar em casa!\n\nChave Pix: 489.120.392-80',
+      'Oi mãe! Tudo bem? Salva meu número novo aí na agenda, por favor.\n\nO meu celular antigo caiu no chão hoje cedo e trincou a tela toda. Tô usando esse número provisório enquanto tá no conserto.\n\nPreciso muito de um favor urgente: tenho que pagar uma taxa da faculdade até às 15h e meu aplicativo do banco ainda não liberou nesse aparelho novo. Você consegue fazer um Pix de R$ 480 pra mim agora? Te devolvo assim que chegar em casa!\n\nChave Pix (CPF): 489.120.392-80',
     clues: [
       {
         id: 'clue-1-ddd',
@@ -286,7 +286,7 @@ export const SCAM_CASES: ScamCase[] = [
     time: '11:05',
     preview: 'Correios: Encomenda retida na fiscalizacao. Pague a taxa...',
     messageContent:
-      'CORREIOS AVISO: Seu pacote com codigo NL8392019BR foi retido na fiscalizacao aduaneira. Ha uma taxa de importacao pendente de R$ 27,90. Evite a devolucao pagando hoje no link oficial: https://correios-taxas-alfandega.online/pagar',
+      'CORREIOS AVISO: Seu pacote com codigo NL8392019BR foi retido na fiscalizacao aduaneira por pendencia de taxa de importacao (R$ 27,90).\n\nPrazo final hoje para evitar devolucao ao remetente. Regularize via Pix no link: https://correios-taxas-alfandega.online/pagar',
     clues: [
       {
         id: 'clue-2-url',
@@ -559,7 +559,7 @@ export const SCAM_CASES: ScamCase[] = [
     time: '15:42',
     preview: 'MAGALU: Compra aprovada de R$ 3.890,00 no Cartão Virtual...',
     messageContent:
-      'MAGALU: Compra aprovada de R$ 3.890,00 no Cartão Virtual em 24/10 às 15:42. Caso você NÃO reconheça esta transação, ligue imediatamente para nossa Central de Prevenção a Fraudes no 0800 729 0001.',
+      'MAGALU: Compra aprovada de R$ 3.890,00 no Cartão Virtual em 24/10 às 15:42.\n\nCaso você NÃO reconheça esta transação, ligue imediatamente para nossa Central de Prevenção a Fraudes no 0800 729 0001.',
     clues: [
       {
         id: 'clue-3-extrato',
@@ -1155,7 +1155,7 @@ export const SCAM_CASES: ScamCase[] = [
     time: '09:30',
     preview: 'Ola! Vaga home office disponivel. Ganhe de R$ 100 a R$ 500...',
     messageContent:
-      'Olá! Sou a Larissa, recrutadora de talentos da Shopee Brasil. Selecionamos seu perfil para nossa equipe de otimização de e-commerce.\n\nTrabalho 100% online pelo celular, dedicando apenas 30 minutos por dia para curtir produtos e avaliar lojas. Pagamento diário via Pix entre R$ 150 e R$ 500.\n\nPara começar e fazer o teste remunerado de R$ 20 agora, entre no nosso grupo de trabalho do Telegram: https://t.me/shopee_tarefas_vip',
+      'Olá! Tudo bem? Sou a Larissa, recrutadora de talentos da Shopee Brasil. Selecionamos seu perfil para nossa equipe de avaliação de produtos.\n\nO trabalho é 100% online pelo celular, dedicando apenas 30 minutos por dia para curtir itens e avaliar lojas. Pagamento diário via Pix entre R$ 150 e R$ 500!\n\nNo primeiro teste você ganha R$ 20 na hora, e na etapa seguinte basta depositar a cota de R$ 100 via Pix para liberar os saques das Tarefas VIP.\n\nPara começar agora, entre no nosso grupo de trabalho do Telegram: https://t.me/shopee_tarefas_vip',
     clues: [
       {
         id: 'clue-7-mecanica',

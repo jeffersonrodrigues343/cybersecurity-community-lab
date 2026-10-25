@@ -948,9 +948,10 @@ const NotesScreen = ({
 const BankScreen = ({
   c,
   inspectedClueIds = [],
-  hasOpenedScamMessage = false,
+  hasOpenedScamMessage: _hasOpenedScamMessage = false,
   copiedPixKey = null,
   onInspectClue,
+  onConfrontPixInChat,
   onBack,
 }: {
   c: ScamCase;
@@ -958,6 +959,7 @@ const BankScreen = ({
   hasOpenedScamMessage?: boolean;
   copiedPixKey?: string | null;
   onInspectClue?: (clue: InvestigativeClue) => void;
+  onConfrontPixInChat?: (clue: InvestigativeClue) => void;
   onBack: () => void;
 }) => {
   const pixClue = c.clues.find(
@@ -968,15 +970,16 @@ const BankScreen = ({
       k.category === 'system' ||
       k.inspection.type === 'official' ||
       k.id.includes('fatura') ||
-      k.id.includes('banco')
+      k.id.includes('banco') ||
+      k.id.includes('extrato')
   );
 
   const [activeTab, setActiveTab] = useState<'pix' | 'statement'>(() => {
     return pixClue ? 'pix' : 'statement';
   });
 
-  const [enteredKey, setEnteredKey] = useState<string>(() => copiedPixKey || '');
-  const [hasQueriedPix, setHasQueriedPix] = useState<boolean>(() => Boolean(copiedPixKey));
+  const [enteredKey, setEnteredKey] = useState<string>(() => copiedPixKey || pixClue?.inspection.field1Value || '');
+  const [hasQueriedPix, setHasQueriedPix] = useState<boolean>(() => Boolean(copiedPixKey || pixClue));
 
   // Sincroniza se a chave copiada mudar externamente
   useEffect(() => {
@@ -989,9 +992,10 @@ const BankScreen = ({
   // Dados do Pix extraídos dinamicamente do caso
   const pixTargetName = pixClue?.inspection.field2Value || 'Valdir dos Santos';
   const pixBankName = pixClue?.inspection.field3Value || 'Pessoa Física - Nu Pagamentos S.A.';
-  const pixAmount = c.clues[0]?.inspection?.field3Value?.includes('R$')
+  const matchedAmount = c.messageContent.match(/R\$\s?[\d.,]+/)?.[0];
+  const pixAmount = matchedAmount || (c.clues[0]?.inspection?.field3Value?.includes('R$')
     ? c.clues[0].inspection.field3Value
-    : 'R$ 1.850,00';
+    : 'R$ 480,00');
 
   const isPixInspected = Boolean(pixClue && inspectedClueIds.includes(pixClue.id));
   const isBankInspected = Boolean(bankClue && inspectedClueIds.includes(bankClue.id));
@@ -1060,7 +1064,7 @@ const BankScreen = ({
               <div className="bg-[#181126] rounded-2xl p-3.5 border border-purple-500/15 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-white/5 text-xs">
                   <span className="text-purple-300 font-medium">Dados da Transferência</span>
-                  <span className="text-[10px] text-emerald-400 font-mono">DICT Bacen ✓</span>
+                  <span className="text-[10px] text-emerald-400 font-mono">Cadastro Banco Central ✓</span>
                 </div>
 
                 <div className="space-y-2 text-xs">
@@ -1069,7 +1073,7 @@ const BankScreen = ({
                     <span className="text-base font-bold font-mono text-white">{pixAmount}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-neutral-400 block">Favorecido (Titular da Conta)</span>
+                    <span className="text-[10px] text-neutral-400 block">Favorecido (Titular Real da Conta)</span>
                     <span className="text-sm font-bold font-mono text-amber-300">{pixTargetName}</span>
                   </div>
                   <div className="flex justify-between items-center pt-1 border-t border-white/5">
@@ -1083,31 +1087,39 @@ const BankScreen = ({
                 </div>
 
                 <p className="text-[11px] text-purple-200/80 bg-purple-900/20 rounded-xl p-2.5 border border-purple-500/15 leading-relaxed">
-                  💡 Confira se o titular registrado acima realmente bate com quem conversou com você.
+                  💡 O Banco Central revelou que o dono real desta chave é <strong>{pixTargetName}</strong>. Confira se bate com quem pediu o dinheiro!
                 </p>
 
                 {pixClue && (
-                  <button
-                    type="button"
-                    disabled={!hasOpenedScamMessage}
-                    onClick={() => {
-                      if (!hasOpenedScamMessage) return;
-                      if (!isPixInspected) onInspectClue?.(pixClue);
-                    }}
-                    className={`w-full py-2.5 text-xs font-semibold rounded-xl transition cursor-pointer active:scale-95 ${
-                      !hasOpenedScamMessage
-                        ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                        : isPixInspected
-                        ? 'bg-emerald-600/80 text-white'
-                        : 'bg-purple-600 hover:bg-purple-500 text-white'
-                    }`}
-                  >
-                    {!hasOpenedScamMessage
-                      ? 'Aguardando leitura da mensagem...'
-                      : isPixInspected
-                      ? '✓ Titular anotado nas Notas'
-                      : 'Salvar Titular nas Notas'}
-                  </button>
+                  <div className="space-y-2">
+                    {onConfrontPixInChat && c.channel === 'whatsapp' && (
+                      <button
+                        type="button"
+                        onClick={() => onConfrontPixInChat(pixClue)}
+                        className="w-full py-2.5 px-3 text-xs font-bold rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+                      >
+                        <MessageSquare className="w-4 h-4 shrink-0" />
+                        <span>Anotar Prova e Questionar &quot;{pixTargetName}&quot; no Chat ➔</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isPixInspected) onInspectClue?.(pixClue);
+                        onBack();
+                      }}
+                      className={`w-full py-2.5 text-xs font-semibold rounded-xl transition cursor-pointer active:scale-95 ${
+                        isPixInspected
+                          ? 'bg-emerald-600/80 text-white'
+                          : 'bg-purple-600 hover:bg-purple-500 text-white'
+                      }`}
+                    >
+                      {isPixInspected
+                        ? '✓ Titular já salvo no Dossiê • Voltar à Mensagem'
+                        : '✓ Salvar Evidência no Dossiê e Voltar'}
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (
@@ -1195,24 +1207,19 @@ const BankScreen = ({
             {bankClue && (
               <button
                 type="button"
-                disabled={!hasOpenedScamMessage}
                 onClick={() => {
-                  if (!hasOpenedScamMessage) return;
                   if (!isBankInspected) onInspectClue?.(bankClue);
+                  onBack();
                 }}
-                className={`w-full py-2.5 text-xs font-semibold rounded-xl transition cursor-pointer active:scale-95 ${
-                  !hasOpenedScamMessage
-                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                    : isBankInspected
+                className={`w-full py-2.5 text-xs font-bold rounded-xl transition cursor-pointer active:scale-95 ${
+                  isBankInspected
                     ? 'bg-emerald-600/80 text-white'
-                    : 'bg-purple-600 hover:bg-purple-500 text-white'
+                    : 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg'
                 }`}
               >
-                {!hasOpenedScamMessage
-                  ? 'Aguardando leitura da mensagem...'
-                  : isBankInspected
-                  ? '✓ Extrato anotado nas Notas'
-                  : 'Salvar Extrato nas Notas'}
+                {isBankInspected
+                  ? '✓ Extrato Limpo já anotado • Voltar à Mensagem'
+                  : '✓ Confirmar Extrato Limpo no Dossiê e Voltar ➔'}
               </button>
             )}
           </div>
@@ -1647,16 +1654,30 @@ const VerdictActionBar = ({
 const BrowserScreen = ({
   c,
   url,
+  inspectedClueIds = [],
+  onInspectClue,
   onBack,
 }: {
   c: ScamCase;
   url?: string;
+  inspectedClueIds?: string[];
+  onInspectClue?: (clue: InvestigativeClue) => void;
   onBack: () => void;
 }) => {
   const hasSpecificUrl = Boolean(url && url !== 'https://pesquisa-segura.com.br');
   const [activeTab, setActiveTab] = useState<'google' | 'site'>(hasSpecificUrl ? 'site' : 'google');
   const [searchQuery, setSearchQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
+
+  const browserClue = c.clues.find(
+    (k) =>
+      k.category === 'whois' ||
+      k.inspection.type === 'link' ||
+      k.id.includes('url') ||
+      k.id.includes('google') ||
+      k.id.includes('rh')
+  );
+  const isBrowserClueInspected = Boolean(browserClue && inspectedClueIds.includes(browserClue.id));
 
   const displayUrl = url || 'https://pesquisa-segura.com.br';
   const isSuspicious = c.isScam;
@@ -1666,9 +1687,9 @@ const BrowserScreen = ({
     const text = `${c.title} ${c.messageContent} ${c.sender}`.toLowerCase();
     const suggestions: string[] = [];
 
-    if (text.includes('pix') || text.includes('banco') || text.includes('transferência') || c.category === 'pix') {
-      suggestions.push('banco liga pedindo confirmação de pix?');
-      suggestions.push('falsa central de segurança número 0800 é golpe');
+    if (text.includes('pix') || text.includes('banco') || text.includes('transferência') || text.includes('magalu') || c.category === 'pix') {
+      suggestions.push('sms compra aprovada 0800 Magazine Luiza é golpe?');
+      suggestions.push('falsa central de segurança número 0800 pede pix');
     }
     if (text.includes('mãe') || text.includes('pai') || text.includes('filho') || text.includes('número novo')) {
       suggestions.push('golpe do novo número filho pedindo dinheiro whatsapp');
@@ -1677,6 +1698,10 @@ const BrowserScreen = ({
     if (text.includes('correios') || text.includes('encomenda') || text.includes('alfândega') || text.includes('taxa')) {
       suggestions.push('sms correios taxa alfandegária retirada é golpe?');
       suggestions.push('como rastrear encomenda no portal oficial correios');
+    }
+    if (text.includes('vaga') || text.includes('shopee') || text.includes('tarefas') || text.includes('telegram')) {
+      suggestions.push('vaga de emprego shopee telegram pedindo pix é golpe?');
+      suggestions.push('golpe das tarefas curtir produtos pagar taxa vip');
     }
     if (text.includes('investimento') || text.includes('lucro') || text.includes('cripto') || text.includes('rendimento')) {
       suggestions.push('promessa de 10% lucro ao dia é pirâmide?');
@@ -1696,6 +1721,9 @@ const BrowserScreen = ({
     sound.playGoogleSearch();
     setSubmittedQuery(query.trim());
     setSearchQuery(query.trim());
+    if (browserClue && !isBrowserClueInspected) {
+      onInspectClue?.(browserClue);
+    }
   };
 
   return (
@@ -1892,7 +1920,31 @@ const BrowserScreen = ({
             )}
 
             {/* Botão de Fechar Navegador */}
-            <div className="mt-auto pt-4">
+            <div className="mt-auto pt-4 space-y-2">
+              {browserClue && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isBrowserClueInspected) {
+                      onInspectClue?.(browserClue);
+                    }
+                    onBack();
+                  }}
+                  className={`w-full py-2.5 font-bold text-xs rounded-xl shadow cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5 ${
+                    isBrowserClueInspected
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>
+                    {isBrowserClueInspected
+                      ? '✓ Evidência já salva • Voltar à Mensagem'
+                      : '✓ Anotar Evidência no Dossiê e Voltar ➔'}
+                  </span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={onBack}
@@ -1917,28 +1969,58 @@ const BrowserScreen = ({
 
             <div>
               <h4 className="font-bold text-sm">
-                {isSuspicious ? '⚠️ Domínio Falso / Redirecionamento' : '✅ Conexão Criptografada e Segura'}
+                {isSuspicious ? '⚠️ Endereço Falso / Site Suspeito' : '✅ Conexão Criptografada e Segura'}
               </h4>
               <p className="text-[11px] text-neutral-300 mt-1 leading-relaxed">
                 {isSuspicious
-                  ? 'O endereço verificado não pertence ao portal oficial e tenta capturar credenciais ou Pix!'
+                  ? 'O endereço verificado não pertence ao site oficial da empresa e foi criado recentemente para aplicar golpes!'
                   : 'O site possui certificado digital válido e pertence aos canais autênticos.'}
               </p>
             </div>
 
             <div className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-left text-[10.5px] space-y-1">
               <span className="text-[9px] font-mono text-neutral-400 uppercase font-bold block">
-                Auditoria de Domínio (Whois):
+                Registro do Site:
               </span>
               <div className="font-mono text-white text-[11px] break-all">{displayUrl}</div>
+              {browserClue && (
+                <div className="text-[10.5px] text-amber-300 pt-1 font-medium">
+                  • {browserClue.inspection.field2Label}: {browserClue.inspection.field2Value}
+                  <br />• {browserClue.inspection.field3Label}: {browserClue.inspection.field3Value}
+                </div>
+              )}
               <div className="text-[10px] text-neutral-400 pt-1">
                 {isSuspicious
-                  ? 'Domínio registrado recentemente em servidor anônimo no exterior.'
+                  ? browserClue?.inspection.observation || 'Site criado há poucos dias em servidor anônimo no exterior.'
                   : 'Domínio registrado com CNPJ e autoridade certificadora válida.'}
               </div>
             </div>
 
             <div className="w-full space-y-2 pt-2">
+              {browserClue && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isBrowserClueInspected) {
+                      onInspectClue?.(browserClue);
+                    }
+                    onBack();
+                  }}
+                  className={`w-full py-2.5 font-bold text-xs rounded-xl shadow-lg cursor-pointer active:scale-95 transition flex items-center justify-center gap-1.5 ${
+                    isBrowserClueInspected
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>
+                    {isBrowserClueInspected
+                      ? '✓ Evidência do Link já salva • Voltar'
+                      : '✓ Anotar Evidência do Site Falso e Voltar ➔'}
+                  </span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => {
@@ -1972,6 +2054,228 @@ const getClueConfrontationAction = (
   clue: InvestigativeClue,
   c: ScamCase,
 ): InteractiveAction => {
+  // Mapeamento específico para as 4 Fases Canônicas (100% Realista ao Contexto)
+  if (clue.id === 'clue-1-ddd') {
+    return {
+      id: `act-${c.id}-ddd`,
+      label: '📱 Perguntar: "Filha, por que esse número novo está com DDD 85 (Ceará)?"',
+      actionType: 'investigation',
+      playerMessage: 'Ué filha, por que esse número novo está com DDD 85 (Ceará) se a gente mora aqui em São Paulo?',
+      replyMessage:
+        'Mãe, é porque comprei esse chip provisório na banca perto da faculdade e foi o único prefixo de promoção que tinha disponível! Me ajuda logo com o Pix antes das 15h!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-ddd`,
+        title: 'DDD 85 Incompatível e Chip Comprado Ontem',
+        description: 'O número pertence a outro estado (DDD 85) e foi ativado ontem como pré-pago.',
+        status: 'suspicious',
+        forensicFact: 'Golpistas usam chips descartáveis de outros estados para fingir que são familiares.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-1-pix') {
+    const titular = clue.inspection.field2Value || 'Valdir dos Santos';
+    return {
+      id: `act-${c.id}-pix`,
+      label: `💸 Confrontar: "Olhei no banco e esse CPF é de ${titular}! Quem é esse?!"`,
+      actionType: 'investigation',
+      playerMessage: `Acabei de simular o Pix no app do Meu Banco e apareceu o nome de ${titular} (Pessoa Física)! Quem é esse homem?! A faculdade não cobra por boleto?!`,
+      replyMessage:
+        'Mãe, o Valdir é o coordenador financeiro da faculdade! Ele disse que só segura minha vaga se pagar direto na conta pessoal dele agora, por favor faz logo!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-pix`,
+        title: `Chave Pix em Nome de Laranja (${titular})`,
+        description: `A conta Pix pertence a um desconhecido (${titular}) e não à faculdade ou à filha.`,
+        status: 'suspicious',
+        forensicFact: 'Instituições de ensino e empresas cobram por CNPJ oficial ou boleto registrado.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-1-behavior') {
+    return {
+      id: `act-${c.id}-audio`,
+      label: '🎙️ Pedir Áudio: "Me manda um áudio de 5 segundos falando comigo pra eu ouvir sua voz"',
+      actionType: 'investigation',
+      playerMessage:
+        'Filha, me manda um áudio de 5 segundos agora falando meu nome. Só transfiro dinheiro depois de ouvir a sua voz.',
+      replyMessage:
+        'Mãe, já falei que a tela caiu no chão e queimou o microfone desse aparelho! O áudio sai todo mudo! Poxa, você tá desconfiando da sua própria filha?! Faltam 10 minutos!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-audio`,
+        title: 'Recusa Sistemática de Mandar Áudio ou Atender Voz',
+        description: 'O contato inventou desculpa de microfone quebrado para fugir da prova de voz.',
+        status: 'suspicious',
+        forensicFact: 'Regra de ouro: Nunca transfira dinheiro para número novo sem ouvir a voz real do parente.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-2-url') {
+    return {
+      id: `act-${c.id}-url`,
+      label: '🌐 Inspecionar o link "correios-taxas-alfandega.online" no Navegador',
+      actionType: 'investigation',
+      playerMessage: 'Inspeção de Segurança do Link: https://correios-taxas-alfandega.online/pagar',
+      replyMessage:
+        'Auditoria do Navegador: Site FALSO terminado em .online, registrado há apenas 3 dias na Islândia. O único site oficial dos Correios é correios.com.br.',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-url`,
+        title: 'Site Falso (.online) Criado Há 3 Dias no Exterior',
+        description: 'O link não pertence aos Correios (correios.com.br) e foi criado recentemente para roubar Pix.',
+        status: 'suspicious',
+        forensicFact: 'Os Correios nunca usam sites terminados em .online, .top ou .site.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-2-rastreio') {
+    return {
+      id: `act-${c.id}-rastreio`,
+      label: '📦 Consultar código "NL8392019BR" no Sistema Oficial dos Correios',
+      actionType: 'investigation',
+      playerMessage: 'Consulta no Sistema Oficial dos Correios: Código NL8392019BR',
+      replyMessage:
+        'Banco de Dados dos Correios: Objeto NL8392019BR NÃO ENCONTRADO. Código de rastreio falso/inexistente.',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-rastreio`,
+        title: 'Código de Rastreio Inexistente nos Correios',
+        description: 'A encomenda citada no SMS simplesmente não existe no sistema oficial.',
+        status: 'suspicious',
+        forensicFact: 'Taxas reais de importação só existem dentro do portal oficial Minhas Importações (correios.com.br).',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-2-remetente') {
+    return {
+      id: `act-${c.id}-remetente`,
+      label: '📱 Verificar número que enviou o SMS (+55 11 98842-1092)',
+      actionType: 'investigation',
+      playerMessage: 'Auditoria da Linha Remetente: +55 (11) 98842-1092',
+      replyMessage:
+        'Operadora Informa: Este SMS partiu de um número de celular pré-pago comum de 9 dígitos, e não do código oficial de 5 dígitos dos Correios.',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-remetente`,
+        title: 'SMS Enviado por Celular Comum de 9 Dígitos',
+        description: 'Órgãos oficiais usam números curtos de 5 dígitos, nunca celulares comuns.',
+        status: 'suspicious',
+        forensicFact: 'Golpistas usam disparo em massa por chips pré-pagos comuns.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-3-extrato') {
+    return {
+      id: `act-${c.id}-extrato`,
+      label: '🏦 Abrir o app Meu Banco e olhar o Extrato Real da Conta',
+      actionType: 'investigation',
+      playerMessage: 'Consulta do Extrato em Tempo Real no App Meu Banco',
+      replyMessage:
+        'Extrato Meu Banco: R$ 0,00 gastos hoje. Nenhuma compra de R$ 3.890,00 no Magazine Luiza foi feita no seu cartão!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-extrato`,
+        title: 'Extrato Bancário 100% Limpo (Compra Inexistente)',
+        description: 'Não há nenhuma compra de R$ 3.890 no app oficial do banco.',
+        status: 'suspicious',
+        forensicFact: 'Se a compra não aparece no app oficial do seu banco, o SMS é uma isca falsa.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-3-central-0800') {
+    return {
+      id: `act-${c.id}-0800`,
+      label: '📞 Ligar no 0800 729 0001 para testar o que o atendente pede',
+      actionType: 'investigation',
+      playerMessage: 'Teste de Chamada para o 0800 729 0001 informado no SMS',
+      replyMessage:
+        'Falso Atendente 0800: Exigiu que você transfira seu saldo via Pix para uma "Conta Segura do Banco Central" para cancelar a compra!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-0800`,
+        title: 'Falso Atendente 0800 Exigindo Pix de Cancelamento',
+        description: 'O golpista no 0800 pediu um Pix para supostamente estornar a compra.',
+        status: 'suspicious',
+        forensicFact: 'Nenhum banco pede para você fazer Pix para cancelar compras ou proteger a conta.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-3-google-pesquisa') {
+    return {
+      id: `act-${c.id}-google`,
+      label: '🌐 Pesquisar "SMS compra aprovada 0800 Magalu" no Google',
+      actionType: 'investigation',
+      playerMessage: 'Pesquisa no Google: "SMS compra aprovada 0800 Magazine Luiza"',
+      replyMessage:
+        'Alerta G1 / FEBRABAN: Golpe da Falsa Central dispara SMS de compras falsas para atrair vítimas para números 0800 criminosos.',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-google`,
+        title: 'Alerta Nacional: Golpe da Falsa Central 0800',
+        description: 'Notícias confirmam que o 0800 do SMS pertence a uma quadrilha.',
+        status: 'suspicious',
+        forensicFact: 'Nunca ligue para números 0800 recebidos por SMS.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-7-mecanica') {
+    return {
+      id: `act-${c.id}-mecanica`,
+      label: '💬 Perguntar: "Por que tenho que depositar R$ 100 via Pix para liberar meu pagamento?"',
+      actionType: 'investigation',
+      playerMessage:
+        'Por que eu preciso depositar R$ 100 do meu próprio bolso via Pix para liberar os saques das Tarefas VIP? Trabalho de verdade paga o funcionário, não cobra!',
+      replyMessage:
+        'Essa cota de R$ 100 é apenas uma recarga obrigatória do sistema VIP de lojistas! Assim que você fizer o Pix de R$ 100, o sistema desbloqueia R$ 500 de comissão pra você na hora!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-mecanica`,
+        title: 'Exigência de Depósito Pix Prévio para Trabalhar',
+        description: 'A suposta recrutadora exige que você pague R$ 100 via Pix para poder receber comissões.',
+        status: 'suspicious',
+        forensicFact: 'Nenhuma vaga de emprego legítima cobra Pix ou depósitos do trabalhador.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-7-canal-rh') {
+    return {
+      id: `act-${c.id}-rh`,
+      label: '🌐 Questionar: "A Shopee oficial contrata funcionários por grupo de Telegram?"',
+      actionType: 'investigation',
+      playerMessage:
+        'A Shopee Brasil contrata pessoas por grupos fechados do Telegram? Vou conferir no site oficial da empresa se isso existe.',
+      replyMessage:
+        'É uma seleção terceirizada expressa pelo Telegram! Não precisa olhar no site oficial da Shopee não, entra logo no grupo antes que sua vaga expire!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-rh`,
+        title: 'Recrutamento Falso via Grupo de Telegram',
+        description: 'Grandes empresas contratam apenas por portais oficiais, nunca por grupos de tarefas no Telegram.',
+        status: 'suspicious',
+        forensicFact: 'Grupos de "tarefas VIP" no Telegram são esquemas de pirâmide financeira.',
+      },
+    };
+  }
+
+  if (clue.id === 'clue-7-ddi') {
+    return {
+      id: `act-${c.id}-ddi`,
+      label: '📱 Perguntar: "Por que seu WhatsApp tem código +62 (Indonésia) se você é do RH no Brasil?"',
+      actionType: 'investigation',
+      playerMessage:
+        'Olhei seu número e ele começa com +62, que é código telefônico da Indonésia! Por que seu WhatsApp é da Indonésia se você diz ser do RH em São Paulo?',
+      replyMessage:
+        'É apenas um ramal virtual internacional automático da nossa central! Ignore o código +62 e clique logo no link do Telegram!',
+      evidenceDiscovered: {
+        id: `ev-${c.id}-ddi`,
+        title: 'Número Estrangeiro da Indonésia (+62)',
+        description: 'A golpista usa número virtual da Indonésia (+62) fingindo ser recrutadora no Brasil.',
+        status: 'suspicious',
+        forensicFact: 'Golpistas usam números virtuais estrangeiros descartáveis para aplicar o golpe das tarefas.',
+      },
+    };
+  }
+
   if (clue.category === 'phone' || clue.inspection.type === 'contact') {
     return {
       id: `act-${c.id}-ddd`,
@@ -1994,86 +2298,17 @@ const getClueConfrontationAction = (
     const titular = clue.inspection.field2Value || 'Valdir dos Santos';
     return {
       id: `act-${c.id}-pix`,
-      label: `💸 Confrontar Favorecido: "Sofia, quem é ${titular}?"`,
+      label: `💸 Confrontar Favorecido: "Quem é ${titular}?"`,
       actionType: 'investigation',
-      playerMessage: `Sofia, quem é esse ${titular} da chave Pix? A faculdade não cobra por boleto ou CNPJ?`,
+      playerMessage: `Quem é esse ${titular} da chave Pix? A instituição não cobra por boleto ou CNPJ?`,
       replyMessage:
-        'Mãe, é o coordenador financeiro da faculdade! Ele disse que só segura minha vaga se pagar direto na conta dele agora, por favor faz logo!',
+        'Mãe, é o coordenador financeiro! Ele disse que só segura minha vaga se pagar direto na conta dele agora, por favor faz logo!',
       evidenceDiscovered: {
         id: `ev-${c.id}-pix`,
         title: `Titular Incompatível: ${titular}`,
         description: `A conta de destino pertence a uma pessoa física estranha (${titular}).`,
         status: 'suspicious',
         forensicFact: 'Instituições de ensino e empresas cobram por CNPJ oficial ou boleto registrado.',
-      },
-    };
-  }
-
-  if (
-    clue.category === 'behavior' ||
-    clue.buttonLabel.toLowerCase().includes('áudio') ||
-    clue.buttonLabel.toLowerCase().includes('audio')
-  ) {
-    return {
-      id: `act-${c.id}-audio`,
-      label: '🎙️ Pedir Áudio: "Mande um áudio falando meu nome"',
-      actionType: 'investigation',
-      playerMessage:
-        'Filha, me manda um áudio de 5 segundos falando meu nome. Não vou transferir nada sem ouvir a sua voz.',
-      replyMessage:
-        'Mãe, já falei que a tela caiu de cara no chão e queimou o microfone! O áudio fica só xiado! Para de desconfiar de mim e me ajuda pelo amor de Deus, faltam 10 minutos!',
-      evidenceDiscovered: {
-        id: `ev-${c.id}-audio`,
-        title: 'Recusa Desesperada de Enviar Áudio',
-        description: 'O golpista inventou desculpa de microfone quebrado para não mandar áudio.',
-        status: 'suspicious',
-        forensicFact: 'Regra de ouro: Nunca transfira sem ouvir a voz real do familiar no número antigo.',
-      },
-    };
-  }
-
-  if (
-    clue.category === 'whois' ||
-    clue.inspection.type === 'link' ||
-    clue.name.toLowerCase().includes('link')
-  ) {
-    return {
-      id: `act-${c.id}-link`,
-      label: '🔗 Questionar Link: "Qual é o site oficial?"',
-      actionType: 'investigation',
-      playerMessage: 'Esse endereço de internet diverge do portal oficial da empresa.',
-      replyMessage:
-        'Aviso do Sistema: Link exclusivo e seguro de pagamento e desembaraço aduaneiro expresso.',
-      evidenceDiscovered: {
-        id: `ev-${c.id}-link`,
-        title: 'Domínio Web Falso',
-        description: 'O endereço de internet diverge do portal oficial.',
-        status: 'suspicious',
-        forensicFact:
-          'Empresas públicas e bancos utilizam apenas domínios oficiais registrados (.com.br ou .gov.br).',
-      },
-    };
-  }
-
-  if (
-    clue.category === 'system' ||
-    clue.inspection.type === 'security' ||
-    clue.name.toLowerCase().includes('banco') ||
-    clue.name.toLowerCase().includes('extrato')
-  ) {
-    return {
-      id: `act-${c.id}-bank`,
-      label: '🏦 Questionar: "Não reconheço essa compra no meu extrato"',
-      actionType: 'investigation',
-      playerMessage: 'Não reconheço essa compra. Vou verificar no extrato oficial do meu aplicativo.',
-      replyMessage:
-        'Central de Segurança: Para cancelamento emergencial e estorno, disque imediatamente para a central informada.',
-      evidenceDiscovered: {
-        id: `ev-${c.id}-bank`,
-        title: 'SMS de Engenharia Social',
-        description: 'O golpista tenta forçar a ligação para a falsa central telefônica.',
-        status: 'suspicious',
-        forensicFact: 'Bancos nunca pedem para ligar para números 0800 desconhecidos via SMS.',
       },
     };
   }
@@ -2112,13 +2347,14 @@ const WhatsAppScreen = ({
   onBackToHome,
   onOpenNotes,
   onStoryDeliveredChange,
+  initialDelivered = false,
   onOpenTips,
   onOpenVerdictModal,
   onOpenPixModal: _onOpenPixModal,
   inspectedClueCount = 0,
   inspectedClueIds = [],
   onInspectClue,
-  onOpenBank: _onOpenBank,
+  onOpenBank,
   onCopyPixKey,
   onRequestVoiceProof,
   onRequestVoiceAudio,
@@ -2139,6 +2375,7 @@ const WhatsAppScreen = ({
   onBackToHome: () => void;
   onOpenNotes?: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  initialDelivered?: boolean;
   onOpenTips?: () => void;
   onOpenVerdictModal?: () => void;
   onOpenPixModal?: () => void;
@@ -2156,20 +2393,31 @@ const WhatsAppScreen = ({
     (k) => k.category === 'pix' || k.inspection.type === 'pix'
   );
   const [isTypingPlayer, setIsTypingPlayer] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const number = findContactNumber(c);
   const name = cleanName(c.sender);
   const unknown = /desconhecid|n[uú]mero novo/i.test(c.sender);
 
-  // Mensagens do caso divididas por parágrafos para simular digitação do suspeito
+  // Mensagens do caso divididas por parágrafos para simular digitação suave e realista
   const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
-  const [revealedCount, setRevealedCount] = useState(0);
-  const [isSuspectTyping, setIsSuspectTyping] = useState(true);
-  const [hasFinishedTyping, setHasFinishedTyping] = useState(false);
+  const [revealedCount, setRevealedCount] = useState(() =>
+    initialDelivered ? messageParagraphs.length : 0
+  );
+  const [isSuspectTyping, setIsSuspectTyping] = useState(() => !initialDelivered);
+  const [hasFinishedTyping, setHasFinishedTyping] = useState(() => initialDelivered);
 
   const onStoryDeliveredChangeRef = useRef(onStoryDeliveredChange);
   onStoryDeliveredChangeRef.current = onStoryDeliveredChange;
 
   useEffect(() => {
+    if (initialDelivered) {
+      setRevealedCount(messageParagraphs.length);
+      setIsSuspectTyping(false);
+      setHasFinishedTyping(true);
+      onStoryDeliveredChangeRef.current?.(true);
+      return;
+    }
+
     setRevealedCount(0);
     setIsSuspectTyping(true);
     setHasFinishedTyping(false);
@@ -2187,21 +2435,33 @@ const WhatsAppScreen = ({
         sound.playMessagePop();
 
         if (count < messageParagraphs.length) {
-          activeTimer = setTimeout(deliverNext, 600);
+          activeTimer = setTimeout(deliverNext, 650);
         } else {
-          setHasFinishedTyping(true);
-          onStoryDeliveredChangeRef.current?.(true);
+          activeTimer = setTimeout(() => {
+            setHasFinishedTyping(true);
+            onStoryDeliveredChangeRef.current?.(true);
+          }, 450);
         }
-      }, 1100);
+      }, 1550);
     };
 
-    const startTimer = setTimeout(deliverNext, 500);
+    const startTimer = setTimeout(deliverNext, 550);
 
     return () => {
       clearTimeout(startTimer);
       clearTimeout(activeTimer);
     };
-  }, [c.id, messageParagraphs.length]);
+  }, [c.id, messageParagraphs.length, initialDelivered]);
+
+  // Auto-scroll suave conforme balões e opções aparecem
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const t = setTimeout(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [revealedCount, hasFinishedTyping, actionHistory.length, isTypingPlayer]);
 
   // Toque para acelerar a leitura caso o jogador não queira esperar
   const handleFastForward = () => {
@@ -2231,27 +2491,28 @@ const WhatsAppScreen = ({
   const isAct1Done = Boolean(act1 && executedActionIds.includes(act1.id));
   const isAct2Done = Boolean(act2 && executedActionIds.includes(act2.id));
 
-  // Ação contextual liberada quando a evidência foi auditada no Bloco de Notas:
-  const activeAction = (!isAct0Done && act0 && isStep0Done)
-    ? act0
-    : (!isAct1Done && act1 && isStep1Done)
-    ? act1
-    : (!isAct2Done && act2 && isStep2Done)
-    ? act2
+  // Próxima ação pendente para destaque no rodapé
+  const activeAction = (!isAct0Done && act0 && (step0?.category !== 'pix' || isStep0Done))
+    ? { act: act0, clue: step0 }
+    : (!isAct1Done && act1 && (step1?.category !== 'pix' || isStep1Done))
+    ? { act: act1, clue: step1 }
+    : (!isAct2Done && act2 && (step2?.category !== 'pix' || isStep2Done))
+    ? { act: act2, clue: step2 }
     : null;
 
   const handleActionClick = (action: InteractiveAction, targetClue?: InvestigativeClue) => {
+    if (isTypingPlayer) return;
     sound.playKeyboardClick();
     setIsTypingPlayer(true);
     setTimeout(() => {
       setIsTypingPlayer(false);
       sound.playMessagePing();
       sound.playTensionPulse();
-      if (targetClue) {
+      if (targetClue && !inspectedClueIds.includes(targetClue.id)) {
         onInspectClue?.(targetClue);
       }
       onPerformAction(action);
-    }, 650);
+    }, 850);
   };
 
   const renderMessageContent = (text: string) => {
@@ -2379,7 +2640,10 @@ const WhatsAppScreen = ({
 
 
       {/* Área da Conversa com Balões Chegando em Tempo Real */}
-      <div className="flex-1 wa-wallpaper overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2">
+      <div
+        ref={chatScrollRef}
+        className="flex-1 wa-wallpaper overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2"
+      >
         <div className="mx-auto w-fit bg-[#ffeecd] text-[#54656f] text-[10px] px-2.5 py-1 rounded-md text-center max-w-[94%] flex items-center gap-1 shadow-sm leading-tight">
           <Lock className="w-2.5 h-2.5 flex-shrink-0" />
           Mensagens protegidas com criptografia de ponta a ponta.
@@ -2432,17 +2696,18 @@ const WhatsAppScreen = ({
 
             {/* Botão diegético de copiar chave Pix para usar no banco */}
             {pixClue && (para.toLowerCase().includes('pix') || para.includes(pixClue.inspection.field1Value) || i === messageParagraphs.length - 1) && onCopyPixKey && (
-              <div className="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between">
+              <div className="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onCopyPixKey(pixClue.inspection.field1Value);
+                    onOpenBank?.();
                   }}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-[#008069] text-[11px] font-bold border border-emerald-300/60 cursor-pointer active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-800 text-[11px] font-bold border border-purple-300/60 cursor-pointer active:scale-95 transition"
                 >
-                  <Copy className="w-3 h-3" />
-                  <span>Copiar Chave Pix ({pixClue.inspection.field1Value})</span>
+                  <CreditCard className="w-3 h-3" />
+                  <span>Conferir CPF ({pixClue.inspection.field1Value}) no Meu Banco ➔</span>
                 </button>
               </div>
             )}
@@ -2499,6 +2764,81 @@ const WhatsAppScreen = ({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.3s]" />
           </div>
         )}
+
+        {/* PAINEL DE OPÇÕES DE MENSAGENS E ATITUDES DECISIVAS (SURGE SUAVEMENTE AO FINAL) */}
+        {hasFinishedTyping && !stamped && !isBlocked && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-2 bg-white/95 backdrop-blur-md border-2 border-[#00a884]/40 rounded-2xl p-2.5 shadow-md space-y-2"
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+              <span className="text-[10.5px] font-extrabold text-[#008069] uppercase tracking-wide flex items-center gap-1">
+                💬 Opções Decisivas neste Contexto
+              </span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                {inspectedClueCount}/3 Provas
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              {c.clues.slice(0, 3).map((clue) => {
+                const act = getClueConfrontationAction(clue, c);
+                const isClueDone = inspectedClueIds.includes(clue.id);
+                const isActDone = executedActionIds.includes(act.id);
+                const isPixStep = clue.category === 'pix' || clue.inspection.type === 'pix';
+
+                if (isClueDone && isActDone) {
+                  return (
+                    <div
+                      key={clue.id}
+                      className="w-full text-left px-2.5 py-2 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-[11px] font-semibold flex items-center gap-2"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="flex-1 leading-snug">
+                        <strong>{clue.name}:</strong> {clue.evidenceResult.headline}
+                      </span>
+                    </div>
+                  );
+                }
+
+                if (isPixStep && !isClueDone) {
+                  return (
+                    <button
+                      key={clue.id}
+                      type="button"
+                      onClick={() => {
+                        onCopyPixKey?.(clue.inspection.field1Value);
+                        onOpenBank?.();
+                      }}
+                      className="w-full text-left px-2.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-950 text-[11.5px] font-bold transition cursor-pointer active:scale-98 flex items-center justify-between gap-2 shadow-2xs"
+                    >
+                      <span className="leading-snug">
+                        🏦 Conferir CPF ({clue.inspection.field1Value}) no app Meu Banco antes de responder
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-purple-600 shrink-0" />
+                    </button>
+                  );
+                }
+
+                return (
+                  <button
+                    key={clue.id}
+                    type="button"
+                    disabled={isTypingPlayer}
+                    onClick={() => handleActionClick(act, clue)}
+                    className="w-full text-left px-2.5 py-2 rounded-xl bg-[#e7fce3] hover:bg-[#d1f7cb] border border-[#00a884]/40 text-[#111b21] text-[11.5px] font-semibold transition cursor-pointer active:scale-98 flex items-center justify-between gap-2 shadow-2xs disabled:opacity-50"
+                  >
+                    <span className="leading-snug">{act.label}</span>
+                    <Send className="w-3.5 h-3.5 text-[#008069] shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Rodapé do WhatsApp */}
@@ -2519,17 +2859,23 @@ const WhatsAppScreen = ({
           <div className="p-2 flex items-center gap-2">
             {activeAction ? (
               <>
-                <div className="flex-1 bg-white rounded-full px-3 py-1.5 flex items-center gap-2 shadow-xs border border-emerald-400">
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleActionClick(activeAction.act, activeAction.clue);
+                  }}
+                  className="flex-1 bg-white rounded-full px-3 py-1.5 flex items-center gap-2 shadow-xs border border-emerald-400 cursor-pointer hover:bg-emerald-50/30 transition"
+                >
                   <Smile className="w-5 h-5 text-neutral-400 shrink-0" />
                   <span className="flex-1 text-xs text-neutral-800 font-medium truncate">
-                    {activeAction.label}
+                    {activeAction.act.label}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleActionClick(activeAction);
+                    handleActionClick(activeAction.act, activeAction.clue);
                   }}
                   className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#008f6f] text-white flex items-center justify-center shadow-xs shrink-0 active:scale-95 transition cursor-pointer"
                   title="Enviar mensagem"
@@ -2542,7 +2888,7 @@ const WhatsAppScreen = ({
                 <div className="flex-1 bg-white rounded-full px-3 py-2 flex items-center gap-2 shadow-xs border border-neutral-200">
                   <Smile className="w-5 h-5 text-neutral-400 shrink-0" />
                   <div className="flex-1 text-[13px] text-neutral-400 select-none truncate">
-                    Mensagem
+                    Todas as perguntas enviadas ✓
                   </div>
                   <Paperclip className="w-4 h-4 text-neutral-400 shrink-0" />
                   <Camera className="w-4 h-4 text-neutral-400 shrink-0" />
@@ -2598,13 +2944,14 @@ const SmsScreen = ({
   onBackToHome,
   onOpenNotes,
   onStoryDeliveredChange,
+  initialDelivered = false,
   onOpenTips,
   onOpenVerdictModal,
   onOpenPixModal: _onOpenPixModal,
   inspectedClueCount = 0,
   inspectedClueIds = [],
   onInspectClue,
-  onOpenBank: _onOpenBank,
+  onOpenBank,
   onCopyPixKey,
   onCallClick,
   onRequestVoiceProof,
@@ -2622,6 +2969,7 @@ const SmsScreen = ({
   onBackToHome: () => void;
   onOpenNotes?: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  initialDelivered?: boolean;
   onOpenTips?: () => void;
   onOpenVerdictModal?: () => void;
   onOpenPixModal?: () => void;
@@ -2638,15 +2986,25 @@ const SmsScreen = ({
   const pixClue = c.clues.find(
     (k) => k.category === 'pix' || k.inspection.type === 'pix'
   );
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const number = findContactNumber(c);
   const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
-  const [revealedCount, setRevealedCount] = useState(0);
-  const [hasFinishedTyping, setHasFinishedTyping] = useState(false);
+  const [revealedCount, setRevealedCount] = useState(() =>
+    initialDelivered ? messageParagraphs.length : 0
+  );
+  const [hasFinishedTyping, setHasFinishedTyping] = useState(() => initialDelivered);
 
   const onStoryDeliveredChangeRef = useRef(onStoryDeliveredChange);
   onStoryDeliveredChangeRef.current = onStoryDeliveredChange;
 
   useEffect(() => {
+    if (initialDelivered) {
+      setRevealedCount(messageParagraphs.length);
+      setHasFinishedTyping(true);
+      onStoryDeliveredChangeRef.current?.(true);
+      return;
+    }
+
     setRevealedCount(0);
     setHasFinishedTyping(false);
     onStoryDeliveredChangeRef.current?.(false);
@@ -2661,21 +3019,32 @@ const SmsScreen = ({
         sound.playMessagePop();
 
         if (count < messageParagraphs.length) {
-          activeTimer = setTimeout(deliverNext, 600);
+          activeTimer = setTimeout(deliverNext, 650);
         } else {
-          setHasFinishedTyping(true);
-          onStoryDeliveredChangeRef.current?.(true);
+          activeTimer = setTimeout(() => {
+            setHasFinishedTyping(true);
+            onStoryDeliveredChangeRef.current?.(true);
+          }, 450);
         }
-      }, 1000);
+      }, 1350);
     };
 
-    const startTimer = setTimeout(deliverNext, 400);
+    const startTimer = setTimeout(deliverNext, 450);
 
     return () => {
       clearTimeout(startTimer);
       clearTimeout(activeTimer);
     };
-  }, [c.id, messageParagraphs.length]);
+  }, [c.id, messageParagraphs.length, initialDelivered]);
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const t = setTimeout(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [revealedCount, hasFinishedTyping, actionHistory.length]);
 
   const handleFastForward = () => {
     if (!hasFinishedTyping) {
@@ -2703,21 +3072,48 @@ const SmsScreen = ({
   const isAct1Done = Boolean(act1 && executedActionIds.includes(act1.id));
   const isAct2Done = Boolean(act2 && executedActionIds.includes(act2.id));
 
-  // Ação contextual liberada quando a evidência foi auditada no Bloco de Notas:
-  const activeAction = (!isAct0Done && act0 && isStep0Done)
-    ? act0
-    : (!isAct1Done && act1 && isStep1Done)
-    ? act1
-    : (!isAct2Done && act2 && isStep2Done)
-    ? act2
+  const activeAction = (!isAct0Done && act0 && !isStep0Done)
+    ? { act: act0, clue: step0 }
+    : (!isAct1Done && act1 && !isStep1Done)
+    ? { act: act1, clue: step1 }
+    : (!isAct2Done && act2 && !isStep2Done)
+    ? { act: act2, clue: step2 }
     : null;
 
   const handleActionClick = (action: InteractiveAction, targetClue?: InvestigativeClue) => {
     sound.playBlip();
-    if (targetClue) {
+    if (targetClue && !inspectedClueIds.includes(targetClue.id)) {
       onInspectClue?.(targetClue);
     }
-    onPerformAction(action);
+    if (!executedActionIds.includes(action.id)) {
+      onPerformAction(action);
+    }
+  };
+
+  const handleSmsDecisionOption = (clue: InvestigativeClue, act: InteractiveAction) => {
+    if (clue.id === 'clue-3-extrato') {
+      onOpenBank?.();
+      return;
+    }
+    if (clue.id === 'clue-3-central-0800') {
+      if (onCallClick) {
+        onCallClick();
+      } else {
+        handleActionClick(act, clue);
+      }
+      return;
+    }
+    if (clue.id === 'clue-2-url') {
+      handleActionClick(act, clue);
+      onLinkClick('https://correios-taxas-alfandega.online/pagar');
+      return;
+    }
+    if (clue.id === 'clue-3-google-pesquisa') {
+      handleActionClick(act, clue);
+      onLinkClick('https://pesquisa-segura.com.br');
+      return;
+    }
+    handleActionClick(act, clue);
   };
 
   const renderMessageContent = (text: string) => {
@@ -2815,7 +3211,10 @@ const SmsScreen = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2">
+      <div
+        ref={chatScrollRef}
+        className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-2.5 space-y-2"
+      >
         <div className="text-center text-[10px] text-[#8e8e93] font-mono">
           Mensagem de Texto • SMS
           <br />
@@ -2839,11 +3238,12 @@ const SmsScreen = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     onCopyPixKey(pixClue.inspection.field1Value);
+                    onOpenBank?.();
                   }}
                   className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white hover:bg-neutral-50 text-[#007aff] text-[11px] font-bold border border-neutral-300 cursor-pointer active:scale-95 transition"
                 >
                   <Copy className="w-3 h-3" />
-                  <span>Copiar Chave Pix ({pixClue.inspection.field1Value})</span>
+                  <span>Conferir Chave Pix ({pixClue.inspection.field1Value}) no Banco</span>
                 </button>
               </div>
             )}
@@ -2869,6 +3269,59 @@ const SmsScreen = ({
         <div className="text-[10px] text-[#8e8e93] pl-1 flex items-center gap-1">
           <Info className="w-3 h-3 text-[#ff9500]" /> Remetente não verificado.
         </div>
+
+        {/* PAINEL DE ATITUDES DECISIVAS APÓS O SMS CHEGAR SUAVEMENTE */}
+        {hasFinishedTyping && !stamped && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-2 bg-slate-50 border-2 border-[#007aff]/35 rounded-2xl p-2.5 shadow-sm space-y-2"
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+              <span className="text-[10.5px] font-extrabold text-[#007aff] uppercase tracking-wide flex items-center gap-1">
+                🔍 Opções Decisivas para Verificar este SMS
+              </span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                {inspectedClueCount}/3 Provas
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              {c.clues.slice(0, 3).map((clue) => {
+                const act = getClueConfrontationAction(clue, c);
+                const isClueDone = inspectedClueIds.includes(clue.id);
+
+                if (isClueDone) {
+                  return (
+                    <div
+                      key={clue.id}
+                      className="w-full text-left px-2.5 py-2 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-[11px] font-semibold flex items-center gap-2"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="flex-1 leading-snug">
+                        <strong>{clue.name}:</strong> {clue.evidenceResult.headline}
+                      </span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={clue.id}
+                    type="button"
+                    onClick={() => handleSmsDecisionOption(clue, act)}
+                    className="w-full text-left px-2.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-[#007aff]/40 text-slate-900 text-[11.5px] font-semibold transition cursor-pointer active:scale-98 flex items-center justify-between gap-2 shadow-2xs"
+                  >
+                    <span className="leading-snug">{act.label}</span>
+                    <ChevronRight className="w-4 h-4 text-[#007aff] shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Rodapé do SMS */}
@@ -2883,19 +3336,25 @@ const SmsScreen = ({
           <div className="p-2 flex items-center gap-2">
             {activeAction ? (
               <>
-                <div className="flex-1 bg-white rounded-full px-3 py-1.5 flex items-center gap-2 border border-blue-400 shadow-xs">
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSmsDecisionOption(activeAction.clue, activeAction.act);
+                  }}
+                  className="flex-1 bg-white rounded-full px-3 py-1.5 flex items-center gap-2 border border-blue-400 shadow-xs cursor-pointer hover:bg-blue-50/40 transition"
+                >
                   <span className="flex-1 text-xs text-neutral-800 font-medium truncate">
-                    {activeAction.label}
+                    {activeAction.act.label}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleActionClick(activeAction);
+                    handleSmsDecisionOption(activeAction.clue, activeAction.act);
                   }}
                   className="w-8 h-8 rounded-full bg-[#007aff] hover:bg-[#0062cc] text-white flex items-center justify-center shadow-xs shrink-0 active:scale-95 transition cursor-pointer"
-                  title="Enviar SMS"
+                  title="Verificar Evidência"
                 >
                   <Send className="w-3.5 h-3.5 ml-0.5" />
                 </button>
@@ -2907,7 +3366,7 @@ const SmsScreen = ({
                 </div>
                 <div className="flex-1 bg-white rounded-full px-3.5 py-1.5 flex items-center gap-2 border border-neutral-300 shadow-xs">
                   <div className="flex-1 text-xs text-[#8e8e93] select-none truncate">
-                    Mensagem de texto
+                    Todas as verificações do SMS concluídas ✓
                   </div>
                   <Mic className="w-3.5 h-3.5 text-[#8e8e93] shrink-0" />
                 </div>
@@ -3813,6 +4272,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   });
   const [notificationArrived, setNotificationArrived] = useState(false);
   const [hasOpenedScamMessage, setHasOpenedScamMessage] = useState(false);
+  const [hasDeliveredStory, setHasDeliveredStory] = useState(false);
   const [scamCountdown, setScamCountdown] = useState(30);
   const [isVerdictModalOpen, setIsVerdictModalOpen] = useState(false);
   const [userHypothesisIndex, setUserHypothesisIndex] = useState<number | null>(null);
@@ -3921,6 +4381,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     setPreviousApp('home');
     setNotificationArrived(false);
     setHasOpenedScamMessage(false);
+    setHasDeliveredStory(false);
     setScamCountdown(30);
     setIsVerdictModalOpen(false);
     setUserHypothesisIndex(null);
@@ -4347,7 +4808,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onCallClick={handleStartVoiceCall}
             onBackToHome={() => setActiveApp('home')}
             onOpenNotes={handleOpenNotes}
-            onStoryDeliveredChange={onStoryDeliveredChange}
+            onStoryDeliveredChange={(delivered) => {
+              if (delivered) setHasDeliveredStory(true);
+              onStoryDeliveredChange?.(delivered);
+            }}
+            initialDelivered={hasDeliveredStory}
             onOpenTips={() => setIsTipsModalOpen(true)}
             onOpenVerdictModal={() => setIsVerdictModalOpen(true)}
             onOpenPixModal={() => setIsPixDoubtModalOpen(true)}
@@ -4398,7 +4863,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onContactClick={handleOpenContactModal}
             onBackToHome={() => setActiveApp('home')}
             onOpenNotes={handleOpenNotes}
-            onStoryDeliveredChange={onStoryDeliveredChange}
+            onStoryDeliveredChange={(delivered) => {
+              if (delivered) setHasDeliveredStory(true);
+              onStoryDeliveredChange?.(delivered);
+            }}
+            initialDelivered={hasDeliveredStory}
             onOpenTips={() => setIsTipsModalOpen(true)}
             onOpenVerdictModal={() => setIsVerdictModalOpen(true)}
             onOpenPixModal={() => setIsPixDoubtModalOpen(true)}
@@ -4790,6 +5259,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   hasOpenedScamMessage={hasOpenedScamMessage}
                   copiedPixKey={copiedPixKey}
                   onInspectClue={handleInspectClue}
+                  onConfrontPixInChat={handleConfrontPixInChat}
                   onBack={() => setActiveApp(previousApp)}
                 />
               </motion.div>
@@ -4805,6 +5275,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 <BrowserScreen
                   c={scamCase}
                   url={browserUrl}
+                  inspectedClueIds={inspectedClueIds}
+                  onInspectClue={handleInspectClue}
                   onBack={() => setActiveApp(previousApp)}
                 />
               </motion.div>
