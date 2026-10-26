@@ -3882,10 +3882,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     };
   }, [scamCase.id]);
 
-  // Chegada orgânica da mensagem do caso na LockScreen (+10s calmo e calibrado pela idade)
+  // Chegada orgânica da mensagem do caso na LockScreen (calibrado -4s com ritmo natural por idade)
   useEffect(() => {
     if (bootStage !== 'ready' || notificationArrived) return;
-    const notifDelay = ageGroup === 'senior' ? 26000 : ageGroup === 'adult' ? 24000 : 20000;
+    const notifDelay = ageGroup === 'senior' ? 22000 : ageGroup === 'adult' ? 20000 : 16000;
     const notifTimer = setTimeout(() => {
       triggerNotificationArrival();
     }, notifDelay);
@@ -3906,8 +3906,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     }
 
     setIsContactTyping(true);
-    const initialBubbleDelay = ageGroup === 'senior' ? 10000 : ageGroup === 'adult' ? 8000 : 6000;
-    const subsequentBubbleDelay = ageGroup === 'senior' ? 24000 : ageGroup === 'adult' ? 20000 : 16000;
+    const initialBubbleDelay = ageGroup === 'senior' ? 7000 : ageGroup === 'adult' ? 5500 : 4000;
+    const subsequentBubbleDelay = ageGroup === 'senior' ? 20000 : ageGroup === 'adult' ? 16000 : 12000;
     const delay = revealedBubblesCount === 0 ? initialBubbleDelay : subsequentBubbleDelay;
 
     const timer = setTimeout(() => {
@@ -3928,8 +3928,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   useEffect(() => {
     if (!hasDeliveredStory || revealedChoicesCount >= 3) return;
 
-    const initialPause = ageGroup === 'senior' ? 20000 : ageGroup === 'adult' ? 16000 : 12000;
-    const stepInterval = ageGroup === 'senior' ? 6500 : ageGroup === 'adult' ? 5000 : 3500;
+    const initialPause = ageGroup === 'senior' ? 16000 : ageGroup === 'adult' ? 12000 : 8000;
+    const stepInterval = ageGroup === 'senior' ? 4500 : ageGroup === 'adult' ? 3500 : 2500;
     const delay = revealedChoicesCount === 0 ? initialPause : stepInterval;
 
     const timer = setTimeout(() => {
