@@ -35,11 +35,11 @@ import {
   Smile,
   Paperclip,
 } from 'lucide-react';
-import type { ScamCase, InteractiveAction, InvestigativeClue } from '../data/scamsData';
+import type { ScamCase, InteractiveAction, InvestigativeClue, AgeGroup } from '../data/scamsData';
 import { sound } from '../utils/audio';
 
 type Verdict = 'scam' | 'safe' | null;
-export type AgeGroup = 'young' | 'adult' | 'senior';
+export type { AgeGroup };
 
 // Habilidades investigativas do perito
 export type Skill = 'question' | 'bank' | 'browser' | 'verdict';
@@ -87,6 +87,7 @@ interface PhoneScreenProps {
   totalLevels?: number;
   initialBootDone?: boolean;
   onCompleteInitialBoot?: () => void;
+  onAgeGroupChange?: (age: AgeGroup) => void;
 }
 
 const findContactNumber = (c: ScamCase): string | null => {
@@ -2890,6 +2891,11 @@ const CallScreen = ({
   onHangup,
   onBackToHome,
   onStoryDeliveredChange,
+  onOpenVerdictModal,
+  onOpenNotes,
+  directChancesLeft = 2,
+  isDirectVerdictLocked = false,
+  stamped,
 }: {
   c: ScamCase;
   onPerformAction: (action: InteractiveAction) => void;
@@ -2898,6 +2904,11 @@ const CallScreen = ({
   onHangup: () => void;
   onBackToHome?: () => void;
   onStoryDeliveredChange?: (delivered: boolean) => void;
+  onOpenVerdictModal?: () => void;
+  onOpenNotes?: () => void;
+  directChancesLeft?: number;
+  isDirectVerdictLocked?: boolean;
+  stamped?: Verdict;
 }) => {
   const number = findContactNumber(c);
   const [callState, setCallState] = useState<'ringing' | 'connected' | 'ended'>('ringing');
@@ -3250,9 +3261,21 @@ const CallScreen = ({
               <span>Desligar Chamada</span>
             </button>
           ) : (
-            <div className="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
-              <PhoneOff className="w-3.5 h-3.5 text-red-400" />
-              <span>Chamada Encerrada • Consulte as Notas para auditar</span>
+            <div className="w-full space-y-2">
+              <div className="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-4 py-2 rounded-full border border-white/10 flex items-center justify-center gap-2">
+                <PhoneOff className="w-3.5 h-3.5 text-red-400" />
+                <span>Chamada Encerrada • Linha desconectada</span>
+              </div>
+              {onOpenVerdictModal && onOpenNotes && (
+                <VerdictActionBar
+                  directChancesLeft={directChancesLeft}
+                  isDirectVerdictLocked={isDirectVerdictLocked}
+                  inspectedClueCount={0}
+                  stamped={stamped ?? null}
+                  onOpenVerdictModal={onOpenVerdictModal}
+                  onOpenNotes={onOpenNotes}
+                />
+              )}
             </div>
           )}
         </div>
@@ -3674,6 +3697,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   totalLevels,
   initialBootDone = false,
   onCompleteInitialBoot,
+  onAgeGroupChange,
 }) => {
   const [activeApp, setActiveApp] = useState<'home' | 'messaging' | 'notes' | 'bank' | 'browser'>('home');
   const [previousApp, setPreviousApp] = useState<'home' | 'messaging' | 'notes'>('home');
@@ -3773,6 +3797,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     try {
       sessionStorage.setItem('hacklearn_age_group', selected);
     } catch {}
+    onAgeGroupChange?.(selected);
     setBootStage('about');
   };
 
@@ -4318,6 +4343,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             onHangup={handleHangup}
             onBackToHome={() => setActiveApp('home')}
             onStoryDeliveredChange={onStoryDeliveredChange}
+            onOpenVerdictModal={() => setIsVerdictModalOpen(true)}
+            onOpenNotes={handleOpenNotes}
+            directChancesLeft={directChancesLeft}
+            isDirectVerdictLocked={isDirectVerdictLocked}
+            stamped={stamped}
           />
         );
       case 'push':

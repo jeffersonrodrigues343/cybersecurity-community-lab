@@ -1555,13 +1555,55 @@ export const SCAM_CASES: ScamCase[] = [
   },
 ];
 
-// 4 Fases Canônicas dos Golpes Mais Comuns no Smartphone Brasileiro
-export const CANONICAL_CASES: ScamCase[] = [
-  SCAM_CASES.find((c) => c.id === 'case-1-whatsapp') || SCAM_CASES[0],
-  SCAM_CASES.find((c) => c.id === 'case-2-correios') || SCAM_CASES[1],
-  SCAM_CASES.find((c) => c.id === 'case-3-falsa-central-sms') || SCAM_CASES[2],
-  SCAM_CASES.find((c) => c.id === 'case-7-vaga-tarefas') || SCAM_CASES[3],
-];
+export type AgeGroup = 'young' | 'adult' | 'senior';
+
+// Trilhas Geracionais Dinâmicas: 4 fases adaptadas à realidade forense de cada faixa etária
+export const getCampaignCasesForAge = (ageGroup: AgeGroup = 'adult'): ScamCase[] => {
+  const findCase = (id: string) => SCAM_CASES.find((c) => c.id === id);
+
+  if (ageGroup === 'young') {
+    // Trilha Jovem (Até 35 anos):
+    // 1. Vaga de Tarefas Remotas (Shopee/YouTube R$ 350/dia)
+    // 2. SMS Correios (Taxa Alfandegária de Encomenda)
+    // 3. SMS Falsa Compra no Cartão (Magazine Luiza R$ 3.890)
+    // 4. WhatsApp Número Novo (Falso Parente/Amigo pedindo Pix de emergência)
+    return [
+      findCase('case-7-vaga-tarefas') || SCAM_CASES[3],
+      findCase('case-2-correios') || SCAM_CASES[1],
+      findCase('case-3-falsa-central-sms') || SCAM_CASES[2],
+      findCase('case-1-whatsapp') || SCAM_CASES[0],
+    ];
+  }
+
+  if (ageGroup === 'senior') {
+    // Trilha Terceira Idade (60+ anos):
+    // 1. WhatsApp Filho com Celular Quebrado (Afeto, Urgência e Amor Familiar)
+    // 2. Ligação da Central 0800 do Banco (Falso Gerente com BINA Falsificada)
+    // 3. SMS Compra Aprovada no Cartão com 0800 (Pânico de Fraude)
+    // 4. SMS Correios (Taxação da Alfândega)
+    return [
+      findCase('case-1-whatsapp') || SCAM_CASES[0],
+      findCase('case-4-falsa-central') || SCAM_CASES[4],
+      findCase('case-3-falsa-central-sms') || SCAM_CASES[2],
+      findCase('case-2-correios') || SCAM_CASES[1],
+    ];
+  }
+
+  // Trilha Adulto / Provedor (36 a 59 anos):
+  // 1. SMS Falsa Compra no Cartão com 0800 do Banco
+  // 2. SMS Correios: Objeto Retido na Alfândega
+  // 3. WhatsApp Filho com Celular Quebrado
+  // 4. Vaga de Tarefas Remotas
+  return [
+    findCase('case-3-falsa-central-sms') || SCAM_CASES[2],
+    findCase('case-2-correios') || SCAM_CASES[1],
+    findCase('case-1-whatsapp') || SCAM_CASES[0],
+    findCase('case-7-vaga-tarefas') || SCAM_CASES[3],
+  ];
+};
+
+// 4 Fases Canônicas Padrão (compatibilidade retroativa)
+export const CANONICAL_CASES: ScamCase[] = getCampaignCasesForAge('adult');
 
 export const BADGES: Badge[] = [
   {

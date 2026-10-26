@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import {
@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import {
   CANONICAL_CASES,
+  getCampaignCasesForAge,
+  type AgeGroup,
   BADGES,
   FAMILY_GOLDEN_RULES,
   GLOSSARY_ITEMS,
@@ -24,9 +26,10 @@ import { PhoneScreen, type Skill } from './PhoneScreen';
 // 4 Fases Canônicas dos Golpes Mais Comuns no Smartphone
 export const CAMPAIGN_CASES: ScamCase[] = CANONICAL_CASES;
 
-export const getCaseForLevel = (levelIndex: number): ScamCase => {
-  if (levelIndex < CAMPAIGN_CASES.length) {
-    return CAMPAIGN_CASES[levelIndex];
+export const getCaseForLevel = (levelIndex: number, ageGroup: AgeGroup = 'adult'): ScamCase => {
+  const cases = getCampaignCasesForAge(ageGroup);
+  if (levelIndex < cases.length) {
+    return cases[levelIndex];
   }
   return generateDynamicScamCase(levelIndex);
 };
@@ -41,8 +44,28 @@ const CLUE_XP = 10;
 const comboBonusFor = (streak: number) => (streak >= 3 ? 30 : streak === 2 ? 10 : 0);
 
 export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>(() => {
+    if (typeof window === 'undefined') return 'adult';
+    try {
+      const saved = sessionStorage.getItem('hacklearn_age_group');
+      if (saved === 'young' || saved === 'adult' || saved === 'senior') return saved;
+    } catch {}
+    return 'adult';
+  });
+
+  const campaignCases = useMemo(() => getCampaignCasesForAge(ageGroup), [ageGroup]);
+
   const [caseNumber, setCaseNumber] = useState(1);
-  const [current, setCurrent] = useState<ScamCase>(() => getCaseForLevel(0));
+  const [current, setCurrent] = useState<ScamCase>(() => {
+    if (typeof window === 'undefined') return getCaseForLevel(0, 'adult');
+    try {
+      const saved = sessionStorage.getItem('hacklearn_age_group') as AgeGroup | null;
+      if (saved === 'young' || saved === 'adult' || saved === 'senior') {
+        return getCaseForLevel(0, saved);
+      }
+    } catch {}
+    return getCaseForLevel(0, 'adult');
+  });
   const [inspected, setInspected] = useState<string[]>([]);
 
   // Condução Interativa no Celular & Coleta de Provas
@@ -204,7 +227,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
       unlockBadge('badge-grand-master');
     }
 
-    onScoreUpdate(newTotal, newSolved, newSolved >= CAMPAIGN_CASES.length);
+    onScoreUpdate(newTotal, newSolved, newSolved >= campaignCases.length);
   }, [
     answered,
     current,
@@ -214,12 +237,28 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     streak,
     totalXp,
     unlockBadge,
+    campaignCases.length,
   ]);
+
+  const handleAgeGroupChange = useCallback(
+    (newAge: AgeGroup) => {
+      setAgeGroup(newAge);
+      // Se estiver no primeiro caso e o veredito ainda não foi carimbado,
+      // carrega imediatamente o primeiro caso da nova trilha geracional
+      if (caseNumber === 1 && !finalVerdict) {
+        setCurrent(getCaseForLevel(0, newAge));
+        setInspected([]);
+        setExecutedActionIds([]);
+        setActionHistory([]);
+      }
+    },
+    [caseNumber, finalVerdict],
+  );
 
   const nextCase = useCallback(() => {
     sound.playBlip();
     const nextIdx = solved;
-    setCurrent(getCaseForLevel(nextIdx));
+    setCurrent(getCaseForLevel(nextIdx, ageGroup));
     setCaseNumber((n) => n + 1);
     setInspected([]);
     setExecutedActionIds([]);
@@ -227,7 +266,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     setFinalVerdict(null);
     setLastEarned(0);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [solved]);
+  }, [solved, ageGroup]);
 
   // Teclado no Desktop (Enter ou Espaço para avançar após veredito)
   useEffect(() => {
@@ -291,8 +330,8 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
         <div className="shrink-0 hidden sm:flex items-center justify-between gap-1.5 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-desk-2/90 border border-desk-line backdrop-blur-md shadow-lg">
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-[11px] sm:text-xs uppercase px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-desk border border-desk-line text-white font-bold">
-              {caseNumber <= CAMPAIGN_CASES.length
-                ? `Fase ${caseNumber} de ${CAMPAIGN_CASES.length}`
+              {caseNumber <= campaignCases.length
+                ? `Fase ${caseNumber} de ${campaignCases.length}`
                 : `Fase #${String(caseNumber).padStart(2, '0')}`}
             </span>
             <span className="text-[11px] sm:text-xs font-semibold text-emerald-400 capitalize hidden sm:inline">
@@ -347,7 +386,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                 <PhoneScreen
                   scamCase={current}
                   levelIndex={caseNumber}
-                  totalLevels={CAMPAIGN_CASES.length}
+                  totalLevels={campaignCases.length}
                   stamped={finalVerdict}
                   wasCorrect={wasVerdictCorrect}
                   onPerformAction={handlePerformPhoneAction}
@@ -362,6 +401,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
                   earnedXp={lastEarned}
                   initialBootDone={hasCompletedInitialBoot}
                   onCompleteInitialBoot={handleCompleteInitialBoot}
+                  onAgeGroupChange={handleAgeGroupChange}
                 />
               </motion.div>
             </AnimatePresence>
