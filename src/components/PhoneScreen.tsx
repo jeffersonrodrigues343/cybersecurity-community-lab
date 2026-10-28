@@ -38,6 +38,7 @@ import {
 import type { ScamCase, InteractiveAction, InvestigativeClue, AgeGroup } from '../data/scamsData';
 import { sound } from '../utils/audio';
 import { apiService } from '../services/api';
+import { SEARCH_RESULTS, FALLBACK_RESULTS, type SearchResult } from '../data/searchResults';
 
 type Verdict = 'scam' | 'safe' | null;
 export type { AgeGroup };
@@ -1698,15 +1699,9 @@ const BrowserScreen = ({
   const [activeTab, setActiveTab] = useState<'google' | 'site'>(hasSpecificUrl ? 'site' : 'google');
   const [searchQuery, setSearchQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
-  // Resultado aberto: os cards são estáticos, então lemos endereço/título/resumo do próprio card clicado
-  const [openedResult, setOpenedResult] = useState<{ url: string; title: string; body: string } | null>(null);
-  const handleResultClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = (e.target as HTMLElement).closest('[data-result]');
-    if (!card) return;
-    const [url, title, body] = [...card.children].map((el) => el.textContent?.trim() ?? '');
-    sound.playKeyboardClick();
-    setOpenedResult({ url, title, body });
-  };
+  const searchResults = SEARCH_RESULTS[c.id] ?? FALLBACK_RESULTS;
+  const [openedResult, setOpenedResult] = useState<SearchResult | null>(null);
+
 
   const browserClue = c.clues.find(
     (k) =>
@@ -1907,11 +1902,18 @@ const BrowserScreen = ({
                   <ArrowLeft className="w-3.5 h-3.5" /> Voltar aos resultados
                 </button>
                 <article className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
-                  <div className="text-[11px] text-emerald-700 flex items-center gap-1">
-                    <Lock className="w-3 h-3" /> {openedResult.url.replace(/ › /g, '/')}
+                  <div className={`text-[11px] flex items-center gap-1 ${openedResult.suspicious ? "text-red-700" : "text-emerald-700"}`}>
+                    {openedResult.suspicious ? <AlertTriangle className="w-3 h-3 text-red-600" /> : <Lock className="w-3 h-3" />} {openedResult.url.replace(/ › /g, '/')}
                   </div>
                   <h4 className="text-[15px] font-bold text-slate-900 leading-snug">{openedResult.title}</h4>
-                  <p className="text-[12.5px] text-slate-700 leading-relaxed">{openedResult.body}</p>
+                  {openedResult.body.map((para, i) => (
+                    <p key={i} className="text-[12.5px] text-slate-700 leading-relaxed">{para}</p>
+                  ))}
+                  {openedResult.suspicious && (
+                    <p className="text-[12px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg p-2">
+                      ⚠️ Repare no endereço: este site não é o oficial. Foi bom não ter pagado nada por aqui.
+                    </p>
+                  )}
                   <p className="text-[12px] text-slate-500 leading-relaxed border-t border-slate-100 pt-2">
                     Dica: confira sempre o endereço do site e desconfie de qualquer página que peça Pix ou dados fora do aplicativo oficial.
                   </p>
@@ -1920,35 +1922,22 @@ const BrowserScreen = ({
             )}
 
             {submittedQuery && !openedResult && (
-              <div
-                onClick={handleResultClick}
-                className="space-y-3 pt-2 border-t border-slate-200 [&_[data-result]]:cursor-pointer [&_[data-result]:hover]:border-blue-300 [&_[data-result]_h5]:underline-offset-2 [&_[data-result]:hover_h5]:underline"
-              >
-                {c.id === 'case-2-correios' && (
-                  <div data-result className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1">
-                    <div className="text-[10px] text-slate-500">
-                      rastreamento.correios.com.br › oficial
-                    </div>
-                    <h5 className="text-[12.5px] font-bold text-blue-700 leading-snug">
-                      Rastreamento Oficial dos Correios - Consulta de Objetos
-                    </h5>
-                    <p className="text-[11px] text-slate-600 leading-relaxed">
-                      Resultado para <b>NL8392019BR</b>: Objeto não encontrado na base de dados dos Correios. Importações reais só podem ser consultadas e pagas pelo portal oficial <b>correios.com.br</b> (Minhas Importações).
-                    </p>
-                  </div>
-                )}
-
-                <div data-result className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1">
-                  <div className="text-[10px] text-slate-500">
-                    g1.globo.com › economia › seguranca-digital
-                  </div>
-                  <h5 className="text-[12.5px] font-bold text-blue-700 leading-snug">
-                    Como funcionam os golpes de urgência por WhatsApp no Brasil
-                  </h5>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
-                    Bancos, Correios e grandes empresas nunca enviam links terminados em <b>.online</b> nem pedem transferências Pix para pessoas físicas, cancelamento de compras ou liberação de vagas de emprego.
-                  </p>
-                </div>
+              <div className="space-y-3 pt-2 border-t border-slate-200">
+                {searchResults.map((r) => (
+                  <button
+                    key={r.url}
+                    type="button"
+                    onClick={() => {
+                      sound.playKeyboardClick();
+                      setOpenedResult(r);
+                    }}
+                    className="w-full text-left bg-white border border-slate-200 hover:border-blue-300 rounded-xl p-3 shadow-2xs space-y-1 cursor-pointer group"
+                  >
+                    <div className="text-[10px] text-slate-500">{r.url}</div>
+                    <h5 className="text-[12.5px] font-bold text-blue-700 leading-snug group-hover:underline">{r.title}</h5>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">{r.snippet}</p>
+                  </button>
+                ))}
               </div>
             )}
           </div>
