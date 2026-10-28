@@ -69,7 +69,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
                   Analise o Celular com Calma
                 </h4>
                 <p className="text-[11.5px] sm:text-xs text-ink-soft leading-relaxed">
-                  Receba mensagens no WhatsApp ou SMS e atenda chamadas telefônicas sem cair na armadilha da pressa.
+                  Receba mensagens e chamadas de WhatsApp sem cair na armadilha da pressa.
                 </p>
               </div>
             </div>

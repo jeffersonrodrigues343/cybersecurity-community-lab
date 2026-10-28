@@ -266,9 +266,10 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
       setInspected([]);
       setExecutedActionIds([]);
       setActionHistory([]);
-      setCampaignRun((n) => n + 1);
+      // Durante a configuração inicial não remonta: isso jogaria o jogador de volta pro "Olá"
+      if (hasCompletedInitialBoot) setCampaignRun((n) => n + 1);
     },
-    [ageGroup],
+    [ageGroup, hasCompletedInitialBoot],
   );
 
   const nextCase = useCallback(() => {
@@ -392,7 +393,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           <div className="w-full h-full flex flex-col items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.div
-                key={`${campaignRun}-${current.id}`}
+                key={`${campaignRun}-${caseNumber}`}
                 initial={{ scale: 0.96, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.96, opacity: 0 }}

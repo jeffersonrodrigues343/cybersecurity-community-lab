@@ -1377,9 +1377,9 @@ const VerdictModal = ({
             className="space-y-2 pt-1 border-t border-white/10"
           >
             <label className="text-[11px] font-semibold text-amber-300 block">
-              2. Qual prova concreta confirma a sua decisão?
+              2. Qual pista te convenceu?
               <span className="text-[10px] text-white/60 font-normal block mt-0.5">
-                Qual pista te convenceu? Toque em uma:
+                Toque na pista que mais pesou:
               </span>
             </label>
 
@@ -1431,7 +1431,7 @@ const VerdictModal = ({
                 : 'bg-white/10 text-white/40 cursor-not-allowed'
             }`}
           >
-            <span>Confirmar ➔</span>
+            <span>Confirmar</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -3846,6 +3846,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   });
 
   const [notificationArrived, setNotificationArrived] = useState(false);
+  const [hasDeliveredStory, setHasDeliveredStory] = useState(false);
   const [guidanceText, setGuidanceText] = useState<string | null>(null);
   // Ref (e não state): incrementar o contador não pode reexecutar o efeito e apagar a dica recém-mostrada
   const hintsShownRef = useRef(0);
@@ -3859,7 +3860,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   useEffect(() => {
     setGuidanceText(null);
     const { delayMs, maxHints } = GUIDANCE_BY_AGE[ageGroup];
-    if (bootStage !== 'ready' || !notificationArrived || stamped || hintsShownRef.current >= maxHints) return;
+    if (bootStage !== 'ready' || !notificationArrived || !hasDeliveredStory || stamped || hintsShownRef.current >= maxHints) return;
     const t = setTimeout(() => {
       const next = scamCase.clues.find((cl) => !inspectedClueIds.includes(cl.id));
       setGuidanceText(
@@ -3870,9 +3871,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       hintsShownRef.current += 1;
     }, delayMs);
     return () => clearTimeout(t);
-  }, [ageGroup, bootStage, notificationArrived, stamped, inspectedClueIds.length, actionHistory.length, scamCase]);
+  }, [ageGroup, bootStage, notificationArrived, hasDeliveredStory, stamped, inspectedClueIds.length, actionHistory.length, scamCase]);
   const [hasOpenedScamMessage, setHasOpenedScamMessage] = useState(false);
-  const [hasDeliveredStory, setHasDeliveredStory] = useState(false);
   const [revealedBubblesCount, setRevealedBubblesCount] = useState(0);
   const [isContactTyping, setIsContactTyping] = useState(false);
   const [revealedChoicesCount, setRevealedChoicesCount] = useState(0);
@@ -3937,6 +3937,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     sound.playKeypress();
     setAgeGroup(selected);
     setHasChosenAge(true);
+    setDirectChancesLeft(CHANCES_BY_AGE[selected]);
     try {
       sessionStorage.setItem('hacklearn_age_group', selected);
     } catch {}
@@ -5042,7 +5043,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 12 }}
-                className="absolute left-3 right-3 bottom-16 z-40 rounded-2xl bg-neutral-900/95 border border-amber-400/40 p-3 text-white shadow-xl backdrop-blur"
+                className="absolute left-3 right-3 top-24 z-40 rounded-2xl bg-neutral-900/95 border border-amber-400/40 p-3 text-white shadow-xl backdrop-blur"
               >
                 <div className="flex items-start gap-2">
                   <span aria-hidden className="text-base leading-none">🧠</span>

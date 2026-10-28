@@ -34,6 +34,18 @@ const BackgroundScene = () => {
     const camera = new THREE.PerspectiveCamera(60, mount.clientWidth / mount.clientHeight, 0.1, 100);
     camera.position.z = 14;
 
+    // Textura de ponto redondo com brilho suave (o PointsMaterial puro desenha quadrados)
+    const dot = document.createElement('canvas');
+    dot.width = dot.height = 64;
+    const g = dot.getContext('2d')!;
+    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.25, 'rgba(255,255,255,0.85)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    const dotTexture = new THREE.CanvasTexture(dot);
+
     // Campo de partículas: cores frias (confiança) com poucos pontos quentes
     const count = isMobile ? 900 : 2000;
     const positions = new Float32Array(count * 3);
@@ -51,7 +63,8 @@ const BackgroundScene = () => {
     fieldGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     fieldGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     const fieldMat = new THREE.PointsMaterial({
-      size: isMobile ? 0.09 : 0.07,
+      size: isMobile ? 0.22 : 0.18,
+      map: dotTexture,
       vertexColors: true,
       transparent: true,
       opacity: 0.85,
@@ -95,7 +108,7 @@ const BackgroundScene = () => {
       geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
       const points = new THREE.Points(
         geo,
-        new THREE.PointsMaterial({ size: 0.16, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }),
+        new THREE.PointsMaterial({ size: 0.35, map: dotTexture, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }),
       );
       scene.add(points);
       bursts.push({ points, velocities: vel, born: performance.now() });
@@ -165,6 +178,7 @@ const BackgroundScene = () => {
           (o.material as THREE.Material).dispose();
         }
       });
+      dotTexture.dispose();
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
