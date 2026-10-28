@@ -240,19 +240,33 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
     campaignCases.length,
   ]);
 
+  // Contador de campanha: entra na key do celular para forçar remontagem quando a
+  // trilha nova começa pelo mesmo caso (ex.: adulto e 60+ abrem com o WhatsApp)
+  const [campaignRun, setCampaignRun] = useState(0);
+
   const handleAgeGroupChange = useCallback(
     (newAge: AgeGroup) => {
+      if (newAge === ageGroup) return;
       setAgeGroup(newAge);
-      // Se estiver no primeiro caso e o veredito ainda não foi carimbado,
-      // carrega imediatamente o primeiro caso da nova trilha geracional
-      if (caseNumber === 1 && !finalVerdict) {
-        setCurrent(getCaseForLevel(0, newAge));
-        setInspected([]);
-        setExecutedActionIds([]);
-        setActionHistory([]);
-      }
+      // Trocar de trilha recomeça a campanha: o índice `solved` da trilha antiga
+      // não vale na nova, e as chances salvas por caso vazariam entre trilhas
+      try {
+        Object.keys(sessionStorage)
+          .filter((k) => k.startsWith('hacklearn_chances_') || k.startsWith('hacklearn_locked_'))
+          .forEach((k) => sessionStorage.removeItem(k));
+      } catch {}
+      setCurrent(getCaseForLevel(0, newAge));
+      setCaseNumber(1);
+      setSolved(0);
+      setStreak(0);
+      setFinalVerdict(null);
+      setLastEarned(0);
+      setInspected([]);
+      setExecutedActionIds([]);
+      setActionHistory([]);
+      setCampaignRun((n) => n + 1);
     },
-    [caseNumber, finalVerdict],
+    [ageGroup],
   );
 
   const nextCase = useCallback(() => {
@@ -376,7 +390,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
           <div className="w-full h-full flex flex-col items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.div
-                key={current.id}
+                key={`${campaignRun}-${current.id}`}
                 initial={{ scale: 0.96, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.96, opacity: 0 }}

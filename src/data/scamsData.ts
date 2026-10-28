@@ -64,6 +64,17 @@ export interface InteractiveAction {
   };
 }
 
+// Identidade do contato como o WhatsApp mostra de verdade: sem rótulos do jogo
+export interface WhatsAppContact {
+  number: string;
+  // Nome salvo na agenda do jogador (contato conhecido); ausente = número desconhecido
+  savedName?: string;
+  // Nome que o próprio remetente escolheu no perfil, exibido como "~Nome"
+  pushName?: string;
+  // Conta comercial: 'verified' tem selo oficial da Meta; 'unverified' qualquer um cria
+  business?: 'verified' | 'unverified';
+}
+
 export interface ScamCase {
   id: string;
   level: ScamLevel;
@@ -74,6 +85,7 @@ export interface ScamCase {
   dilemma: string;
   sender: string;
   channel: 'whatsapp' | 'sms' | 'call' | 'social' | 'document' | 'push';
+  whatsapp?: WhatsAppContact;
   time: string;
   preview: string;
   messageContent: string;
@@ -139,14 +151,15 @@ export const SCAM_CASES: ScamCase[] = [
     levelTitle: 'Nível 1 • Básico',
     xpReward: 60,
     category: 'WhatsApp & Família',
-    title: 'Filho com Celular Quebrado Pedindo Pix',
-    dilemma: 'Um número desconhecido manda mensagem com a foto da sua filha dizendo que o celular quebrou e precisa de um Pix urgente de R$ 480 para a faculdade.',
-    sender: 'Filha (Número Desconhecido)',
+    title: 'Filha com Celular Quebrado Pedindo Pix',
+    dilemma: 'Um número desconhecido te chama no WhatsApp com a foto da sua filha no perfil, dizendo que o celular quebrou e que precisa de um Pix urgente de R$ 480 para a faculdade.',
+    sender: '+55 85 98124-9912',
     channel: 'whatsapp',
+    whatsapp: { number: '+55 85 98124-9912', pushName: 'Sofia' },
     time: '14:22',
-    preview: 'Oi mãe, anota meu número novo! O celular quebrou...',
+    preview: 'Oi mãe, esse é meu número novo, salva aí pfv',
     messageContent:
-      'Oi mãe! Tudo bem? Salva meu número novo aí na agenda, por favor.\n\nO meu celular antigo caiu no chão hoje cedo e trincou a tela toda. Tô usando esse número provisório enquanto tá no conserto.\n\nPreciso muito de um favor urgente: tenho que pagar uma taxa da faculdade até às 15h e meu aplicativo do banco ainda não liberou nesse aparelho novo. Você consegue fazer um Pix de R$ 480 pra mim agora? Te devolvo assim que chegar em casa!\n\nChave Pix (CPF): 489.120.392-80',
+      'Oi mãe, tudo bem?\n\nEsse é meu número novo, salva aí pfv\n\nMeu celular caiu hoje cedo e a tela trincou toda, deixei no conserto. Tô usando esse chip provisório\n\nMãe preciso de um favor urgente, tenho que pagar uma taxa da faculdade até as 15h e o app do banco não quer abrir nesse celular novo\n\nVc consegue fazer um pix de 480 pra mim agora? Te devolvo assim que chegar em casa\n\nChave pix (CPF): 489.120.392-80',
     clues: [
       {
         id: 'clue-1-ddd',
@@ -278,15 +291,16 @@ export const SCAM_CASES: ScamCase[] = [
     level: 'basico',
     levelTitle: 'Nível 1 • Básico',
     xpReward: 60,
-    category: 'SMS & Encomendas',
-    title: 'SMS dos Correios: Encomenda Retida na Alfândega',
-    dilemma: 'Você recebe um SMS dizendo que uma encomenda sua foi taxada em R$ 27,90 e será devolvida se você não pagar hoje pelo link.',
+    category: 'WhatsApp & Encomendas',
+    title: '"Correios" no WhatsApp: Encomenda Retida na Alfândega',
+    dilemma: 'Um perfil "Correios Encomendas", com o logo dos Correios, te manda no WhatsApp que uma encomenda sua foi taxada em R$ 27,90 e será devolvida se você não pagar hoje pelo link.',
     sender: '+55 11 98842-1092',
-    channel: 'sms',
+    channel: 'whatsapp',
+    whatsapp: { number: '+55 11 98842-1092', pushName: 'Correios Encomendas', business: 'unverified' },
     time: '11:05',
-    preview: 'Correios: Encomenda retida na fiscalizacao. Pague a taxa...',
+    preview: 'Seu objeto NL8392019BR está retido na fiscalização aduaneira...',
     messageContent:
-      'CORREIOS AVISO: Seu pacote internacional com codigo NL8392019BR foi retido na fiscalizacao aduaneira.\n\nMotivo: Pendencia de regularizacao da Taxa de Despacho Postal no valor de R$ 27,90.\n\nPrazo final hoje para evitar devolucao ao remetente. Pague via Pix no link: https://correios-taxas-alfandega.online/pagar',
+      'Olá, bom dia! Aqui é da Central de Encomendas dos Correios.\n\nSeu objeto internacional NL8392019BR está retido na fiscalização aduaneira por pendência da Taxa de Despacho Postal, no valor de R$ 27,90.\n\nCaso o pagamento não seja realizado até hoje às 23h59, o objeto será devolvido ao remetente.\n\nPara regularizar via Pix, acesse: https://correios-taxas-alfandega.online/pagar\n\nApós o pagamento, envie o comprovante aqui que liberamos a entrega em até 24h.',
     clues: [
       {
         id: 'clue-2-url',
@@ -338,54 +352,54 @@ export const SCAM_CASES: ScamCase[] = [
       },
       {
         id: 'clue-2-remetente',
-        name: 'Número do Remetente',
-        buttonLabel: 'Checar Origem do SMS',
+        name: 'Perfil do Remetente',
+        buttonLabel: 'Ver Dados do Perfil no WhatsApp',
         category: 'phone',
-        question: 'Quem mandou esse SMS?',
+        question: 'Quem é esse perfil "Correios Encomendas" no WhatsApp?',
         inspection: {
           type: 'contact',
-          badge: 'Telefonia & Rastreamento',
-          field1Label: 'Remetente do SMS',
-          field1Value: '+55 (11) 98842-1092 (Telefonia Móvel Comum)',
-          field2Label: 'Canal de SMS dos Correios',
-          field2Value: 'Shortcode corporativo de 5 dígitos (ex: 28588)',
+          badge: 'Perfil do WhatsApp',
+          field1Label: 'Tipo de Conta',
+          field1Value: 'Conta comercial "Correios Encomendas" SEM selo de verificação',
+          field2Label: 'Número da Conta',
+          field2Value: '+55 (11) 98842-1092 (celular pré-pago comum)',
           field3Label: 'Consulta de Rastreio NL8392019BR',
           field3Value: 'Código não localizado no Sistema Nacional de Rastreamento',
-          observation: 'O SMS veio de um celular pessoal comum de 9 dígitos e o código de objeto não existe na base nacional dos Correios.',
+          observation: 'O perfil usa o nome e o logo dos Correios, mas é uma conta comercial sem selo criada num celular comum, e o código de objeto não existe na base dos Correios.',
         },
         evidenceResult: {
           status: 'suspicious',
-          headline: 'Enviado por celular comum em vez de número corporativo!',
-          details: 'Empresas oficiais usam códigos curtos (shortcodes) de 5 dígitos, nunca celulares pré-pagos comuns.',
-          fato: 'Golpistas compram pacotes de disparo de SMS em massa usando números de telefone celular descartáveis.',
+          headline: 'Conta "comercial" sem selo, num celular qualquer!',
+          details: 'Qualquer pessoa baixa o WhatsApp Business, coloca o nome "Correios" e o logo copiado. Sem selo de verificação, o nome do perfil não prova nada.',
+          fato: 'Golpistas disparam essas mensagens em massa usando chips descartáveis; quando um número é banido, outro entra no lugar no mesmo dia.',
         },
       },
     ],
     isScam: true,
     evidenceHypotheses: [
       'O link leva para um site falso (.online) criado há 3 dias e o código de rastreio não existe nos Correios.',
-      'A mensagem veio de um celular comum de 9 dígitos e não do número curto oficial de 5 dígitos.',
+      'A mensagem veio de uma conta comercial sem selo de verificação, num número de celular comum.',
       'O valor da taxa de R$ 27,90 é muito baixo, pois taxas de importação federais são sempre acima de R$ 100.',
       'O site dos Correios nunca pode usar a cor amarela em links enviados pelo celular.',
     ],
     correctEvidenceIndex: 0,
     circumstantialHintIndex: 1,
-    circumstantialHintFeedback: 'Receber SMS de um celular comum é um sinal forte de desconfiança, mas fornecedores e transportadoras terceirizadas por vezes usam rotas variadas. A prova irrefutável e técnica é o link falso (.online criado há 3 dias) e o código que nem sequer existe nos Correios!',
+    circumstantialHintFeedback: 'Um perfil sem selo num celular comum é um sinal forte de desconfiança, mas transportadoras terceirizadas às vezes mandam mensagem por números comuns. A prova irrefutável é o link falso (.online criado há 3 dias) e o código que nem sequer existe nos Correios!',
     keyEvidenceReason: 'O link leva para um site falso (.online) hospedado no exterior e o código de rastreio informado sequer existe no banco de dados dos Correios.',
     redFlags: [
       'Endereço do site estranho (termina em .online em vez de correios.com.br)',
-      'SMS enviado por celular comum de 9 dígitos',
+      'Perfil "Correios" sem selo de verificação, num celular comum',
       'Pressa para pagar uma taxa no mesmo dia',
       'Cobrança direta de Pix em página não oficial',
     ],
-    explanation: 'Golpe do SMS falso dos Correios. Criminosos mandam mensagens automáticas para milhares de celulares torcendo para que alguém que comprou pela internet se assuste e pague a taxa falsa.',
-    realWorldTip: 'Nunca clique em links de SMS sobre entregas. Abra o site correios.com.br você mesmo e consulte o rastreamento.',
+    explanation: 'Golpe dos falsos Correios no WhatsApp. Criminosos criam perfis com o logo dos Correios e mandam a mesma mensagem para milhares de pessoas, torcendo para que alguém que comprou pela internet se assuste e pague a taxa falsa.',
+    realWorldTip: 'Nunca clique em links de mensagem sobre entregas. Abra o site correios.com.br você mesmo e consulte o rastreamento.',
     pedagogy: {
       emotionalTrigger: 'Medo de Perder a Encomenda: o golpista quer que você clique no link por impulso achando que seu pacote vai ser cancelado.',
       kidsAnalogy: 'É como receber um bilhete anônimo dizendo que seu brinquedo foi preso e cobrando dinheiro para soltar.',
-      parentsGuide: 'Ensine a família a nunca clicar em links de SMS. Sempre consulte pelo aplicativo ou site oficial.',
+      parentsGuide: 'Ensine a família a nunca clicar em links de cobrança que chegam por WhatsApp ou SMS. Sempre consulte pelo aplicativo ou site oficial.',
       adultRemedy: 'Se pagou o Pix falso, tire prints da tela e conteste a transferência no app do banco.',
-      goldenRule: 'Os Correios nunca mandam link de cobrança por Pix via SMS!',
+      goldenRule: 'Os Correios não cobram taxa por link de Pix no WhatsApp!',
     },
     reinforcementDrill: {
       title: "Treino de Olho: Endereços Oficiais vs Falsos",
@@ -419,14 +433,15 @@ export const SCAM_CASES: ScamCase[] = [
     levelTitle: 'Nível 1 • Básico',
     xpReward: 60,
     category: 'Segurança & Cartão',
-    title: 'Notificação do App do Banco: Compra no Cartão',
-    dilemma: 'Seu celular vibra com uma notificação do aplicativo oficial do seu banco informando uma compra de R$ 34,90 em uma padaria do seu bairro.',
-    sender: 'App Nubank (Notificação Oficial)',
-    channel: 'sms',
+    title: 'WhatsApp Oficial do Banco: Compra no Cartão',
+    dilemma: 'Logo depois de pagar o café na padaria, chega no WhatsApp uma mensagem da conta verificada do seu banco avisando uma compra de R$ 34,90 na Padaria Estrela.',
+    sender: 'Itaú Unibanco',
+    channel: 'whatsapp',
+    whatsapp: { number: '+55 11 4004-4828', pushName: 'Itaú Unibanco', business: 'verified' },
     time: '08:45',
-    preview: 'Compra aprovada de R$ 34,90 em Padaria Estrela...',
+    preview: 'Compra aprovada no cartão de débito final 4821: R$ 34,90...',
     messageContent:
-      'Compra aprovada no seu Cartão de Débito:\nValor: R$ 34,90\nEstabelecimento: Padaria Estrela\nHoje às 08:44\n\nSe você não reconhece esta transação, toque aqui para abrir o app oficial e bloquear seu cartão temporariamente.',
+      'Itaú informa: compra aprovada no seu cartão de débito final 4821.\n\nValor: R$ 34,90\nLocal: PADARIA ESTRELA\nHoje, 08:44\n\nNão reconhece essa compra? Bloqueie o cartão pelo app Itaú, em Cartões > Bloquear cartão.\n\nO Itaú nunca pede senha, código ou Pix por aqui.',
     clues: [
       {
         id: 'clue-3-canal',
@@ -436,20 +451,20 @@ export const SCAM_CASES: ScamCase[] = [
         question: 'De onde veio essa notificação?',
         inspection: {
           type: 'official',
-          badge: 'Sistema Operacional & App',
-          field1Label: 'Origem da Notificação',
-          field1Value: 'Push Notification nativo do aplicativo Nubank instalado',
+          badge: 'Perfil do WhatsApp',
+          field1Label: 'Conta Remetente',
+          field1Value: 'Itaú Unibanco • conta comercial verificada (selo azul), +55 11 4004-4828',
           field2Label: 'Links ou Endereços Web',
-          field2Value: 'Nenhum link externo contido no aviso',
+          field2Value: 'Nenhum link: só orienta abrir o app oficial por conta própria',
           field3Label: 'Solicitação de Dados Cadastrais',
           field3Value: 'Nenhuma senha, código ou dado solicitado',
-          observation: 'A notificação é gerada localmente pelo próprio aplicativo do banco, sem links externos nem pedidos de senha.',
+          observation: 'A mensagem veio da conta verificada do banco, no número divulgado no site oficial, sem links e sem pedido de senha.',
         },
         evidenceResult: {
           status: 'clean',
-          headline: 'Notificação legítima do próprio app oficial!',
-          details: 'A mensagem foi gerada internamente pelo aplicativo oficial do banco já instalado.',
-          fato: 'Notificações push autênticas de aplicativos instalados não contêm links para navegadores web desconhecidos.',
+          headline: 'Aviso legítimo do canal oficial do banco!',
+          details: 'Conta com selo de verificação, número oficial e nenhum link: a mensagem só informa e manda você mesmo abrir o app.',
+          fato: 'Selo sozinho não basta: o que fecha o caso é o aviso não pedir nada e bater com uma compra que você fez.',
         },
       },
       {
@@ -506,19 +521,19 @@ export const SCAM_CASES: ScamCase[] = [
       'A notificação é falsa porque compras no cartão só podem ser avisadas por e-mail no final do mês.',
       'A mensagem é verdadeira só porque está escrita sem nenhum erro de português.',
       'O banco só aprova compras por aproximação se você confirmar no caixa eletrônico.',
-      'É um aviso comum do próprio app do banco sobre uma compra real que você acabou de fazer, sem links e sem pedir Pix.',
+      'É um aviso comum do canal oficial do banco sobre uma compra real que você acabou de fazer, sem links e sem pedir Pix.',
     ],
     correctEvidenceIndex: 3,
-    keyEvidenceReason: 'O próprio aplicativo do banco enviou um aviso normal sobre a sua compra recente, sem pedir senhas, dados ou transferências.',
+    keyEvidenceReason: 'A conta verificada do banco enviou um aviso normal sobre a sua compra recente, sem links e sem pedir senhas, dados ou transferências.',
     redFlags: [],
-    explanation: 'Esta notificação é 100% VERDADEIRA. Aplicativos de banco avisam cada compra na hora para proteger você. É importante saber reconhecer avisos normais para não entrar em pânico sem motivo.',
-    realWorldTip: 'Mantenha os avisos do seu app de banco ativados! Eles te avisam na mesma hora se alguém usar seu cartão.',
+    explanation: 'Esta mensagem é 100% VERDADEIRA. Bancos avisam cada compra na hora, pelo app ou pelo WhatsApp oficial, para proteger você. É importante saber reconhecer avisos normais para não entrar em pânico sem motivo.',
+    realWorldTip: 'Mantenha os avisos de compra do seu banco ativados! Eles te avisam na mesma hora se alguém usar seu cartão.',
     pedagogy: {
-      emotionalTrigger: 'Susto com Notificação: ver um aviso de compra no celular pode assustar, mas conferir o extrato no app mostra que foi uma compra sua.',
+      emotionalTrigger: 'Susto com Aviso de Compra: ver uma compra no WhatsApp pode assustar, mas conferir o extrato no app mostra que foi uma compra sua.',
       kidsAnalogy: 'É como a campainha da casa tocando quando alguém da sua família chega com as compras.',
       parentsGuide: 'Ensine a conferir o extrato do banco no aplicativo sempre que fizer uma compra.',
       adultRemedy: 'Se não reconhecer uma compra no app, use a opção "Bloquear Cartão" direto no aplicativo oficial.',
-      goldenRule: 'Aviso do app oficial sem link externo é proteção para você, não golpe!',
+      goldenRule: 'Aviso oficial que não tem link e não pede nada é proteção para você, não golpe!',
     },
     reinforcementDrill: {
       title: "Treino de Vigilância: Notificação Real vs Golpe",
@@ -527,9 +542,9 @@ export const SCAM_CASES: ScamCase[] = [
       options: [
             {
                   id: "opt-3-a",
-                  text: "Avisos reais do app apenas informam a compra e NUNCA incluem links de internet nem pedem para fazer Pix.",
+                  text: "Avisos reais do banco apenas informam a compra e NUNCA incluem links de internet nem pedem para fazer Pix.",
                   isCorrect: true,
-                  feedback: "Perfeito! Bancos usam o push para transparência. Golpistas sempre colocam um link ou um número para você ligar no desespero."
+                  feedback: "Perfeito! Bancos avisam compras para dar transparência. Golpistas sempre colocam um link ou um número para você ligar no desespero."
             },
             {
                   id: "opt-3-b",
@@ -551,15 +566,16 @@ export const SCAM_CASES: ScamCase[] = [
     level: 'medio',
     levelTitle: 'Nível 3 • Falsa Central Telefônica',
     xpReward: 100,
-    category: 'SMS & Falsa Central',
-    title: 'SMS de Falsa Compra de R$ 3.890 no Magazine Luiza com 0800',
-    dilemma: 'Você recebe um SMS alarmante de compra de R$ 3.890 no Magazine Luiza com um 0800 pedindo para ligar urgente se desconhecer a transação.',
-    sender: '0800 729 0001 (Magalu)',
-    channel: 'sms',
+    category: 'WhatsApp & Falsa Central',
+    title: 'Alerta de Compra de R$ 3.890 no Magalu com 0800 para Ligar',
+    dilemma: 'Um perfil "Magalu Alertas" te manda no WhatsApp que uma compra de R$ 3.890 foi aprovada no seu cartão e passa um 0800 para você ligar urgente se não reconhecer.',
+    sender: '+55 11 97316-4408',
+    channel: 'whatsapp',
+    whatsapp: { number: '+55 11 97316-4408', pushName: 'Magalu Alertas', business: 'unverified' },
     time: '15:42',
-    preview: 'MAGALU: Compra aprovada de R$ 3.890,00 no Cartão Virtual...',
+    preview: 'Magalu informa: compra aprovada no valor de R$ 3.890,00...',
     messageContent:
-      'MAGALU ALERTA: Compra aprovada no valor de R$ 3.890,00 no seu Cartão Virtual.\n\nEstabelecimento: Magazine Luiza S/A (Hoje às 15:42).\n\nCaso você NÃO reconheça esta transação, ligue imediatamente para nossa Central de Prevenção a Fraudes: 0800 729 0001.',
+      'Magalu informa: compra aprovada no valor de R$ 3.890,00 no seu cartão virtual.\n\nProduto: iPhone 15 128GB Preto\nData: hoje, 15:42\n\nCaso NÃO reconheça esta compra, entre em contato imediatamente com a nossa Central de Prevenção a Fraudes: 0800 729 0001\n\nAtendimento 24h. Não responda esta mensagem.',
     clues: [
       {
         id: 'clue-3-extrato',
@@ -581,14 +597,14 @@ export const SCAM_CASES: ScamCase[] = [
         evidenceResult: {
           status: 'suspicious',
           headline: 'A compra nunca existiu! O extrato está 100% limpo.',
-          details: 'No aplicativo do banco não existe nenhuma cobrança de R$ 3.890. O SMS é uma isca falsa para criar desespero.',
-          fato: 'Golpistas inventam compras de alto valor por SMS para induzir a vítima a ligar para o 0800 no susto.',
+          details: 'No aplicativo do banco não existe nenhuma cobrança de R$ 3.890. A mensagem é uma isca falsa para criar desespero.',
+          fato: 'Golpistas inventam compras de alto valor por WhatsApp e SMS para induzir a vítima a ligar para o 0800 no susto.',
         },
       },
       {
         id: 'clue-3-central-0800',
         name: 'Gravação da Central 0800',
-        buttonLabel: 'Ligar para o 0800 do SMS',
+        buttonLabel: 'Ligar para o 0800 da Mensagem',
         category: 'phone',
         question: 'O que o atendente do 0800 pede para você fazer?',
         inspection: {
@@ -614,22 +630,22 @@ export const SCAM_CASES: ScamCase[] = [
         name: 'Pesquisa no Google',
         buttonLabel: 'Checar Notícias de Segurança no Google',
         category: 'whois',
-        question: 'O que as notícias alertam sobre SMS com 0800 de compra aprovada?',
+        question: 'O que as notícias alertam sobre mensagens de compra aprovada com 0800?',
         inspection: {
           type: 'link',
           badge: 'Pesquisa no Google Brasil',
           field1Label: 'Termo Pesquisado',
-          field1Value: '"SMS compra aprovada 0800 Magazine Luiza"',
+          field1Value: '"mensagem compra aprovada 0800 Magalu WhatsApp"',
           field2Label: 'Alerta Antifraude Localizado',
-          field2Value: 'Notícia de Segurança: "Golpe do 0800 falso usa SMS de compras inventadas para roubar Pix"',
+          field2Value: 'Notícia de Segurança: "Golpe do 0800 falso usa WhatsApp com compras inventadas para roubar Pix"',
           field3Label: 'Orientação Oficial dos Bancos',
-          field3Value: 'Nunca ligue para números informados em SMS. Consulte seu extrato no app oficial.',
+          field3Value: 'Nunca ligue para números informados em mensagens. Consulte seu extrato no app oficial.',
           observation: 'A pesquisa no Google confirma que criminosos contratam números 0800 para fingir que são centrais antifraude de lojas e bancos.',
         },
         evidenceResult: {
           status: 'suspicious',
           headline: 'Alerta nacional: Golpe clássico do 0800 falso!',
-          details: 'Criminosos mandam SMS em massa sobre compras falsas de lojas famosas com números 0800 controlados por eles.',
+          details: 'Criminosos disparam mensagens em massa no WhatsApp sobre compras falsas de lojas famosas, com números 0800 controlados por eles.',
           fato: 'Para falar com seu banco de verdade, use apenas o telefone oficial impresso no verso do seu cartão físico.',
         },
       },
@@ -638,31 +654,31 @@ export const SCAM_CASES: ScamCase[] = [
     evidenceHypotheses: [
       'O Magazine Luiza não vende produtos com valores quebrados sem centavos.',
       'No app do banco não há nenhuma compra no extrato e o atendente do 0800 exige Pix para cancelamento.',
-      'O SMS veio com um número 0800 pedindo para você ligar com urgência se não reconhece a compra.',
+      'A mensagem trouxe um número 0800 pedindo para você ligar com urgência se não reconhece a compra.',
       'Ligações para 0800 são proibidas aos sábados e domingos segundo o Procon.',
     ],
     correctEvidenceIndex: 1,
     circumstantialHintIndex: 2,
-    circumstantialHintFeedback: 'Receber um SMS com número 0800 pedindo para ligar gera desconfiança, mas bancos às vezes informam canais de suporte. A prova definitiva do golpe é o extrato do seu banco estar ZERADO (a compra nunca existiu) e o atendente pedir um Pix para cancelar!',
+    circumstantialHintFeedback: 'Receber uma mensagem com número 0800 pedindo para ligar gera desconfiança, mas empresas às vezes informam canais de suporte. A prova definitiva do golpe é o extrato do seu banco estar ZERADO (a compra nunca existiu) e o atendente pedir um Pix para cancelar!',
     keyEvidenceReason: 'O extrato oficial no aplicativo do banco está totalmente limpo (a compra de R$ 3.890 nunca existiu) e o atendente do 0800 exige que a vítima faça um Pix para estorno.',
     redFlags: [
-      'SMS alarmando sobre compra de alto valor que você não fez',
+      'Mensagem de perfil sem selo alarmando sobre compra de alto valor que você não fez',
       'Instrução para ligar urgentemente em um número 0800',
       'Extrato da conta limpo sem nenhuma cobrança real',
       'Atendente pedindo transferência Pix para "proteger o saldo"',
     ],
-    explanation: 'Golpe do SMS de Compra Aprovada com Falsa Central 0800. Os golpistas inventam uma compra alta no Magazine Luiza para assustar você. Ao ligar no 0800 deles, falsos atendentes dizem que para cancelar a compra você tem que fazer um Pix para uma conta de segurança.',
-    realWorldTip: 'Recebeu SMS de compra estranha? NUNCA ligue no número do SMS. Abra seu aplicativo de banco e confira o extrato. Se não tiver nada lá, apague a mensagem!',
+    explanation: 'Golpe da Compra Aprovada com Falsa Central 0800. Os golpistas inventam uma compra alta no Magazine Luiza para assustar você. Ao ligar no 0800 deles, falsos atendentes dizem que para cancelar a compra você tem que fazer um Pix para uma conta de segurança.',
+    realWorldTip: 'Recebeu mensagem de compra estranha? NUNCA ligue no número que veio nela. Abra seu aplicativo de banco e confira o extrato. Se não tiver nada lá, apague a mensagem!',
     pedagogy: {
       emotionalTrigger: 'Susto e Pânico Financeiro: a mensagem de compra de quase 4 mil reais induz a vítima a ligar para o 0800 sem checar o extrato antes.',
       kidsAnalogy: 'É como alguém passar na rua gritando que pegou sua bicicleta para você correr até o esconderijo deles.',
-      parentsGuide: 'Ensine a nunca ligar para telefones que vêm dentro de SMS. O canal seguro é sempre o telefone do verso do cartão.',
+      parentsGuide: 'Ensine a nunca ligar para telefones que vêm dentro de mensagens. O canal seguro é sempre o telefone do verso do cartão.',
       adultRemedy: 'Desligue imediatamente qualquer ligação que peça transferências Pix para estornar compras.',
       goldenRule: 'O extrato do banco é a única verdade: se não tá no extrato, a compra não existe!',
     },
     reinforcementDrill: {
-      title: "Treino de Reação: SMS de Compra no Cartão",
-      question: "Você recebe SMS dizendo que uma compra de R$ 3.890 foi aprovada e pede para ligar no 0800 caso desconheça. Qual o primeiro passo?",
+      title: "Treino de Reação: Mensagem de Compra no Cartão",
+      question: "Você recebe no WhatsApp uma mensagem dizendo que uma compra de R$ 3.890 foi aprovada e pede para ligar no 0800 caso desconheça. Qual o primeiro passo?",
       options: [
         {
           id: "opt-fc-1",
@@ -672,9 +688,9 @@ export const SCAM_CASES: ScamCase[] = [
         },
         {
           id: "opt-fc-2",
-          text: "Ligar correndo para o 0800 indicado no SMS para cancelar antes que debitem.",
+          text: "Ligar correndo para o 0800 indicado na mensagem para cancelar antes que debitem.",
           isCorrect: false,
-          feedback: "Perigo! O 0800 do SMS é controlado pelos próprios golpistas.",
+          feedback: "Perigo! O 0800 da mensagem é controlado pelos próprios golpistas.",
         },
         {
           id: "opt-fc-3",
@@ -693,14 +709,15 @@ export const SCAM_CASES: ScamCase[] = [
     levelTitle: 'Nível 2 • Médio',
     xpReward: 100,
     category: 'Ligação & Falsa Central',
-    title: 'Ligação do "Banco": 0800 com BINA Falsificada',
-    dilemma: 'Você recebe uma ligação onde o visor do celular exibe exatamente o número 0800 oficial do seu banco. Uma voz profissional diz que sua conta foi invadida e pede que você transfira para a conta segura.',
-    sender: '0800 729 0001 (Visor do Banco)',
+    title: 'Chamada de WhatsApp do "Banco": Central Antifraude',
+    dilemma: 'Você recebe uma chamada de voz no WhatsApp de um perfil "Central Antifraude", com o logo do seu banco na foto. Uma voz profissional diz que tentaram fazer um Pix da sua conta e pede que você transfira o saldo para uma conta de segurança.',
+    sender: '+55 11 94418-2270',
     channel: 'call',
+    whatsapp: { number: '+55 11 94418-2270', pushName: 'Central Antifraude', business: 'unverified' },
     time: '16:40',
-    preview: 'Chamada de voz: Detectamos tentativa de compra de R$ 2.800...',
+    preview: 'Chamada de voz do WhatsApp...',
     messageContent:
-      'LIGAÇÃO TELEFÔNICA RECEBIDA:\n\nAtendente: "Olá, falo com o titular? Aqui é da Central de Prevenção a Fraudes do Banco. Identificamos uma tentativa de transferência Pix suspeita de R$ 2.800 para Lucas Almeida em São Paulo. O senhor confirma essa operação?"\n\nVocê: "Não, não fui eu!"\n\nAtendente: "Perfeito, senhor. Para cancelar essa transação e proteger seu saldo antes que seja debitado, o senhor precisa abrir seu app agora e transferir o valor disponível para nossa Conta Cofre de Segurança Provisória do Banco Central. Eu vou te passar a chave Pix de segurança..."',
+      'Atendente: "Boa tarde, falo com o titular da conta? Aqui é o Ricardo, da central antifraude do seu banco. Identificamos agora uma tentativa de Pix de R$ 2.800 para um tal de Lucas Almeida, em São Paulo. O senhor reconhece essa transação?"\n\nVocê: "Não, não fui eu!"\n\nAtendente: "Certo, já vou deixar ela bloqueada. Mas o seu acesso está comprometido, senhor, o golpista ainda tá logado na sua conta. Pra proteger o saldo, o senhor vai abrir o app agora e transferir o valor disponível pra uma conta de segurança. Pode pegar papel e caneta que eu vou te passar a chave..."',
     clues: [
       {
         id: 'clue-4-pix-seguro',
@@ -712,7 +729,7 @@ export const SCAM_CASES: ScamCase[] = [
           type: 'security',
           badge: 'Normativa Operacional do Banco Central',
           field1Label: 'Procedimento Solicitado na Chamada',
-          field1Value: 'Transferência Pix para "Conta Cofre Provisória"',
+          field1Value: 'Transferência Pix para uma "conta de segurança"',
           field2Label: 'Protocolo Padrão em Fraudes Suspeitas',
           field2Value: 'Bloqueio administrativo interno pelo sistema da instituição',
           field3Label: 'Normativa Bacen Resolução nº 1/2020',
@@ -728,26 +745,26 @@ export const SCAM_CASES: ScamCase[] = [
       },
       {
         id: 'clue-4-bina',
-        name: 'Raio-X do Número no Visor',
-        buttonLabel: 'Checar como o 0800 Aparece no Visor',
+        name: 'Raio-X de Quem Está Ligando',
+        buttonLabel: 'Ver Perfil da Chamada no WhatsApp',
         category: 'phone',
-        question: 'O número 0800 na tela do celular garante que é o banco?',
+        question: 'Um perfil de WhatsApp com o logo do banco garante que é o banco?',
         inspection: {
           type: 'official',
-          badge: 'Telefonia & Roteamento',
-          field1Label: 'Identificação no Visor do Celular',
-          field1Value: '0800 729 0001',
-          field2Label: 'Sentido do Tráfego Telefônico',
-          field2Value: 'Chamada Externa Ativa (Outbound)',
-          field3Label: 'Regulamentação Anatel para Linhas 0800',
-          field3Value: 'Configuração exclusiva para tráfego receptivo (Inbound)',
-          observation: 'O visor mostra 0800 em uma ligação recebida (chamada ativa), violando a arquitetura técnica regulamentar da Anatel.',
+          badge: 'Perfil do WhatsApp',
+          field1Label: 'Nome e Foto do Perfil',
+          field1Value: '"Central Antifraude", com o logo do banco copiado',
+          field2Label: 'Tipo de Conta',
+          field2Value: 'Conta comercial SEM selo de verificação, no celular +55 11 94418-2270',
+          field3Label: 'Política dos Bancos',
+          field3Value: 'Bancos não fazem ligação de segurança pelo WhatsApp',
+          observation: 'Quem liga é um celular comum com WhatsApp Business, sem selo, usando nome e logo escolhidos pelo próprio golpista.',
         },
         evidenceResult: {
           status: 'suspicious',
-          headline: 'Número mascarado por tecnologia de falsificação (Spoofing)!',
-          details: 'O criminoso usa tecnologia de telefonia via internet para alterar o número que aparece no visor do seu telefone.',
-          fato: 'Centrais 0800 de bancos são configuradas apenas para RECEBER ligações, quase nunca para fazer chamadas ativas para clientes.',
+          headline: 'Qualquer um coloca o logo do banco num perfil de WhatsApp!',
+          details: 'Nome e foto de perfil são escolhidos por quem cria a conta. Sem selo de verificação, isso não prova nada.',
+          fato: 'Banco não liga pelo WhatsApp para tratar de fraude. Se ligou por lá, de uma conta sem selo, desligue.',
         },
       },
       {
@@ -777,9 +794,9 @@ export const SCAM_CASES: ScamCase[] = [
     ],
     isScam: true,
     evidenceHypotheses: [
-      'A ligação é verdadeira porque o número que apareceu na tela começa com 0800.',
+      'A ligação é verdadeira porque o perfil tem o logo do banco e se chama "Central Antifraude".',
       'O atendente mandou fazer um Pix para uma "conta de segurança", o que nenhum banco jamais pede.',
-      'O número 0800 é falso porque não está escrito no verso do cartão físico.',
+      'A chamada é falsa porque o número não está escrito no verso do cartão físico.',
       'A compra só poderia ser cancelada se a ligação acontecesse durante o horário comercial.',
     ],
     correctEvidenceIndex: 1,
@@ -790,7 +807,7 @@ export const SCAM_CASES: ScamCase[] = [
         label: 'Confrontar: "Vou desligar e ligar para o telefone do verso do meu cartão!"',
         actionType: 'investigation',
         playerMessage: 'Essa conversa está muito estranha. Vou desligar a ligação e ligar eu mesmo no número do verso do meu cartão!',
-        replyMessage: 'Atendente (nervoso e autoritário): "Senhor, se você desligar agora, o sistema entenderá que você confirmou o Pix de R$ 2.800! A responsabilidade civil pelo débito será sua! Permaneça na linha e faça o Pix de segurança agora!"',
+        replyMessage: 'Atendente: "Senhor, se desligar agora o sistema entende que o senhor autorizou o Pix de R$ 2.800, e aí o banco não devolve! Fica na linha comigo que em dois minutinhos a gente resolve."',
         evidenceDiscovered: {
           id: 'ev-c4-threat',
           title: 'Ameaça Desesperada para Não Desligar',
@@ -801,16 +818,16 @@ export const SCAM_CASES: ScamCase[] = [
       },
       {
         id: 'act-c4-2',
-        label: 'Questionar BINA: "Por que um 0800 está ME ligando se 0800 só recebe chamadas?"',
+        label: 'Questionar: "Desde quando banco liga pelo WhatsApp?"',
         actionType: 'investigation',
-        playerMessage: '0800 é canal exclusivo para receber ligações de clientes. Como é que o banco está ME ligando de um 0800?',
-        replyMessage: 'Atendente (hesitando): "Senhor... nós somos da divisão especial integrada de inteligência... o sistema faz a rotação de prefixo automatizada..."',
+        playerMessage: 'Banco não me liga pelo WhatsApp. E esse perfil nem tem selo de verificação. Por que vocês estão me ligando por aqui?',
+        replyMessage: 'Atendente: "É que... por segurança a gente tá usando o WhatsApp, senhor, porque a linha normal pode estar sendo monitorada pelo golpista. O importante agora é proteger o seu dinheiro, tá bom? Abre o app aí pra mim."',
         evidenceDiscovered: {
           id: 'ev-c4-spoofing',
-          title: 'Hesitação e Farsa do 0800',
-          description: 'O criminoso gaguejou. Números 0800 não realizam chamadas ativas na telefonia brasileira.',
+          title: 'Desculpa Esfarrapada para o WhatsApp',
+          description: 'O golpista improvisou uma justificativa. Bancos não fazem atendimento de fraude por chamada de WhatsApp.',
           status: 'suspicious',
-          forensicFact: 'O BINA Spoofing mascara a chamada para parecer um canal oficial.',
+          forensicFact: 'Nome e foto de perfil no WhatsApp são escolhidos por quem criou a conta: qualquer um pode usar o logo do banco.',
         },
       },
       {
@@ -818,11 +835,11 @@ export const SCAM_CASES: ScamCase[] = [
         label: 'Hesitar: "Mas por que EU tenho que fazer um Pix para estornar uma compra?"',
         actionType: 'investigation',
         playerMessage: 'Se o banco é quem cuida da minha conta, por que EU preciso transferir um Pix para cancelar uma transação?',
-        replyMessage: 'Atendente (pressionando): "É o protocolo de compensação do Banco Central, senhor! O cofre precisa do espelhamento do saldo para validar o bloqueio! Faltam apenas 40 segundos, faça a transferência!"',
+        replyMessage: 'Atendente: "Senhor, é o procedimento padrão. O dinheiro fica parado nessa conta de segurança e volta pra sua conta em até 24 horas, depois que a gente concluir o bloqueio. Mas tem que ser agora, antes que o golpista faça o Pix!"',
         evidenceDiscovered: {
           id: 'ev-c4-protocolo-falso',
-          title: 'Invenção de Protocolo Falso',
-          description: 'O Banco Central não possui "cofre de espelhamento". Todo estorno bancário é feito pelo sistema interno do banco.',
+          title: 'Invenção de Procedimento Falso',
+          description: 'Não existe "conta de segurança". Todo bloqueio e estorno é feito pelo sistema interno do próprio banco.',
           status: 'suspicious',
           forensicFact: 'Banco nenhum pede dinheiro de volta para cancelar transação não reconhecida.',
         },
@@ -832,10 +849,10 @@ export const SCAM_CASES: ScamCase[] = [
       'Ligação dizendo que sua conta foi invadida',
       'Pressão para agir rápido e não desligar o telefone',
       'Pedido para fazer Pix para "proteger" o dinheiro',
-      'Golpista fingindo usar o número oficial do banco no visor do celular',
+      'Perfil de WhatsApp com o logo do banco, sem selo de verificação',
     ],
-    explanation: 'Este é o Golpe da Falsa Central Telefônica. Os criminosos simulam o som de call center e fingem que são do banco para você se desesperar e transferir seu dinheiro para eles.',
-    realWorldTip: 'Recebeu ligação do banco falando de compra suspeita? DESLIGUE NA HORA! Pegue seu cartão e ligue para o número do verso.',
+    explanation: 'Este é o Golpe da Falsa Central, agora pelo WhatsApp. Os criminosos montam um perfil com o logo do banco, simulam o som de call center e fingem que são do banco para você se desesperar e transferir seu dinheiro para eles.',
+    realWorldTip: 'Recebeu ligação "do banco" falando de compra suspeita, ainda mais pelo WhatsApp? DESLIGUE NA HORA! Pegue seu cartão e ligue para o número do verso.',
     pedagogy: {
       emotionalTrigger: 'Medo de Perder o Dinheiro: o golpista diz que sua conta foi invadida para você não ter tempo de desligar e conferir.',
       kidsAnalogy: 'É como alguém fingir que é o diretor da escola no telefone dizendo que você precisa pagar para não ser expulso.',
@@ -845,8 +862,8 @@ export const SCAM_CASES: ScamCase[] = [
     },
     reinforcementDrill: {
       title: "Treino de Reação: A Ligação da Falsa Central",
-      question: "Uma gravação profissional te liga dizendo que uma compra de R$ 3.800 foi aprovada no seu cartão e transfere para um atendente. O que você faz?",
-      context: "Golpistas conseguem mascarar o número no visor do celular para parecer o 0800 do banco (BINA Spoofing).",
+      question: "Um perfil com o logo do seu banco te liga pelo WhatsApp dizendo que uma compra de R$ 3.800 foi aprovada no seu cartão. O que você faz?",
+      context: "Golpistas criam perfis no WhatsApp com o nome e o logo do banco para parecer atendimento oficial.",
       options: [
             {
                   id: "opt-4-a",
@@ -874,15 +891,16 @@ export const SCAM_CASES: ScamCase[] = [
     level: 'medio',
     levelTitle: 'Nível 2 • Médio',
     xpReward: 100,
-    category: 'Comércio & Redes Sociais',
-    title: 'Anúncio no Instagram: Air Fryer com 85% de Desconto',
-    dilemma: 'Um anúncio patrocinado no Instagram mostra uma famosa rede varejista liquidando Air Fryers Philips Walita de R$ 699 por apenas R$ 119 no Pix por tempo limitado.',
-    sender: 'Magazine Luiza Ofertas (Anúncio Patrocinado)',
-    channel: 'social',
+    category: 'Comércio & WhatsApp',
+    title: 'Promoção no WhatsApp: Air Fryer com 83% de Desconto',
+    dilemma: 'Um perfil "Magalu Ofertas", com o logo da loja, te manda no WhatsApp uma queima de estoque: Air Fryer Philips Walita de R$ 699 por apenas R$ 119,90 no Pix, só até hoje.',
+    sender: '+55 21 99734-5180',
+    channel: 'whatsapp',
+    whatsapp: { number: '+55 21 99734-5180', pushName: 'Magalu Ofertas', business: 'unverified' },
     time: '20:15',
-    preview: 'Mega Queima de Estoque! Air Fryer por apenas R$ 119...',
+    preview: 'Você foi selecionado(a) para a nossa Queima de Estoque...',
     messageContent:
-      'MEGA QUEIMA DE ESTOQUE EXCLUSIVA!\n\nAir Fryer Philips Walita Série 3000 de R$ 699,00 por apenas R$ 119,90 no Pix!\n\nÚltimas 14 unidades no depósito por motivo de renovação de estoque. Frete Grátis para todo o Brasil!\n\nCompre agora pelo site oficial da promoção: https://magazineluiza-queima-estoque.shop/produto/airfryer',
+      'Oi, tudo bem? Você foi selecionado(a) para a nossa Queima de Estoque de aniversário Magalu!\n\nAir Fryer Philips Walita Série 3000 de R$ 699,00 por apenas R$ 119,90 no Pix\n\nRestam só 14 unidades e a promoção acaba hoje à meia-noite. Frete grátis para todo o Brasil!\n\nGaranta a sua pelo link: https://magazineluiza-queima-estoque.shop/produto/airfryer\n\nQualquer dúvida é só chamar aqui que a Lu te atende',
     clues: [
       {
         id: 'clue-5-link',
@@ -893,7 +911,7 @@ export const SCAM_CASES: ScamCase[] = [
         inspection: {
           type: 'link',
           badge: 'Whois & Registro de Domínio',
-          field1Label: 'URL do Anúncio',
+          field1Label: 'URL Enviada na Mensagem',
           field1Value: 'https://magazineluiza-queima-estoque.shop',
           field2Label: 'Domínio Raiz Registrado',
           field2Value: 'magazineluiza-queima-estoque.shop',
@@ -941,7 +959,7 @@ export const SCAM_CASES: ScamCase[] = [
         inspection: {
           type: 'official',
           badge: 'Pesquisa de Mercado',
-          field1Label: 'Preço no Anúncio',
+          field1Label: 'Preço na Mensagem',
           field1Value: 'R$ 119,90 (Desconto anunciado de 83%)',
           field2Label: 'Preço Médio Praticado no Varejo',
           field2Value: 'R$ 599,00 a R$ 699,00',
@@ -961,7 +979,7 @@ export const SCAM_CASES: ScamCase[] = [
     evidenceHypotheses: [
       'O site é falso (.shop em vez de site oficial), tem preço impossível e obriga o pagamento por Pix.',
       'O site é de confiança porque mostra o selo de "Compra Protegida" e tem cadeado na tela.',
-      'O anúncio no Instagram não tem o selo azul de verificação ao lado do nome.',
+      'O perfil "Magalu Ofertas" no WhatsApp não tem selo de verificação ao lado do nome.',
       'A loja oferece frete grátis para todo o Brasil sem calcular taxa de entrega.',
     ],
     correctEvidenceIndex: 0,
@@ -970,20 +988,21 @@ export const SCAM_CASES: ScamCase[] = [
       'Desconto absurdo de mais de 80% em produto caro',
       'Endereço de site estranho (termina em .shop)',
       'O site só aceita pagamento por Pix',
-      'Anúncio com relógio de contagem regressiva para comprar rápido',
+      'Prazo de "só hoje" e "últimas unidades" para comprar rápido',
+      'Perfil com o logo da loja, sem selo de verificação',
     ],
-    explanation: 'Golpe da Loja Falsa na internet. Os golpistas criam um site falso quase idêntico ao de uma loja famosa, cobram metade do preço e pegam o Pix de quem tenta comprar.',
-    realWorldTip: 'Viu uma promoção incrível em rede social? Não clique no link do anúncio! Abra o navegador, digite o site oficial da loja e procure o produto por lá.',
+    explanation: 'Golpe da Loja Falsa. Os golpistas criam um perfil de WhatsApp e um site falso quase idênticos aos de uma loja famosa, anunciam um preço impossível e pegam o Pix de quem tenta comprar.',
+    realWorldTip: 'Recebeu uma promoção incrível no WhatsApp? Não clique no link da mensagem! Abra o navegador, digite o site oficial da loja e procure o produto por lá.',
     pedagogy: {
       emotionalTrigger: 'Pressa de Aproveitar a Oferta: a promessa de um super desconto faz a pessoa querer comprar correndo sem olhar o endereço do site.',
       kidsAnalogy: 'É como alguém na internet prometer diamantes no jogo por um preço quase de graça, mas só se pagar adiantado.',
       parentsGuide: 'Ensine que quando o preço é bom demais, quase sempre é golpe. Descontos de 80% em celulares não existem.',
-      adultRemedy: 'Denuncie o anúncio na rede social e nunca faça Pix para sites que você não conhece.',
+      adultRemedy: 'Denuncie e bloqueie o contato no WhatsApp e nunca faça Pix para sites que você não conhece.',
       goldenRule: 'Desconto milagroso? Entre no site oficial digitando pelo navegador!',
     },
     reinforcementDrill: {
       title: "Treino de Compras: Descontos Miraculosos na Internet",
-      question: "Você vê um anúncio nas redes sociais com um smartphone top de linha por R$ 399 no Pix (preço normal R$ 3.500). Qual é a conclusão de análise?",
+      question: "Você recebe no WhatsApp uma oferta de um smartphone top de linha por R$ 399 no Pix (preço normal R$ 3.500). Qual é a conclusão de análise?",
       context: "Preços abaixo do custo de fábrica combinados com exclusividade de Pix imediato são 100% de probabilidade de fraude.",
       options: [
             {
@@ -1013,21 +1032,22 @@ export const SCAM_CASES: ScamCase[] = [
     levelTitle: 'Nível 2 • Médio',
     xpReward: 100,
     category: 'Segurança & 2FA',
-    title: 'SMS com Código de 2 Fatores Solicitado por Você',
-    dilemma: 'Você acabou de digitar seu login no site do banco pelo seu computador e, 3 segundos depois, recebe um SMS com um código de segurança.',
-    sender: 'Banco do Brasil (28588)',
-    channel: 'sms',
+    title: 'Código de Acesso no WhatsApp Oficial Pedido por Você',
+    dilemma: 'Você acabou de digitar seu login no site do banco pelo computador e, 3 segundos depois, chega no WhatsApp uma mensagem da conta verificada do banco com um código de acesso.',
+    sender: 'Banco do Brasil',
+    channel: 'whatsapp',
+    whatsapp: { number: '+55 61 4004-0001', pushName: 'Banco do Brasil', business: 'verified' },
     time: '15:10',
-    preview: 'BB: Seu codigo de autorizacao e 739102. NUNCA informe...',
+    preview: 'BB: seu código de acesso é 739102. Não compartilhe...',
     messageContent:
-      'BB: Seu codigo de acesso para login no computador e: 739102.\n\nValido por 5 minutos.\n\nATENCAO: O Banco do Brasil NUNCA liga pedindo este codigo. Nao compartilhe com ninguem, nem mesmo com funcionarios do banco.',
+      'BB: seu código de acesso para liberar o login no computador é 739102.\n\nVálido por 5 minutos.\n\nNão compartilhe este código com ninguém. O Banco do Brasil nunca liga nem manda mensagem pedindo este código.',
     clues: [
       {
         id: 'clue-6-contexto',
         name: 'Contexto da Solicitação',
         buttonLabel: 'Verificar Ação Recente',
         category: 'system',
-        question: 'Você acabou de fazer alguma ação que justificasse esse SMS?',
+        question: 'Você acabou de fazer alguma ação que justificasse essa mensagem?',
         inspection: {
           type: 'official',
           badge: 'Registro de Sessão no Navegador',
@@ -1035,39 +1055,39 @@ export const SCAM_CASES: ScamCase[] = [
           field1Value: 'Inserção de agência e conta no site bb.com.br pelo computador',
           field2Label: 'Horário do Login no Navegador',
           field2Value: '15:10:00',
-          field3Label: 'Horário de Recebimento do SMS',
+          field3Label: 'Horário de Recebimento da Mensagem',
           field3Value: '15:10:03 (Intervalo de 3 segundos)',
-          observation: 'O SMS foi disparado 3 segundos após uma tentativa voluntária de login realizada pelo próprio usuário.',
+          observation: 'A mensagem foi disparada 3 segundos após uma tentativa voluntária de login realizada pelo próprio usuário.',
         },
         evidenceResult: {
           status: 'clean',
           headline: 'Envio imediato em resposta direta ao seu login!',
-          details: 'O SMS foi gerado exatamente no instante em que você solicitou acesso no computador.',
+          details: 'O código foi gerado exatamente no instante em que você solicitou acesso no computador.',
           fato: 'Autenticação de dois fatores legítima ocorre em sincronia direta com a ação voluntária do usuário.',
         },
       },
       {
         id: 'clue-6-numero',
-        name: 'Shortcode do Remetente',
-        buttonLabel: 'Checar Número do Remetente',
+        name: 'Perfil do Remetente',
+        buttonLabel: 'Checar Conta do Remetente',
         category: 'phone',
-        question: 'O SMS veio de um número corporativo oficial?',
+        question: 'A mensagem veio da conta oficial e verificada do banco?',
         inspection: {
           type: 'contact',
-          badge: 'Operadora de Mensageria',
-          field1Label: 'Número Remetente',
-          field1Value: '28588 (Código Curto / Shortcode Homologado)',
-          field2Label: 'Proprietário do Código',
-          field2Value: 'Banco do Brasil S.A. (Homologado na Anatel)',
+          badge: 'Perfil do WhatsApp',
+          field1Label: 'Conta Remetente',
+          field1Value: 'Banco do Brasil • conta comercial verificada (selo azul)',
+          field2Label: 'Número da Conta',
+          field2Value: '+55 61 4004-0001 (número divulgado no bb.com.br)',
           field3Label: 'Contém Links de Internet?',
           field3Value: 'Nenhum link! Apenas o código numérico',
-          observation: 'O SMS veio do shortcode oficial de 5 dígitos do Banco do Brasil, sem links perigosos.',
+          observation: 'A mensagem veio da conta verificada do Banco do Brasil, no número oficial divulgado pelo banco, sem links perigosos.',
         },
         evidenceResult: {
           status: 'clean',
-          headline: 'Canal oficial de shortcode bancário de 5 dígitos!',
-          details: 'O número 28588 é o canal de mensageria oficial registrado do Banco do Brasil.',
-          fato: 'Shortcodes de 5 dígitos são rigorosamente auditados pelas operadoras de telefonia e custam caro para serem mantidos.',
+          headline: 'Conta oficial verificada do banco, sem links!',
+          details: 'O 4004-0001 é o WhatsApp oficial divulgado pelo próprio Banco do Brasil, e a conta tem o selo de verificação.',
+          fato: 'O selo sozinho não basta: o que fecha o caso é o código ter chegado na hora em que você mesmo pediu, sem link e sem pedir nada.',
         },
       },
       {
@@ -1080,7 +1100,7 @@ export const SCAM_CASES: ScamCase[] = [
           type: 'security',
           badge: 'Alerta Antifraude',
           field1Label: 'Aviso Explícito',
-          field1Value: '"O Banco do Brasil NUNCA liga pedindo este código"',
+          field1Value: '"O Banco do Brasil nunca liga nem manda mensagem pedindo este código"',
           field2Label: 'Pede para Clicar em Algum Lugar?',
           field2Value: 'Não! Nenhum link presente',
           field3Label: 'Pede para Ligar para Algum Número?',
@@ -1103,25 +1123,25 @@ export const SCAM_CASES: ScamCase[] = [
       'A mensagem é falsa porque códigos bancários só podem ser liberados pessoalmente na agência.',
     ],
     correctEvidenceIndex: 2,
-    keyEvidenceReason: 'O SMS foi pedido por você mesmo para entrar no banco, veio do canal oficial (número de 5 dígitos) e não tem links suspeitos.',
+    keyEvidenceReason: 'O código foi pedido por você mesmo para entrar no banco, veio da conta verificada oficial do banco e não tem links suspeitos.',
     redFlags: [],
     explanation: 'Mensagem 100% VERDADEIRA. É o código de confirmação (2 etapas) que o banco manda para saber se é você mesmo. O único perigo é se alguém te ligar pedindo esse código — NUNCA passe esse número para ninguém!',
-    realWorldTip: 'Códigos por SMS são como a chave da sua casa: use você mesmo onde você pediu, mas NUNCA leia nem passe para ninguém por telefone!',
+    realWorldTip: 'Códigos de acesso (por SMS ou WhatsApp) são como a chave da sua casa: use você mesmo onde você pediu, mas NUNCA leia nem passe para ninguém por telefone!',
     pedagogy: {
       emotionalTrigger: 'Dúvida sobre Códigos: desconfiar é normal, mas basta lembrar se foi você mesmo quem tentou acessar a conta no computador.',
       kidsAnalogy: 'É como a senha do seu cofre que você usa para abrir, mas se alguém estranho pedir para você contar, você não conta.',
-      parentsGuide: 'Explique que códigos de SMS servem apenas para a própria pessoa digitar onde ela mesma abriu.',
+      parentsGuide: 'Explique que códigos de acesso servem apenas para a própria pessoa digitar onde ela mesma abriu.',
       adultRemedy: 'Se alguém te ligar pedindo o código recebido, desligue na hora.',
-      goldenRule: 'Código de SMS é pessoal: nunca passe para ninguém por telefone!',
+      goldenRule: 'Código de acesso é pessoal: nunca passe para ninguém, nem por ligação nem por mensagem!',
     },
     reinforcementDrill: {
       title: "Treino de Autenticação: O Código de 2 Fatores (2FA)",
-      question: "Você recebe um SMS do seu banco com o texto: \"Seu codigo de acesso: 829104. Nao informe a ninguem\". Em seguida, alguém te liga pedindo esse código. O que fazer?",
-      context: "O golpista já tem sua senha inicial e precisa apenas do código do SMS para esvaziar sua conta.",
+      question: "Você recebe do seu banco a mensagem: \"Seu código de acesso: 829104. Não informe a ninguém\". Em seguida, alguém te liga pedindo esse código. O que fazer?",
+      context: "O golpista já tem sua senha inicial e precisa apenas do código para esvaziar sua conta.",
       options: [
             {
                   id: "opt-6-a",
-                  text: "NUNCA ditar nem enviar o código para ninguém: códigos de SMS são de uso exclusivo e pessoal.",
+                  text: "NUNCA ditar nem enviar o código para ninguém: códigos de acesso são de uso exclusivo e pessoal.",
                   isCorrect: true,
                   feedback: "Isso aí! Códigos de 2FA são como chaves físicas da sua casa: se você entregar pelo telefone, o invasor entra."
             },
@@ -1150,12 +1170,13 @@ export const SCAM_CASES: ScamCase[] = [
     category: 'Emprego & Vagas Falsas',
     title: 'Vaga de Trabalho Remoto: R$ 350/dia para Curtir Vídeos',
     dilemma: 'Uma recrutadora te chama no WhatsApp oferecendo trabalho flexível de meio período para avaliar marcas e curtir vídeos no YouTube. No primeiro dia você ganha R$ 20 de verdade no Pix, mas no segundo pedem um depósito de R$ 100 para liberar tarefas VIP.',
-    sender: 'Larissa - RH Shopee Brasil',
+    sender: '+62 821-4920-1823',
     channel: 'whatsapp',
+    whatsapp: { number: '+62 821-4920-1823', pushName: 'Larissa | RH Shopee', business: 'unverified' },
     time: '09:30',
-    preview: 'Ola! Vaga home office disponivel. Ganhe de R$ 100 a R$ 500...',
+    preview: 'Olá, bom dia! Tudo bem? Me chamo Larissa, sou do RH da Shopee...',
     messageContent:
-      'Olá! Tudo bem? Sou a Larissa, recrutadora de talentos da Shopee Brasil. Selecionamos seu perfil para nossa equipe de avaliação de produtos.\n\nO trabalho é 100% online pelo celular, dedicando apenas 30 minutos por dia para curtir itens e avaliar lojas. Pagamento diário via Pix entre R$ 150 e R$ 500!\n\nNo primeiro teste você ganha R$ 20 na hora, e na etapa seguinte basta depositar a cota de R$ 100 via Pix para liberar os saques das Tarefas VIP.\n\nPara começar agora, entre no nosso grupo de trabalho do Telegram: https://t.me/shopee_tarefas_vip',
+      'Olá, bom dia! Tudo bem?\n\nMe chamo Larissa, sou do RH da Shopee Brasil. Seu perfil foi selecionado para uma vaga de avaliador(a) de produtos, home office\n\nÉ bem simples: uns 30 minutinhos por dia curtindo vídeos e avaliando lojas pelo celular. O pagamento é diário via Pix, de R$ 150 a R$ 500\n\nNa primeira tarefa você já recebe R$ 20 na hora, pra conhecer. Depois, pra liberar as Tarefas VIP, é só fazer uma recarga de R$ 100 que volta com o lucro no mesmo dia\n\nTem interesse? Entra no nosso grupo de treinamento no Telegram que a mentora te explica tudo: https://t.me/shopee_tarefas_vip',
     clues: [
       {
         id: 'clue-7-mecanica',
@@ -1288,37 +1309,38 @@ export const SCAM_CASES: ScamCase[] = [
     levelTitle: 'Nível 3 • Avançado',
     xpReward: 150,
     category: 'Governo & Impostos',
-    title: 'Mensagem na Caixa Postal Oficial do Portal Gov.br / e-CAC',
-    dilemma: 'Você entra no portal oficial cav.receita.fazenda.gov.br digitando sua senha do Gov.br. Na sua Caixa Postal oficial há uma notificação de malha fina do Imposto de Renda com prazo de 30 dias para retificar declaração médica.',
-    sender: 'Receita Federal do Brasil (Portal e-CAC Oficial)',
-    channel: 'document',
+    title: 'Contador Avisa: Pendência de Malha na Caixa Postal do e-CAC',
+    dilemma: 'O Marcos, contador que faz seu Imposto de Renda há anos, te chama no WhatsApp: caiu uma pendência de malha fina na sua Caixa Postal do e-CAC. Ele não manda link nem cobra nada, só pede que você confira e separe os recibos médicos.',
+    sender: 'Marcos Contador',
+    channel: 'whatsapp',
+    whatsapp: { number: '+55 11 99218-4530', savedName: 'Marcos Contador', pushName: 'Marcos Ribeiro' },
     time: '10:00',
-    preview: 'Termo de Intimacao Fiscal: Divergencia na Declaracao do IRPF...',
+    preview: 'Bom dia! Caiu uma mensagem na sua caixa postal do e-CAC...',
     messageContent:
-      'RECEITA FEDERAL DO BRASIL - MINISTÉRIO DA FAZENDA\nPortal e-CAC - Centro Virtual de Atendimento ao Contribuinte\n\nTermo de Notificação de Lançamento / Malha Fiscal:\nContribuinte: CPF ***.392.108-**\nExercício: 2025 (Ano-calendário 2024)\n\nPrezado(a) Contribuinte,\nIdentificamos inconsistência nas deduções de despesas médicas declaradas no valor de R$ 4.200,00 com o profissional Dr. Carlos Eduardo CRM/SP 89201.\n\nOrientações:\nAcesse a aba "Meu Imposto de Renda" > "Pendências de Malha" neste mesmo portal para apresentar os recibos médicos ou retificar a declaração no prazo de 30 dias.\n\nNÃO É NECESSÁRIO COMPARECER A UMA UNIDADE FÍSICA. ESTE PROCEDIMENTO É TOTALMENTE REALIZADO PELO PORTAL GOV.BR.',
+      'Bom dia! Tudo certo?\n\nOlha, entrei no e-CAC com a procuração que vc me deu e caiu uma mensagem na sua caixa postal da Receita. Sua declaração de 2025 ficou retida na malha por causa das despesas médicas\n\nÉ aquele valor de R$ 4.200,00 do Dr. Carlos Eduardo (CRM/SP 89201)\n\nNada grave, tem prazo de 30 dias. A gente só precisa mandar os recibos pela própria aba de pendências de malha, lá no portal\n\nNão precisa pagar nada nem clicar em link nenhum, tá? Se quiser conferir, entra vc mesmo no gov.br > e-CAC > Caixa Postal que tá lá. Depois me manda foto dos recibos',
     clues: [
       {
         id: 'clue-8-ambiente',
-        name: 'Ambiente de Acesso',
-        buttonLabel: 'Checar Onde a Mensagem Foi Lida',
+        name: 'Conferência no e-CAC',
+        buttonLabel: 'Conferir no e-CAC por Conta Própria',
         category: 'whois',
-        question: 'Como você acessou essa mensagem?',
+        question: 'A pendência que o contador avisou existe mesmo no portal oficial?',
         inspection: {
           type: 'official',
           badge: 'Cadeia de Custódia Digital',
-          field1Label: 'Endereço do Portal Acessado',
+          field1Label: 'Endereço que Você Digitou',
           field1Value: 'https://cav.receita.fazenda.gov.br',
           field2Label: 'Método de Autenticação Utilizado',
           field2Value: 'Login Gov.br com Biometria Facial (Nível Ouro)',
-          field3Label: 'Origem do Documento',
-          field3Value: 'Caixa Postal interna autenticada do contribuinte',
-          observation: 'O documento foi acessado diretamente dentro do portal oficial .gov.br mediante autenticação forte Gov.br.',
+          field3Label: 'O que Está na Caixa Postal',
+          field3Value: 'Termo de Intimação de malha fina, igual ao que o contador descreveu',
+          observation: 'Você mesmo digitou o endereço oficial, entrou com sua conta Gov.br e encontrou a mesma pendência que o contador avisou.',
         },
         evidenceResult: {
           status: 'clean',
-          headline: 'Mensagem lida dentro da área interna autenticada do Governo Federal!',
-          details: 'O contribuinte acessou voluntariamente o domínio oficial .gov.br com autenticação forte Gov.br.',
-          fato: 'Criminosos não conseguem injetar mensagens dentro da caixa postal do portal e-CAC governamental oficial.',
+          headline: 'A pendência está mesmo na sua Caixa Postal oficial!',
+          details: 'Você não clicou em link nenhum: entrou sozinho no portal .gov.br e confirmou o aviso do contador.',
+          fato: 'A Receita Federal não manda mensagem nem cobrança por WhatsApp. Comunicados oficiais ficam na Caixa Postal do e-CAC.',
         },
       },
       {
@@ -1326,7 +1348,7 @@ export const SCAM_CASES: ScamCase[] = [
         name: 'Forma de Regularização',
         buttonLabel: 'Verificar se Pede Pagamento Imediato',
         category: 'pix',
-        question: 'O comunicado pede para pagar algum Pix urgente?',
+        question: 'O aviso pede para pagar algum Pix ou clicar em algum link?',
         inspection: {
           type: 'security',
           badge: 'Instruções Processuais',
@@ -1372,15 +1394,15 @@ export const SCAM_CASES: ScamCase[] = [
     ],
     isScam: false,
     evidenceHypotheses: [
-      'A notificação está dentro do site oficial do governo (Gov.br), não pede Pix e dá 30 dias para você responder com calma.',
+      'O aviso veio de um contato conhecido, a pendência aparece no e-CAC que você mesmo acessou, não pede Pix e dá 30 dias para responder.',
       'O documento é verdadeiro apenas porque tem o desenho do brasão da República no cabeçalho.',
       'A cobrança é real porque a Receita só pode pedir recibos de médicos nos primeiros meses do ano.',
       'O aviso é falso porque notificações sobre impostos só podem ser entregues pessoalmente por policiais.',
     ],
     correctEvidenceIndex: 0,
-    keyEvidenceReason: 'A mensagem está na caixa postal do site oficial Gov.br acessado por você mesmo, não cobra Pix e dá 30 dias de prazo para responder.',
+    keyEvidenceReason: 'O aviso do contador não tem link nem cobrança, e a pendência está na caixa postal do e-CAC que você mesmo acessou, com 30 dias de prazo para responder.',
     redFlags: [],
-    explanation: 'Mensagem 100% VERDADEIRA E OFICIAL. Quando você mesmo entra no site oficial Gov.br e vê um aviso na sua caixa postal, ele é real e você tem tempo para resolver sem desespero.',
+    explanation: 'Aviso 100% VERDADEIRO. Quem mandou foi o seu contador, de um número que você já tem salvo, e a pendência existe mesmo: você confirmou entrando sozinho no Gov.br. A Receita em si não manda WhatsApp; o caminho seguro é sempre conferir no e-CAC.',
     realWorldTip: 'Acesse o portal Gov.br pelo menos uma vez por ano após declarar o Imposto de Renda para checar se está tudo em ordem!',
     pedagogy: {
       emotionalTrigger: 'Medo de Problemas com Impostos: avisos verdadeiros do governo não cobram Pix na hora nem ameaçam prisão; eles dão prazo para você conferir com calma.',
@@ -1392,7 +1414,7 @@ export const SCAM_CASES: ScamCase[] = [
     reinforcementDrill: {
       title: "Treino de Cidadania: Como Auditar Intimações Governamentais",
       question: "Você quer verificar se uma suposta notificação de malha fina do Imposto de Renda é verdadeira. Como proceder sem risco?",
-      context: "Golpistas mandam e-mails falsos com boletos. A Receita Federal oficial atua exclusivamente pela Caixa Postal do Gov.br.",
+      context: "Golpistas mandam e-mails e mensagens de WhatsApp falsos \"da Receita\" com boletos. A Receita Federal oficial se comunica pela Caixa Postal do e-CAC.",
       options: [
             {
                   id: "opt-8-a",
@@ -1421,14 +1443,15 @@ export const SCAM_CASES: ScamCase[] = [
     levelTitle: 'Nível 3 • Avançado',
     xpReward: 150,
     category: 'Golpe do Acesso Remoto',
-    title: 'Ligação do "Suporte": Baixe o Aplicativo de Segurança',
-    dilemma: 'Um suposto engenheiro de segurança do banco liga dizendo que seu celular está infectado por um vírus que está tentando transferir seu dinheiro. Ele insiste que você baixe um app de "suporte e varredura" para proteger sua conta.',
-    sender: 'Central de Segurança Bancária',
+    title: 'Chamada de WhatsApp do "Suporte": Instale o App de Segurança',
+    dilemma: 'Um perfil "Suporte Segurança Digital", com o logo do seu banco, te liga pelo WhatsApp dizendo que seu celular pegou um vírus que está tentando mexer no seu dinheiro. A pessoa insiste que você baixe um app de "suporte" para limpar o aparelho.',
+    sender: '+55 21 97052-3318',
     channel: 'call',
+    whatsapp: { number: '+55 21 97052-3318', pushName: 'Suporte Segurança Digital', business: 'unverified' },
     time: '18:20',
-    preview: 'Alerta urgente: Celular com malware ativo tentando compras...',
+    preview: 'Chamada de voz do WhatsApp...',
     messageContent:
-      'LIGAÇÃO TELEFÔNICA:\n\n"Senhor(a), aqui é do Centro de Resposta a Incidentes Digitais do seu Banco. Nosso firewall detectou que um malware de controle remoto foi instalado no seu aparelho através de um link malicioso.\n\nPara que possamos realizar a desinfecção do seu aplicativo bancário antes que seus limites sejam drenados, o senhor precisa ir agora na Play Store e instalar nossa ferramenta de suporte homologada: pesquise por AnyDesk (ou TeamViewer) e me informe o código de 9 dígitos que aparecer na tela para que nossa equipe técnica assuma a limpeza..."',
+      'Atendente: "Boa noite, falo com o titular? Aqui é do setor de segurança digital do seu banco. Detectamos que entrou um vírus no seu celular por um link que o senhor abriu, e ele tá tentando fazer compras na sua conta agora."\n\nAtendente: "Pra gente limpar isso antes que levem seu dinheiro, o senhor vai abrir a Play Store e baixar o nosso app de suporte. Pesquisa aí AnyDesk, é o ícone vermelho."\n\nAtendente: "Abriu? Vai aparecer um número de 9 dígitos na tela. Me fala esse número que a nossa equipe técnica faz a limpeza daqui, o senhor não precisa mexer em nada."',
     clues: [
       {
         id: 'clue-9-app',
@@ -1462,7 +1485,7 @@ export const SCAM_CASES: ScamCase[] = [
         question: 'Por que o atendente não deixa você desligar nem ir à agência?',
         inspection: {
           type: 'behavior',
-          badge: 'Gravação da Chamada Telefônica',
+          badge: 'Gravação da Chamada de WhatsApp',
           field1Label: 'Instrução do Atendente sobre Desligar',
           field1Value: '"Não desligue a chamada sob risco de bloqueio definitivo"',
           field2Label: 'Solicitação de Comparecimento à Agência',
@@ -1513,13 +1536,13 @@ export const SCAM_CASES: ScamCase[] = [
     correctEvidenceIndex: 2,
     keyEvidenceReason: 'Nenhum banco pede para você baixar aplicativos de controle remoto (como AnyDesk ou TeamViewer) para limpar o celular ou proteger a conta.',
     redFlags: [
-      'Ligação dizendo que o celular está com vírus',
+      'Chamada de WhatsApp de perfil sem selo dizendo que o celular está com vírus',
       'Ordem para instalar aplicativos como AnyDesk ou TeamViewer',
       'Pressão psicológica dizendo que seu dinheiro vai sumir se você desligar',
       'Pedido para passar códigos numéricos que aparecem na tela',
     ],
     explanation: 'Golpe da Mão Fantasma (Acesso Remoto). O criminoso convence a pessoa a instalar um aplicativo de controle de tela. Ao passar o código, o golpista assume o controle do celular e faz transferências sem você conseguir impedir.',
-    realWorldTip: 'NUNCA instale aplicativos no celular a pedido de pessoas que te ligaram por telefone, por mais convincentes que pareçam!',
+    realWorldTip: 'NUNCA instale aplicativos no celular a pedido de quem te ligou, por telefone ou WhatsApp, por mais convincente que pareça!',
     pedagogy: {
       emotionalTrigger: 'Medo de Vírus e Invasão: o golpista finge que seu celular está infectado para fazer você se assustar e entregar o controle do aparelho.',
       kidsAnalogy: 'É como alguém na rua dizer que tem um monstro na sua casa e pedir a chave do portão para entrar e tirar o monstro.',
@@ -1529,7 +1552,7 @@ export const SCAM_CASES: ScamCase[] = [
     },
     reinforcementDrill: {
       title: "Treino de Dispositivos: O Golpe do Acesso Remoto (Mão Fantasma)",
-      question: "Um atendente telefônico diz que seu celular tem um vírus perigoso e ordena que você instale o app \"AnyDesk\" ou \"TeamViewer\" para limpeza. Por que isso é um golpe?",
+      question: "Alguém te liga pelo WhatsApp dizendo que seu celular tem um vírus perigoso e ordena que você instale o app \"AnyDesk\" ou \"TeamViewer\" para limpeza. Por que isso é um golpe?",
       context: "Esses aplicativos concedem permissão de espelhamento e controle remoto da tela, permitindo ao criminoso operar seu app bancário.",
       options: [
             {
@@ -1557,50 +1580,23 @@ export const SCAM_CASES: ScamCase[] = [
 
 export type AgeGroup = 'young' | 'adult' | 'senior';
 
-// Trilhas Geracionais Dinâmicas: 4 fases adaptadas à realidade forense de cada faixa etária
-export const getCampaignCasesForAge = (ageGroup: AgeGroup = 'adult'): ScamCase[] => {
-  const findCase = (id: string) => SCAM_CASES.find((c) => c.id === id);
-
-  if (ageGroup === 'young') {
-    // Trilha Jovem (Até 35 anos):
-    // 1. Vaga de Tarefas Remotas (Shopee/YouTube R$ 350/dia)
-    // 2. SMS Correios (Taxa Alfandegária de Encomenda)
-    // 3. SMS Falsa Compra no Cartão (Magazine Luiza R$ 3.890)
-    // 4. WhatsApp Número Novo (Falso Parente/Amigo pedindo Pix de emergência)
-    return [
-      findCase('case-7-vaga-tarefas') || SCAM_CASES[3],
-      findCase('case-2-correios') || SCAM_CASES[1],
-      findCase('case-3-falsa-central-sms') || SCAM_CASES[2],
-      findCase('case-1-whatsapp') || SCAM_CASES[0],
-    ];
-  }
-
-  if (ageGroup === 'senior') {
-    // Trilha Terceira Idade (60+ anos):
-    // 1. WhatsApp Filho com Celular Quebrado (Afeto, Urgência e Amor Familiar)
-    // 2. Ligação da Central 0800 do Banco (Falso Gerente com BINA Falsificada)
-    // 3. SMS Compra Aprovada no Cartão com 0800 (Pânico de Fraude)
-    // 4. SMS Correios (Taxação da Alfândega)
-    return [
-      findCase('case-1-whatsapp') || SCAM_CASES[0],
-      findCase('case-4-falsa-central') || SCAM_CASES[4],
-      findCase('case-3-falsa-central-sms') || SCAM_CASES[2],
-      findCase('case-2-correios') || SCAM_CASES[1],
-    ];
-  }
-
-  // Trilha Adulto / Provedor (36 a 59 anos):
-  // 1. SMS Falsa Compra no Cartão com 0800 do Banco
-  // 2. SMS Correios: Objeto Retido na Alfândega
-  // 3. WhatsApp Filho com Celular Quebrado
-  // 4. Vaga de Tarefas Remotas
-  return [
-    findCase('case-3-falsa-central-sms') || SCAM_CASES[2],
-    findCase('case-2-correios') || SCAM_CASES[1],
-    findCase('case-1-whatsapp') || SCAM_CASES[0],
-    findCase('case-7-vaga-tarefas') || SCAM_CASES[3],
-  ];
+// Trilhas Geracionais Dinâmicas: dificuldade nunca desce (básico → avançado) e cada
+// trilha tem 1 caso legítimo numa posição diferente, para "é golpe" não ser resposta automática
+const AGE_TRACKS: Record<AgeGroup, string[]> = {
+  // Jovem (até 35): legítimo na fase 3
+  young: ['case-2-correios', 'case-5-loja-falsa-promocao', 'case-6-sms-seguranca-real', 'case-7-vaga-tarefas'],
+  // Adulto (36 a 59): legítimo na fase 4
+  adult: ['case-1-whatsapp', 'case-3-falsa-central-sms', 'case-4-falsa-central', 'case-8-receita-ecac'],
+  // 60+: curva mais suave (2 básicos), legítimo na fase 2
+  senior: ['case-1-whatsapp', 'case-3-compra-aprovada', 'case-4-falsa-central', 'case-9-mao-fantasma-suporte'],
 };
+
+export const getCampaignCasesForAge = (ageGroup: AgeGroup = 'adult'): ScamCase[] =>
+  AGE_TRACKS[ageGroup].map((id) => {
+    const found = SCAM_CASES.find((c) => c.id === id);
+    if (!found) throw new Error(`Caso da trilha ${ageGroup} não existe: ${id}`);
+    return found;
+  });
 
 // 4 Fases Canônicas Padrão (compatibilidade retroativa)
 export const CANONICAL_CASES: ScamCase[] = getCampaignCasesForAge('adult');

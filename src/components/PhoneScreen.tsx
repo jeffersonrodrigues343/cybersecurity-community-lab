@@ -103,6 +103,29 @@ const findContactNumber = (c: ScamCase): string | null => {
 
 const cleanName = (sender: string) => sender.replace(/\s*\(.*?\)\s*/g, '').trim();
 
+// O que o WhatsApp mostra de verdade: contato salvo pelo nome; desconhecido pelo número
+// com "~nome do perfil"; empresa verificada pelo nome com selo; comercial sem selo pelo número
+const getWaIdentity = (c: ScamCase) => {
+  const wa = c.whatsapp;
+  if (!wa) return { title: cleanName(c.sender), subtitle: null as string | null, verified: false, initial: cleanName(c.sender).charAt(0) };
+  const verified = wa.business === 'verified';
+  const title = wa.savedName ?? (verified ? wa.pushName ?? wa.number : wa.number);
+  const subtitle = wa.savedName || verified
+    ? null
+    : [wa.pushName && `~${wa.pushName}`, wa.business === 'unverified' && 'Conta comercial'].filter(Boolean).join(' • ') || null;
+  return { title, subtitle, verified, initial: (wa.savedName ?? wa.pushName ?? title).replace(/^\+/, '').charAt(0) };
+};
+
+// Margem de erro no veredito por faixa etária: mais chances para quem tem menos traquejo digital
+const CHANCES_BY_AGE: Record<AgeGroup, number> = { young: 1, adult: 2, senior: 3 };
+
+const VerifiedSeal = () => (
+  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-label="Conta comercial verificada">
+    <path fill="#25D366" d="M12 1l2.6 2.2 3.4-.4.9 3.3 3 1.7-1.3 3.2 1.3 3.2-3 1.7-.9 3.3-3.4-.4L12 23l-2.6-2.2-3.4.4-.9-3.3-3-1.7L3.4 13 2.1 9.8l3-1.7.9-3.3 3.4.4z" />
+    <path fill="#fff" d="M10.4 15.6l-3-3 1.4-1.4 1.6 1.6 4.8-4.8 1.4 1.4z" />
+  </svg>
+);
+
 const StatusBar = ({
   time,
   dark,
@@ -188,7 +211,7 @@ const LockScreen = ({
                 >
                   {c.channel === 'whatsapp' ? <MessageSquare className="w-3 h-3" /> : <Bell className="w-3 h-3" />}
                 </div>
-                <span className="font-semibold text-xs text-white truncate">{cleanName(c.sender)}</span>
+                <span className="font-semibold text-xs text-white truncate">{getWaIdentity(c).title}</span>
                 <span className="text-[9px] text-emerald-400 font-mono ml-auto">agora</span>
               </div>
 
@@ -301,7 +324,7 @@ const TipsModal = ({
               <span>3. App &quot;Meu Banco&quot; (Extrato Oficial)</span>
             </div>
             <p className="text-[11px] text-white/80 leading-relaxed">
-              Recebeu SMS de compra aprovada? Não ligue para o 0800 do SMS! Abra o app do banco na tela inicial e audite o extrato oficial com a data e hora exatas da sua última transação.
+              Recebeu mensagem de compra aprovada? Não ligue para o 0800 da mensagem! Abra o app do banco na tela inicial e audite o extrato oficial com a data e hora exatas da sua última transação.
             </p>
           </div>
 
@@ -580,7 +603,7 @@ const VoiceCallOverlay = ({
   } else if (c.id === 'case-2-correios') {
     contextualDialogue = 'Mensagem automática da operadora: "O número discado não recebe chamadas ou está temporariamente fora de serviço."';
   } else if (c.id === 'case-3-falsa-central-sms' || c.id === 'case-4-falsa-central') {
-    contextualDialogue = 'Falso Atendente (Central 0800): "Aqui é da Central de Prevenção a Fraudes. A compra de R$ 3.890 no Magalu foi pré-aprovada. Para cancelar, você precisa transferir seu saldo disponível para a Conta Segura do Banco Central via Pix agora!"';
+    contextualDialogue = '"Aqui é da Central de Prevenção a Fraudes. A compra de R$ 3.890 no Magalu foi pré-aprovada. Para cancelar, você precisa transferir seu saldo disponível para a Conta Segura do Banco Central via Pix agora!"';
   } else if (c.id === 'case-7-vaga-tarefas') {
     contextualDialogue = 'Recusa de chamada. Mensagem automática: "Atendimento de recrutamento Larissa Shopee é realizado exclusivamente pelo grupo de tarefas no Telegram."';
   }
@@ -1202,7 +1225,7 @@ const VerdictModal = ({
             </div>
             <div>
               <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold">
-                {isPericial ? 'Perícia Forense Completa' : `Julgamento Direto (${chancesLeft}/2 chances)`}
+                {isPericial ? 'Perícia Forense Completa' : `Julgamento Direto (${chancesLeft} ${chancesLeft === 1 ? "chance" : "chances"})`}
               </div>
               <h3 className="text-xs font-bold text-white">Veredito & Prova Material</h3>
             </div>
@@ -1450,7 +1473,7 @@ const LockoutModal = ({
 
         <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-2">
           <p className="text-xs text-red-100 leading-relaxed">
-            Você gastou as <strong>2 chances diretas</strong> de veredito sem apontar a prova material concreta.
+            Você gastou <strong>todas as chances diretas</strong> de veredito sem apontar a prova material concreta.
           </p>
           <p className="text-[11.5px] text-neutral-300 leading-relaxed">
             Para não agir por impulso e se proteger de fraudes reais, você agora deve abrir o seu <strong>Dossiê</strong> e checar as 3 evidências nos apps do celular antes de poder julgar novamente.
@@ -1525,7 +1548,7 @@ const VerdictActionBar = ({
           <span>
             {inspectedClueCount >= 3
               ? 'Dar Veredito Final'
-              : `Dar Veredito (${directChancesLeft}/2 chances)`}
+              : `Dar Veredito (${directChancesLeft} ${directChancesLeft === 1 ? "chance" : "chances"})`}
           </span>
         </div>
         <div className="flex items-center gap-1 text-[11px] font-semibold bg-slate-950/15 px-2 py-0.5 rounded-md shrink-0">
@@ -1935,11 +1958,11 @@ const getClueConfrontationAction = (
   if (clue.id === 'clue-2-rastreio') {
     return {
       id: `act-${c.id}-rastreio`,
-      label: 'Responder: "Que pacote é esse? Não encomendei nada"',
+      label: 'Que pacote é esse? Não comprei nada',
       actionType: 'investigation',
-      playerMessage: 'Que pacote NL8392019BR é esse? Não tenho nenhuma encomenda retida.',
+      playerMessage: 'Oi, que pacote NL8392019BR é esse? Não tô esperando nenhuma encomenda não.',
       replyMessage:
-        '[Mensagem Automática]: O objeto NL8392019BR será devolvido hoje caso a guia de R$ 27,90 não seja paga pelo link enviado.',
+        'Pode ser presente ou compra internacional no seu CPF, senhor(a). Se a taxa de R$ 27,90 não for paga hoje pelo link, o objeto NL8392019BR volta pro remetente, tá bom?',
       evidenceDiscovered: {
         id: `ev-${c.id}-rastreio`,
         title: 'Cobrança Automática Sem Identificação',
@@ -1953,11 +1976,11 @@ const getClueConfrontationAction = (
   if (clue.id === 'clue-2-remetente') {
     return {
       id: `act-${c.id}-remetente`,
-      label: 'Responder: "Por que esse SMS veio de um celular comum?"',
+      label: 'Por que os Correios usam um número comum, sem selo?',
       actionType: 'investigation',
-      playerMessage: 'Por que esse aviso dos Correios veio de um número de celular comum?',
+      playerMessage: 'Estranho... Por que os Correios tão falando comigo por um número comum, sem o selo verde de conta verificada?',
       replyMessage:
-        '[Sistema de Despacho]: Canal temporário de notificação. Acesse o link imediatamente para regularizar seu CPF na alfândega.',
+        'Esse é o nosso número de atendimento regional, o oficial tá sobrecarregado essa semana. Mas pode confiar, é só pagar pelo link que libera hoje mesmo!',
       evidenceDiscovered: {
         id: `ev-${c.id}-remetente`,
         title: 'SMS Enviado por Número de Celular Comum',
@@ -1971,11 +1994,11 @@ const getClueConfrontationAction = (
   if (clue.id === 'clue-2-url') {
     return {
       id: `act-${c.id}-url`,
-      label: 'Responder: "Esse site .online não é o oficial dos Correios"',
+      label: 'Esse site .online não é dos Correios',
       actionType: 'investigation',
-      playerMessage: 'O site dos Correios é correios.com.br, por que esse link termina em .online?',
+      playerMessage: 'O site dos Correios é correios.com.br. Por que esse link termina em .online?',
       replyMessage:
-        '[Aviso Final]: Link externo exclusivo para pagamento rápido via Pix. Prazo encerrando hoje.',
+        'É o nosso site parceiro de pagamento, é mais rápido pelo Pix. Mas corre que o prazo acaba às 18h!',
       evidenceDiscovered: {
         id: `ev-${c.id}-url`,
         title: 'Link Externo Terminado em .online',
@@ -1990,11 +2013,11 @@ const getClueConfrontationAction = (
   if (clue.id === 'clue-3-extrato') {
     return {
       id: `act-${c.id}-extrato`,
-      label: 'Responder: "Não fiz essa compra! Vou olhar meu app do banco"',
+      label: 'Não fiz essa compra! Vou olhar no app do banco',
       actionType: 'investigation',
-      playerMessage: 'Eu não fiz nenhuma compra de R$ 3.890! Vou abrir o aplicativo do meu banco agora para olhar o extrato.',
+      playerMessage: 'Eu não fiz compra nenhuma de R$ 3.890! Vou abrir o app do meu banco agora pra ver o extrato.',
       replyMessage:
-        '[Alerta Automático]: Transação em pré-autorização. Para impedir o lançamento na fatura, ligue imediatamente para 0800 729 0001.',
+        'A compra ainda tá em pré-autorização, por isso não aparece no app. Pra não cair na sua fatura, ligue agora no 0800 729 0001 que a nossa equipe cancela pra você.',
       evidenceDiscovered: {
         id: `ev-${c.id}-extrato`,
         title: 'Pressão para Ligar no 0800 Sem Olhar o Extrato',
@@ -2012,7 +2035,7 @@ const getClueConfrontationAction = (
       actionType: 'investigation',
       playerMessage: '[Ligação realizada para 0800 729 0001]',
       replyMessage:
-        'Atendente 0800: "Para cancelar a compra de R$ 3.890 no seu cartão, você precisa transferir seu saldo via Pix agora para a Conta Segura do Banco Central!"',
+        '"Boa tarde, central de segurança. Pra cancelar essa compra de R$ 3.890, o senhor precisa passar o saldo via Pix pra uma conta de segurança agora, depois a gente devolve tudo."',
       evidenceDiscovered: {
         id: `ev-${c.id}-0800`,
         title: 'Atendente 0800 Exigindo Pix para Cancelar Compra',
@@ -2026,11 +2049,11 @@ const getClueConfrontationAction = (
   if (clue.id === 'clue-3-google-pesquisa') {
     return {
       id: `act-${c.id}-google`,
-      label: 'Responder: "Cancelar compra imediatamente"',
+      label: 'Responder: "CANCELAR"',
       actionType: 'investigation',
       playerMessage: 'CANCELAR COMPRA',
       replyMessage:
-        '[Comando Inválido]: Cancelamentos por texto não são aceitos. Ligue urgente para a central 0800 729 0001.',
+        'Por aqui a gente não consegue cancelar, só por telefone. Liga urgente no 0800 729 0001, a compra entra na fatura em poucos minutos!',
       evidenceDiscovered: {
         id: `ev-${c.id}-google`,
         title: 'Isca de SMS para Forçar Ligação ao 0800',
@@ -2049,7 +2072,7 @@ const getClueConfrontationAction = (
       actionType: 'investigation',
       playerMessage: 'Oi! Como vocês conseguiram meu número de WhatsApp? Qual é o CNPJ oficial dessa agência no Brasil?',
       replyMessage:
-        'Seu número foi selecionado pelo nosso sistema internacional de talentos! Usamos ramal virtual internacional para atendimento rápido, não precisa de burocracia!',
+        'Seu currículo apareceu pra gente num site de vagas 😊 O número é de fora porque a nossa equipe de RH é terceirizada, mas a vaga é da Shopee sim, pode ficar tranquilo(a)!',
       evidenceDiscovered: {
         id: `ev-${c.id}-ddi`,
         title: 'Abordagem de Número Estrangeiro Sem CNPJ',
@@ -2068,7 +2091,7 @@ const getClueConfrontationAction = (
       playerMessage:
         'Espera aí: se é um trabalho pra eu ganhar dinheiro, por que eu tenho que depositar R$ 100 do meu bolso via Pix?',
       replyMessage:
-        'Os R$ 100 são apenas a cota de ativação do painel VIP de lojistas! Assim que você fizer o Pix de R$ 100, o sistema libera R$ 500 de comissão pra você na mesma hora!',
+        'É só pra ativar a sua conta de tarefas, todo mundo faz! Você manda os R$ 100 e na mesma hora já cai R$ 500 de comissão, olha os prints da galera no grupo.',
       evidenceDiscovered: {
         id: `ev-${c.id}-mecanica`,
         title: 'Exigência de Pagamento para Trabalhar',
@@ -2087,7 +2110,7 @@ const getClueConfrontationAction = (
       playerMessage:
         'Vocês não podem simplesmente descontar esses R$ 100 das comissões que eu tenho pra receber? E por que é por grupo de Telegram?',
       replyMessage:
-        'O sistema do Telegram é 100% automatizado e bloqueia quem não deposita a cota antes! Faça o Pix agora ou sua vaga VIP será passada para outro!',
+        'Infelizmente não dá, o sistema é automático 😕 E as vagas de hoje tão acabando, se não fizer agora eu preciso passar pra próxima pessoa da lista.',
       evidenceDiscovered: {
         id: `ev-${c.id}-rh`,
         title: 'Recusa de Desconto e Pressão por Depósito no Telegram',
@@ -2103,7 +2126,10 @@ const getClueConfrontationAction = (
     label: `${clue.question}`,
     actionType: 'investigation',
     playerMessage: clue.question,
-    replyMessage: 'Por favor, confirme o procedimento com urgência para evitar o encerramento do prazo.',
+    // Empresa verdadeira não pressiona; golpista sempre empurra para a pressa
+    replyMessage: c.isScam
+      ? 'Olha, não dá pra explicar tudo por aqui agora. Faz o que eu pedi rapidinho que o prazo tá acabando!'
+      : 'Por aqui não pedimos senha, código nem pagamento. Se tiver dúvida, confira direto no aplicativo oficial ou ligue no número do verso do seu cartão.',
     evidenceDiscovered: {
       id: `ev-${c.id}-${clue.id}`,
       title: clue.name,
@@ -2177,8 +2203,7 @@ const WhatsAppScreen = ({
   const [isTypingReply, setIsTypingReply] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const number = findContactNumber(c);
-  const name = cleanName(c.sender);
-  const unknown = /desconhecid|n[uú]mero novo/i.test(c.sender);
+  const waId = getWaIdentity(c);
 
   const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
   const isSenior = ageGroup === 'senior';
@@ -2270,11 +2295,12 @@ const WhatsAppScreen = ({
             title="Dados do contato"
           >
             <div className="w-8 h-8 rounded-full bg-[#dfe5e7] flex items-center justify-center text-[#54656f] font-semibold text-xs shrink-0">
-              {name.charAt(0)}
+              {waId.initial}
             </div>
             <div className="flex-1 min-w-0 leading-tight">
               <div className="font-semibold text-[13.5px] truncate flex items-center gap-1">
-                <span>{unknown && number ? number : name}</span>
+                <span className="truncate">{waId.title}</span>
+                {waId.verified && <VerifiedSeal />}
                 {isBlocked && (
                   <span className="bg-red-600 text-[9px] px-1 rounded uppercase font-bold">
                     Bloqueado
@@ -2286,8 +2312,8 @@ const WhatsAppScreen = ({
                   <span className="text-emerald-100 font-medium">digitando...</span>
                 ) : isBlocked ? (
                   'bloqueado'
-                ) : unknown ? (
-                  `~${name}`
+                ) : waId.subtitle ? (
+                  waId.subtitle
                 ) : (
                   'online'
                 )}
@@ -3059,22 +3085,23 @@ const CallScreen = ({
             className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-700 via-teal-600 to-sky-600 p-1 shadow-[0_0_30px_rgba(16,185,129,0.35)]"
           >
             <div className="w-full h-full rounded-full bg-[#0f172a] flex items-center justify-center text-3xl font-bold font-display">
-              {c.sender.charAt(0)}
+              {getWaIdentity(c).initial}
             </div>
             <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shadow-md animate-pulse">
               <Phone className="w-3.5 h-3.5 text-white" />
             </div>
           </motion.div>
 
-          <h3 className="text-xl font-bold font-display mt-4 text-white drop-shadow">
-            {c.sender}
+          <h3 className="text-xl font-bold font-display mt-4 text-white drop-shadow flex items-center gap-1.5">
+            {getWaIdentity(c).title}
+            {getWaIdentity(c).verified && <VerifiedSeal />}
           </h3>
-          <div className="text-xs font-mono text-emerald-400 mt-1 bg-emerald-500/15 px-3 py-0.5 rounded-full border border-emerald-500/30 font-semibold">
-            {number ?? '0800 729 0001'}
-          </div>
+          {getWaIdentity(c).subtitle && (
+            <div className="text-xs text-white/70 mt-1">{getWaIdentity(c).subtitle}</div>
+          )}
           <div className="text-[11px] text-white/60 mt-1.5 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>Chamada de Voz Recebida • Tocando...</span>
+            <Lock className="w-3 h-3" />
+            <span>Chamada de voz do WhatsApp • Chamando...</span>
           </div>
         </div>
 
@@ -3141,7 +3168,7 @@ const CallScreen = ({
 
         <div className="flex flex-col items-center leading-tight">
           <span className="font-bold text-xs text-white truncate max-w-[150px]">
-            {c.sender}
+            {getWaIdentity(c).title}
           </span>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
@@ -3470,11 +3497,11 @@ const HomeScreen = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-bold text-white truncate flex items-center justify-between gap-1.5">
-                <span className="truncate">{cleanName(c.sender)}</span>
+                <span className="truncate">{getWaIdentity(c).title}</span>
                 <span className="text-[10px] text-neutral-400 font-normal shrink-0">agora</span>
               </div>
               <div className="text-[11px] text-white/75 truncate">
-                {c.channel === 'call' ? 'Chamada recebida • Toque para atender' : (c.preview || c.messageContent)}
+                {c.channel === 'call' ? 'Chamada de voz do WhatsApp' : (c.preview || c.messageContent)}
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-white/50 shrink-0" />
@@ -3752,7 +3779,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     if (typeof window === 'undefined') return 2;
     try {
       const saved = sessionStorage.getItem(`hacklearn_chances_${scamCase.id}`);
-      return saved !== null ? parseInt(saved, 10) : 2;
+      return saved !== null ? parseInt(saved, 10) : CHANCES_BY_AGE[ageGroup];
     } catch {
       return 2;
     }
@@ -3881,11 +3908,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
 
     try {
       const savedChances = sessionStorage.getItem(`hacklearn_chances_${scamCase.id}`);
-      setDirectChancesLeft(savedChances !== null ? parseInt(savedChances, 10) : 2);
+      setDirectChancesLeft(savedChances !== null ? parseInt(savedChances, 10) : CHANCES_BY_AGE[ageGroup]);
       const savedLocked = sessionStorage.getItem(`hacklearn_locked_${scamCase.id}`);
       setIsDirectVerdictLocked(savedLocked === 'true');
     } catch {
-      setDirectChancesLeft(2);
+      setDirectChancesLeft(CHANCES_BY_AGE[ageGroup]);
       setIsDirectVerdictLocked(false);
     }
 
@@ -4737,10 +4764,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   {/* Cabeçalho com Foto, Nome e Telefone */}
                   <div className="bg-[#1f2c34] rounded-2xl p-4 flex flex-col items-center text-center space-y-2 border border-white/5">
                     <div className="w-16 h-16 rounded-full bg-slate-600 flex items-center justify-center text-2xl font-bold text-white shadow">
-                      {cleanName(scamCase.sender).charAt(0)}
+                      {getWaIdentity(scamCase).initial}
                     </div>
                     <div>
-                      <h3 className="font-bold text-base text-white">{cleanName(scamCase.sender)}</h3>
+                      <h3 className="font-bold text-base text-white">{getWaIdentity(scamCase).title}</h3>
                       <p className="text-xs text-neutral-300 font-mono mt-0.5">{displayPhone}</p>
                     </div>
 
