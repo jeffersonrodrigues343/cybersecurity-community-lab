@@ -38,6 +38,7 @@ import {
 import type { ScamCase, InteractiveAction, InvestigativeClue, AgeGroup } from '../data/scamsData';
 import { sound } from '../utils/audio';
 import { apiService } from '../services/api';
+import { triggerBurst } from '../utils/burst';
 
 type Verdict = 'scam' | 'safe' | null;
 export type { AgeGroup };
@@ -4196,6 +4197,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       } catch {}
       onVerdict?.(verdict);
     } else {
+      triggerBurst('wrong');
       const nextChances = Math.max(0, directChancesLeft - 1);
       setDirectChancesLeft(nextChances);
       try {

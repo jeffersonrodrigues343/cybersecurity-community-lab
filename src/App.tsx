@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, lazy, Suspense } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Header } from './components/Header';
@@ -9,6 +9,19 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { Footer } from './components/Footer';
 import { ShieldCheck } from 'lucide-react';
 import { ResultsPanel } from './components/ResultsPanel';
+
+// Three.js só baixa depois do jogo abrir; desligado para quem pede menos movimento ou aparelho fraco
+const BackgroundScene = lazy(() => import('./components/BackgroundScene'));
+const canRender3D = () => {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if ((navigator.hardwareConcurrency ?? 4) <= 2) return false;
+  try {
+    return Boolean(document.createElement('canvas').getContext('webgl2'));
+  } catch {
+    return false;
+  }
+};
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -45,12 +58,17 @@ function Simulator() {
   return (
     <div
       ref={mainContainerRef}
-      className={`desk-surface text-[#e8eaf2] relative ${
+      className={`desk-surface text-[#e8eaf2] relative isolate ${
         isPlaying
           ? 'h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col'
           : 'min-h-screen flex flex-col overflow-x-hidden'
       }`}
     >
+      {canRender3D() && (
+        <Suspense fallback={null}>
+          <BackgroundScene />
+        </Suspense>
+      )}
       {/* Barra de Navegação (oculta no mobile durante o jogo para foco 100% no celular) */}
       <div className={isPlaying ? 'hidden sm:block shrink-0' : 'shrink-0'}>
         <Header

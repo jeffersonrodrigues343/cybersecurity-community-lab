@@ -22,6 +22,7 @@ import {
 import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 import { sound } from '../utils/audio';
 import { PhoneScreen, type Skill } from './PhoneScreen';
+import { triggerBurst } from '../utils/burst';
 
 // 4 Fases Canônicas dos Golpes Mais Comuns no Smartphone
 export const CAMPAIGN_CASES: ScamCase[] = CANONICAL_CASES;
@@ -196,6 +197,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
       newStreak = streak + 1;
       earned = current.xpReward + inspected.length * CLUE_XP + comboBonusFor(newStreak);
       sound.playSuccess();
+      triggerBurst('correct');
       confetti({
         particleCount: 70,
         spread: 75,
