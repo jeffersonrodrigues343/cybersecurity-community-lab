@@ -4563,7 +4563,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   return (
     <div
       key={`phone-${scamCase.id}`}
-      className="relative mx-auto h-full w-full max-w-full sm:w-[410px] sm:max-w-[420px] sm:h-full sm:max-h-[820px] sm:min-h-[640px] flex flex-col"
+      className={`relative mx-auto h-full w-full max-w-full ${ageGroup === 'senior' ? 'senior-text' : ''} sm:w-[410px] sm:max-w-[420px] sm:h-full sm:max-h-[820px] sm:min-h-[640px] flex flex-col`}
     >
       {/* Moldura: Apenas no desktop (sm:). No celular real, a tela é nativa sem bordas artificiais */}
       <div className="relative w-full h-full sm:rounded-[50px] sm:bg-[#0c0e14] sm:p-[12px] sm:shadow-[0_0_0_3px_#272b38,0_24px_50px_-10px_rgba(0,0,0,0.9)] sm:border sm:border-white/20 flex flex-col">

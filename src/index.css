@@ -133,3 +133,16 @@
     justify-content: center;
   }
 }
+
+/* Faixa 50+: nenhum texto do celular abaixo de 13px (Tailwind usa text-[9px]..text-[12px] e text-xs) */
+.senior-text .text-xs,
+.senior-text [class*='text-[9px]'],
+.senior-text [class*='text-[10px]'],
+.senior-text [class*='text-[10.5px]'],
+.senior-text [class*='text-[11px]'],
+.senior-text [class*='text-[11.5px]'],
+.senior-text [class*='text-[12px]'],
+.senior-text [class*='text-[12.5px]'] {
+  font-size: 13px;
+  line-height: 1.35;
+}
