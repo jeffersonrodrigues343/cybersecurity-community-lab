@@ -1,86 +1,68 @@
-# 🛡️ HackLearn - Laboratório Comunitário de Cibersegurança
-### Simulador Interativo de Golpes Digitais em Smartphone (Point & Click)
+# HackLearn
 
-Projeto de Extensão Universitária vinculado ao **Programa de Contexto à Comunidade** do curso de **CST em Análise e Desenvolvimento de Sistemas (ADS)** — **Universidade Pitágoras Unopar / Anhanguera**.
+Simulador de golpes de WhatsApp para treinar adultos a reconhecer fraude antes de cair nela.
 
-* **Autor:** Jefferson Rodrigues Leite
-* **RA:** `3816612105`
-* **Curso:** CST em Análise e Desenvolvimento de Sistemas (5º Semestre)
-* **Objetivos de Desenvolvimento Sustentável (ONU):** ODS 4 (Educação de Qualidade - Meta 4.4) e ODS 9 (Indústria, Inovação e Infraestrutura - Meta 9.c).
+Projeto de extensão do curso de Análise e Desenvolvimento de Sistemas (Unopar / Anhanguera), programa Contexto à Comunidade.
 
----
+**Jogar:** https://cybersecurity-community-lab.vercel.app
 
-## 📱 Visão Geral do Projeto
+## Como funciona
 
-O **HackLearn** é uma aplicação web gamificada e de código aberto criada para capacitar jovens, adultos e idosos na detecção e prevenção de golpes virtuais e ataques de engenharia social comuns no Brasil.
+A tela imita um celular. Chega uma mensagem ou ligação de WhatsApp e você decide se é golpe ou não. Antes de decidir, dá para investigar do mesmo jeito que faria na vida real:
 
-Ao invés de cartilhas teóricas que geram baixa retenção, o usuário vivencia a simulação realista de um **smartphone point & click**, recebendo mensagens suspeitas diretamente na tela do aparelho e utilizando ferramentas forenses do cotidiano para tomar a decisão correta.
+- tocar no contato e ver o número, o nome do perfil e se a conta é verificada;
+- simular o Pix no app do banco e ver em nome de quem está a chave;
+- pedir um áudio ou ligar de volta;
+- pesquisar no Google e abrir os resultados (alguns são sites falsos);
+- anotar o que encontrou.
 
----
+Na hora de decidir, além de dizer "golpe" ou "seguro", você escolhe a pista que te convenceu. No final do caso o jogo explica o que entregava a fraude.
 
-## 🎮 Principais Funcionalidades
+Os casos são baseados nos golpes mais comuns no Brasil: falso parente com número novo, taxa falsa dos Correios, falsa central do banco, promoção falsa, vaga de "tarefas" e app de acesso remoto. Cada trilha também tem uma mensagem verdadeira, para ninguém sair achando que tudo é golpe.
 
-1. **Simulação Realista de Smartphone:**
-   - **Tela de Bloqueio com Chegada ao Vivo:** O caso começa com o celular em repouso. Em poucos instantes, o aparelho vibra, toca o som característico e exibe um banner deslizante da notificação.
-   - **Transição Point & Click:** O usuário toca no banner para desbloquear o telefone e entrar diretamente no aplicativo (WhatsApp, SMS, Ligação Telefônica ou Push Bancário).
-2. **Investigação Forense no Aparelho:**
-   - **Mini-Navegador Seguro:** Permite abrir e auditar links suspeitos dentro do próprio celular para verificar redirecionamentos fraudulentos e legitimidade de domínios.
-   - **Simulação de Pix (Detecção de Contas Laranjas):** O usuário confere quem é o titular real da chave antes de realizar transferências.
-   - **Verificação de SAC Físico vs. BINA Spoofing:** Aprenda por que nunca se deve confiar no número 0800 que liga para você e como conferir o SAC no verso do cartão.
-   - **Diálogo Interativo em Tempo Real:** Envie respostas rápidas para o suspeito e observe a reação do golpista.
-3. **Decisão Imediata e Aprendizado Contínuo:**
-   - **Botões de Veredito:** Decisão rápida entre **"É GOLPE!"** e **"É SEGURO!"** posicionados logo abaixo do aparelho.
-   - **Carimbo na Tela e Regra de Ouro:** Feedback visual imediato com carimbo cravado na tela e explicação direta da regra de segurança recomendada pelo CERT.br e Procon.
-4. **Gamificação e Recompensas:**
-   - Pontuação por XP e multiplicadores de Combo.
-   - Árvore de Conquistas e Badges pedagógicos (*Protetor da Família*, *Mestre do Whois*, *Guardião do Pix*, etc.).
-   - Emissão de **Certificado de Cidadão Blindado** ao concluir a jornada de casos.
+## Dificuldade por idade
 
----
+| Faixa | Chances de erro | Ritmo das mensagens | Dicas quando você trava |
+|---|---|---|---|
+| 20 a 34 | 1 | mais rápido | 1 |
+| 35 a 49 | 2 | normal | 2 |
+| 50+ | 3 | mais calmo, letra maior | 3 |
 
-## 🛠️ Tecnologias Utilizadas
+As dicas dizem onde olhar, nunca a resposta. O jogador também escolhe como quer ser tratado (mãe/pai, senhora/senhor), e as falas mudam de acordo.
 
-* **Front-end:** React 19, TypeScript, Vite, Tailwind CSS v4, Framer Motion, Lucide React, Canvas Confetti.
-* **Áudio:** Web Audio API com sintetizador procedural nativo (vibração, toques, carimbos e notificações sem dependências pesadas externas).
-* **Deploy:** Vercel e túnel reverso via SSH (Pinggy).
+## Resultados
 
----
+Cada decisão é registrada sem dados pessoais (só faixa de idade, caso, acerto e quantas pistas foram abertas). A página `/painel` mostra a taxa de acerto por faixa.
 
-## 🚀 Como Executar Localmente
+## Tecnologias
 
-### 1. Pré-requisitos
-* Node.js (versão 18 ou superior)
-* npm (versão 9 ou superior)
+React 19, TypeScript, Vite, Tailwind CSS, Motion, Supabase (PostgreSQL) e um backend opcional em C# (.NET). Os sons são gerados com a Web Audio API.
 
-### 2. Instalação e Execução
+## Rodar localmente
+
+Precisa de Node.js 18 ou mais novo.
+
 ```bash
-# Clone o repositório
 git clone https://github.com/jeffersonrodrigues343/cybersecurity-community-lab.git
-
-# Acesse o diretório
 cd cybersecurity-community-lab
-
-# Instale as dependências
 npm install
-
-# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-Acesse no navegador: `http://localhost:5173`
+Abre em `http://localhost:5173`.
 
----
+Para gravar os resultados no Supabase, crie a tabela com `docs/supabase_game_results.sql` e defina `VITE_SUPABASE_ANON_KEY`.
 
-## 📦 Deploy na Vercel
+## ODS (ONU)
 
-O projeto foi configurado com suporte nativo para Single-Page Applications (SPA) via `vercel.json`. Para publicar seu próprio deploy:
+- 4.4 – habilidades digitais para jovens e adultos
+- 10.2 – inclusão digital independente da idade
+- 16.4 – combate a fluxos financeiros ilegais
 
-```bash
-npx vercel
-```
+## Autor
 
----
+Jefferson Rodrigues — CST em Análise e Desenvolvimento de Sistemas
 
-## 📄 Licença e Uso Educacional
+## Licença
 
-Este projeto é disponibilizado sob a licença **MIT** com foco estritamente educacional e comunitário.
+MIT
