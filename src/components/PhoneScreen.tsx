@@ -1698,6 +1698,15 @@ const BrowserScreen = ({
   const [activeTab, setActiveTab] = useState<'google' | 'site'>(hasSpecificUrl ? 'site' : 'google');
   const [searchQuery, setSearchQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
+  // Resultado aberto: os cards são estáticos, então lemos endereço/título/resumo do próprio card clicado
+  const [openedResult, setOpenedResult] = useState<{ url: string; title: string; body: string } | null>(null);
+  const handleResultClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = (e.target as HTMLElement).closest('[data-result]');
+    if (!card) return;
+    const [url, title, body] = [...card.children].map((el) => el.textContent?.trim() ?? '');
+    sound.playKeyboardClick();
+    setOpenedResult({ url, title, body });
+  };
 
   const browserClue = c.clues.find(
     (k) =>
@@ -1754,6 +1763,7 @@ const BrowserScreen = ({
   };
 
   const handleExecuteSearch = (query: string) => {
+    setOpenedResult(null);
     if (!query.trim()) return;
     sound.playGoogleSearch();
     const q = query.trim();
@@ -1887,10 +1897,35 @@ const BrowserScreen = ({
             </div>
 
             {/* Resultados da Busca (SERP Realista) */}
-            {submittedQuery && (
+            {submittedQuery && openedResult && (
               <div className="space-y-3 pt-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setOpenedResult(null)}
+                  className="text-[12px] text-blue-700 font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" /> Voltar aos resultados
+                </button>
+                <article className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
+                  <div className="text-[11px] text-emerald-700 flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> {openedResult.url.replace(/ › /g, '/')}
+                  </div>
+                  <h4 className="text-[15px] font-bold text-slate-900 leading-snug">{openedResult.title}</h4>
+                  <p className="text-[12.5px] text-slate-700 leading-relaxed">{openedResult.body}</p>
+                  <p className="text-[12px] text-slate-500 leading-relaxed border-t border-slate-100 pt-2">
+                    Dica: confira sempre o endereço do site e desconfie de qualquer página que peça Pix ou dados fora do aplicativo oficial.
+                  </p>
+                </article>
+              </div>
+            )}
+
+            {submittedQuery && !openedResult && (
+              <div
+                onClick={handleResultClick}
+                className="space-y-3 pt-2 border-t border-slate-200 [&_[data-result]]:cursor-pointer [&_[data-result]:hover]:border-blue-300 [&_[data-result]_h5]:underline-offset-2 [&_[data-result]:hover_h5]:underline"
+              >
                 {c.id === 'case-2-correios' && (
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1">
+                  <div data-result className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1">
                     <div className="text-[10px] text-slate-500">
                       rastreamento.correios.com.br › oficial
                     </div>
@@ -1903,7 +1938,7 @@ const BrowserScreen = ({
                   </div>
                 )}
 
-                <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1">
+                <div data-result className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1">
                   <div className="text-[10px] text-slate-500">
                     g1.globo.com › economia › seguranca-digital
                   </div>
