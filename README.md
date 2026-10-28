@@ -76,7 +76,7 @@ Para gravar os resultados no Supabase, crie a tabela com `docs/supabase_game_res
 
 ## Autor
 
-Jefferson Rodrigues — CST em Análise e Desenvolvimento de Sistemas
+Jefferson Rodrigues Leite — CST em Análise e Desenvolvimento de Sistemas
 
 ## Licença
 
