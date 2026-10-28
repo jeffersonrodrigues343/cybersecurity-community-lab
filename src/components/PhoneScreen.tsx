@@ -38,6 +38,7 @@ import {
 import type { ScamCase, InteractiveAction, InvestigativeClue, AgeGroup } from '../data/scamsData';
 import { sound } from '../utils/audio';
 import { apiService } from '../services/api';
+import { sourcesFor } from '../data/caseSources';
 import { SEARCH_RESULTS, FALLBACK_RESULTS, type SearchResult } from '../data/searchResults';
 
 type Verdict = 'scam' | 'safe' | null;
@@ -5290,6 +5291,26 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   <p className="text-[11px] font-semibold text-white leading-snug mt-0.5">
                     {scamCase.pedagogy.goldenRule}
                   </p>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <div className="text-[9px] font-mono uppercase tracking-wider text-neutral-400 font-bold">
+                    De onde vem este caso
+                  </div>
+                  <ul className="mt-1 space-y-0.5">
+                    {sourcesFor(scamCase.id).map((src) => (
+                      <li key={src.url}>
+                        <a
+                          href={src.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-sky-300 underline underline-offset-2 hover:text-sky-200"
+                        >
+                          {src.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 {scamCase.isScam && !isBlocked && (

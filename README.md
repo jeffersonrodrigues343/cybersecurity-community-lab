@@ -20,6 +20,21 @@ Na hora de decidir, além de dizer "golpe" ou "seguro", você escolhe a pista qu
 
 Os casos são baseados nos golpes mais comuns no Brasil: falso parente com número novo, taxa falsa dos Correios, falsa central do banco, promoção falsa, vaga de "tarefas" e app de acesso remoto. Cada trilha também tem uma mensagem verdadeira, para ninguém sair achando que tudo é golpe.
 
+## De onde vêm os casos
+
+Os casos foram montados a partir de alertas e materiais públicos. No fim de cada caso, o jogo mostra as fontes daquele golpe.
+
+- CERT.br – Cartilha "Phishing e Outros Golpes" (2022): https://busca.acervo.nic.br/vufind/Record/oai:bibliotecadigital.acervo.nic.br:123456789-2155/Details
+- Banco Central do Brasil – Golpes: https://www.bcb.gov.br/acessoinformacao/golpes
+- Febraban – Golpes: https://portal.febraban.org.br/pagina/3267/1076/pt-br/golpes
+- Aos Fatos – golpe da encomenda retida nos Correios: https://www.aosfatos.org/noticias/e-golpe-alerta-que-exige-pagamento-para-liberar-encomenda-retida-pelos-correios/
+- Mercado & Consumo – Correios alertam sobre golpe na alfândega (2024): https://mercadoeconsumo.com.br/31/07/2024/economia/correios-alertam-sobre-golpe-de-encomendas-presas-na-alfandega/
+- Itatiaia – lista de sites a evitar do Procon (2023): https://www.itatiaia.com.br/brasil/black-friday-2023-procon-lista-78-sites-para-consumidor-evitar-em-compras
+- Receita Federal – portal oficial: https://www.gov.br/receitafederal/pt-br
+- SBT News – golpe do falso emprego: https://sbtnews.sbt.com.br/noticia/tecnologia/261784-alerta-golpe-do-falso-emprego-atinge-desempregados-no-brasil
+
+Nomes, números e valores dentro do jogo são fictícios.
+
 ## Dificuldade por idade
 
 | Faixa | Chances de erro | Ritmo das mensagens | Dicas quando você trava |
