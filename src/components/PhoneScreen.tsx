@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import type { ScamCase, InteractiveAction, InvestigativeClue, AgeGroup } from '../data/scamsData';
 import { sound } from '../utils/audio';
+import { apiService } from '../services/api';
 
 type Verdict = 'scam' | 'safe' | null;
 export type { AgeGroup };
@@ -91,6 +92,8 @@ interface PhoneScreenProps {
 }
 
 const findContactNumber = (c: ScamCase): string | null => {
+  // O número real da conversa/chamada é o do WhatsApp; varrer pistas pegava o 0800 citado no texto
+  if (c.whatsapp?.number) return c.whatsapp.number;
   const allValues = c.clues
     .flatMap((cl) => [cl.inspection.field1Value, cl.inspection.field2Value, cl.inspection.field3Value])
     .filter((v): v is string => Boolean(v));
@@ -118,6 +121,78 @@ const getWaIdentity = (c: ScamCase) => {
 
 // Margem de erro no veredito por faixa etária: mais chances para quem tem menos traquejo digital
 const CHANCES_BY_AGE: Record<AgeGroup, number> = { young: 1, adult: 2, senior: 3 };
+
+// Sistema de orientação: quanto mais velho, mais cedo e mais vezes o "pensamento do
+// perito" aparece. Cada dica aponta o próximo lugar a investigar, nunca a resposta.
+const GUIDANCE_BY_AGE: Record<AgeGroup, { delayMs: number; maxHints: number }> = {
+  young: { delayMs: 60000, maxHints: 1 },
+  adult: { delayMs: 35000, maxHints: 2 },
+  senior: { delayMs: 18000, maxHints: 3 },
+};
+
+const GUIDANCE_BY_CATEGORY: Record<InvestigativeClue['category'], string> = {
+  phone: 'Quem é essa pessoa de verdade? Toque no nome ou número no topo da conversa e veja os dados do contato.',
+  pix: 'Antes de mandar qualquer dinheiro, simule o Pix no app do banco e veja em nome de quem a conta está.',
+  whois: 'Tem link na conversa? Abra no navegador do celular e compare o endereço com o site oficial.',
+  official: 'Como essa empresa costuma falar com você? Confira pelo app ou site oficial, nunca pelo contato que te procurou.',
+  system: 'Desconfie de pressa e de passo a passo. Pesquise no navegador se esse procedimento existe mesmo.',
+  behavior: 'Repare no jeito da conversa: pressa, ameaça ou desculpa pra não falar por voz? Pergunte algo que só a pessoa de verdade saberia.',
+};
+
+export type PlayerGender = 'female' | 'male';
+
+const readGender = (): PlayerGender => {
+  try {
+    return sessionStorage.getItem('hacklearn_gender') === 'male' ? 'male' : 'female';
+  } catch {
+    return 'female';
+  }
+};
+
+// Os textos dos casos são escritos com "mãe" e "senhor(a)"; aqui viram o tratamento
+// certo para quem joga. Ordem importa: locuções ("pra mãe") antes da palavra solta.
+const GENDER_RULES: Record<PlayerGender, [RegExp, string][]> = {
+  male: [
+    [/\b(p)ra mãe\b/gi, '$1ro pai'],
+    [/\b(d)a mãe\b/gi, '$1o pai'],
+    [/\bà mãe\b/g, 'ao pai'],
+    [/\ba mãe\b/g, 'o pai'],
+    [/\bA mãe\b/g, 'O pai'],
+    [/\bMamãe\b/g, 'Papai'],
+    [/\bmamãe\b/g, 'papai'],
+    [/\bMãe\b/g, 'Pai'],
+    [/\bmãe\b/g, 'pai'],
+    [/\bMÃE\b/g, 'PAI'],
+    [/\bsenhor\(a\)/gi, 'senhor'],
+    [/(\p{L})o\(a\)/gu, '$1o'],
+  ],
+  female: [
+    [/\bsenhor\(a\)/gi, 'senhora'],
+    [/\b(d)o senhor\b/gi, '$1a senhora'],
+    [/\b(p)ro senhor\b/gi, '$1ra senhora'],
+    [/\bao senhor\b/gi, 'à senhora'],
+    [/\bO senhor\b/g, 'A senhora'],
+    [/\bo senhor\b/g, 'a senhora'],
+    [/\bSenhor\b/g, 'Senhora'],
+    [/\bsenhor\b/g, 'senhora'],
+    [/(\p{L})o\(a\)/gu, '$1a'],
+  ],
+};
+
+const genderize = (text: string, gender: PlayerGender) =>
+  GENDER_RULES[gender].reduce((acc, [re, to]) => acc.replace(re, to), text);
+
+// Aplica em todas as strings de um objeto (caso, ação), preservando a estrutura
+const genderizeDeep = <T,>(value: T, gender: PlayerGender): T => {
+  if (typeof value === 'string') return genderize(value, gender) as T;
+  if (Array.isArray(value)) return value.map((v) => genderizeDeep(v, gender)) as T;
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, k === 'id' ? v : genderizeDeep(v, gender)]),
+    ) as T;
+  }
+  return value;
+};
 
 const VerifiedSeal = () => (
   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0" aria-label="Conta comercial verificada">
@@ -284,7 +359,7 @@ const TipsModal = ({
               💡
             </div>
             <div>
-              <h3 className="font-bold text-xs text-white">Dicas do Celular (Tips)</h3>
+              <h3 className="font-bold text-xs text-white">Dicas do Celular</h3>
               <p className="text-[10px] text-white/50">Onde encontrar cada prova no aparelho</p>
             </div>
           </div>
@@ -324,7 +399,7 @@ const TipsModal = ({
               <span>3. App &quot;Meu Banco&quot; (Extrato Oficial)</span>
             </div>
             <p className="text-[11px] text-white/80 leading-relaxed">
-              Recebeu mensagem de compra aprovada? Não ligue para o 0800 da mensagem! Abra o app do banco na tela inicial e audite o extrato oficial com a data e hora exatas da sua última transação.
+              Recebeu mensagem de compra aprovada? Não ligue para o número que veio na mensagem! Abra o app do banco na tela inicial e audite o extrato oficial com a data e hora exatas da sua última transação.
             </p>
           </div>
 
@@ -383,7 +458,9 @@ const PixDoubtModal = ({
   const titular = pixClue?.inspection.field2Value || 'Valdir dos Santos';
   const chave = pixClue?.inspection.field1Value || '489.120.392-80';
   const banco = pixClue?.inspection.field3Value || 'Nu Pagamentos S.A.';
-  const valor = 'R$ 480,00';
+  const valorMatch = (c.dilemma + ' ' + c.messageContent).match(/R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{2})?/);
+  const valor = valorMatch ? valorMatch[0] : 'Valor pedido na mensagem';
+  const parente = c.whatsapp?.pushName || c.whatsapp?.savedName || cleanName(c.sender);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/85 backdrop-blur-md animate-fadeIn">
@@ -442,8 +519,8 @@ const PixDoubtModal = ({
             <span>Dúvida Investigativa</span>
           </div>
           <p className="text-[11.5px] text-white/90 leading-relaxed">
-            {c.category.includes('Família') || c.category.includes('WhatsApp')
-              ? `Espere um pouco... A mensagem dizia ser da sua filha Sofia. Mas o titular cadastrado no Banco Central é "${titular}"! Por que você pagaria uma conta de faculdade para a conta pessoal de um estranho?`
+            {c.category.includes('Família')
+              ? `Espere um pouco... A mensagem dizia ser de ${parente}. Mas o titular cadastrado no Banco Central é "${titular}"! Por que você mandaria dinheiro para a conta pessoal de um estranho?`
               : `Atenção: A chave Pix informada está em nome de pessoa física ("${titular}"), e não no CNPJ oficial do órgão ou empresa!`}
           </p>
           <div className="text-[10.5px] font-mono text-amber-300/80 pt-1">
@@ -468,7 +545,7 @@ const PixDoubtModal = ({
             className="w-full py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 font-bold text-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Check className="w-4 h-4" />
-            <span>Anotar Evidência no Bloco de Notas</span>
+            <span>Anotar nas Notas</span>
           </button>
 
           <button
@@ -601,11 +678,13 @@ const VoiceCallOverlay = ({
   if (c.id === 'case-1-whatsapp') {
     contextualDialogue = 'Chamada recusada pelo contato. Resposta por texto: "Mãe, tô em aula agora na faculdade, o professor não deixa atender! Faz o Pix logo por favor."';
   } else if (c.id === 'case-2-correios') {
-    contextualDialogue = 'Mensagem automática da operadora: "O número discado não recebe chamadas ou está temporariamente fora de serviço."';
-  } else if (c.id === 'case-3-falsa-central-sms' || c.id === 'case-4-falsa-central') {
+    contextualDialogue = 'Ninguém atende a chamada de WhatsApp. Segundos depois chega por texto: "Este canal é só para mensagens. Para liberar sua encomenda, pague a taxa pelo link ainda hoje."';
+  } else if (c.id === 'case-3-falsa-central-sms') {
     contextualDialogue = '"Aqui é da Central de Prevenção a Fraudes. A compra de R$ 3.890 no Magalu foi pré-aprovada. Para cancelar, você precisa transferir seu saldo disponível para a Conta Segura do Banco Central via Pix agora!"';
+  } else if (c.id === 'case-4-falsa-central') {
+    contextualDialogue = '"Aqui é o Ricardo, da central antifraude. A tentativa de Pix de R$ 2.800 ainda está ativa. Para proteger o saldo, o senhor precisa transferir o valor disponível para a conta de segurança agora!"';
   } else if (c.id === 'case-7-vaga-tarefas') {
-    contextualDialogue = 'Recusa de chamada. Mensagem automática: "Atendimento de recrutamento Larissa Shopee é realizado exclusivamente pelo grupo de tarefas no Telegram."';
+    contextualDialogue = 'Chamada recusada. Logo depois a Larissa responde por texto: "Oii, não consigo atender agora! Todo o treinamento é feito no nosso grupo do Telegram, entra lá que a mentora te explica."';
   }
 
   return (
@@ -670,7 +749,7 @@ const getClueGuide = (clue: InvestigativeClue) => {
     return {
       title: 'Você deve verificar o DDD e a procedência do número.',
       steps: [
-        'Volte ao app de mensagens (WhatsApp ou SMS).',
+        'Volte para a conversa no WhatsApp.',
         'Toque no nome ou na foto do contato no topo da conversa.',
         'Confira o DDD (prefixo regional) e há quanto tempo o chip foi ativado.',
       ],
@@ -1225,9 +1304,9 @@ const VerdictModal = ({
             </div>
             <div>
               <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold">
-                {isPericial ? 'Perícia Forense Completa' : `Julgamento Direto (${chancesLeft} ${chancesLeft === 1 ? "chance" : "chances"})`}
+                {isPericial ? 'Investigação completa' : `Decidir agora (${chancesLeft} ${chancesLeft === 1 ? "chance" : "chances"})`}
               </div>
-              <h3 className="text-xs font-bold text-white">Veredito & Prova Material</h3>
+              <h3 className="text-xs font-bold text-white">Sua decisão</h3>
             </div>
           </div>
           <button
@@ -1242,7 +1321,7 @@ const VerdictModal = ({
         {/* ETAPA 1: Decisão Principal (Golpe ou Seguro) */}
         <div className="space-y-2">
           <label className="text-[11px] font-semibold text-neutral-200 block">
-            1. Qual é o seu veredito técnico sobre o caso?
+            1. Na sua opinião, é golpe ou é seguro?
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -1299,7 +1378,7 @@ const VerdictModal = ({
             <label className="text-[11px] font-semibold text-amber-300 block">
               2. Qual prova concreta confirma a sua decisão?
               <span className="text-[10px] text-white/60 font-normal block mt-0.5">
-                Selecione o cartão com a evidência técnica incontestável:
+                Qual pista te convenceu? Toque em uma:
               </span>
             </label>
 
@@ -1351,7 +1430,7 @@ const VerdictModal = ({
                 : 'bg-white/10 text-white/40 cursor-not-allowed'
             }`}
           >
-            <span>Confirmar Veredito Técnico ➔</span>
+            <span>Confirmar ➔</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -1395,7 +1474,7 @@ const DidacticFeedbackModal = ({
             <span className="text-2xl">⚠️</span>
             <div>
               <span className="text-[10px] font-mono uppercase font-bold text-amber-400 block">
-                {isCircumstantial ? 'Indício Circunstancial' : 'Evidência Incorreta'}
+                {isCircumstantial ? 'Pista fraca' : 'Essa pista não prova'}
               </span>
               <h3 className="text-xs font-bold text-white">Você gastou 1 chance ({chancesLeft} restante)</h3>
             </div>
@@ -1414,7 +1493,7 @@ const DidacticFeedbackModal = ({
             {feedback}
           </p>
           <p className="text-[11px] text-amber-300/90 italic">
-            💡 Dica de Perito: Golpistas se aproveitam de pressa e suposições. Você pode investigar nos apps do celular para confirmar com 100% de certeza!
+            💡 Dica: Golpistas se aproveitam de pressa e suposições. Você pode investigar nos apps do celular para confirmar com 100% de certeza!
           </p>
         </div>
 
@@ -1465,18 +1544,18 @@ const LockoutModal = ({
           </div>
           <div>
             <span className="text-[10px] font-mono uppercase font-bold text-red-400 block">
-              Tentativas Diretas Esgotadas
+              Vamos investigar mais um pouco
             </span>
-            <h3 className="text-xs font-bold text-white">Perícia Obrigatória Ativada</h3>
+            <h3 className="text-xs font-bold text-white">Investigue antes de decidir</h3>
           </div>
         </div>
 
         <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-2">
           <p className="text-xs text-red-100 leading-relaxed">
-            Você gastou <strong>todas as chances diretas</strong> de veredito sem apontar a prova material concreta.
+            Suas chances de decidir direto acabaram. Sem problema: é assim que a gente aprende.
           </p>
           <p className="text-[11.5px] text-neutral-300 leading-relaxed">
-            Para não agir por impulso e se proteger de fraudes reais, você agora deve abrir o seu <strong>Dossiê</strong> e checar as 3 evidências nos apps do celular antes de poder julgar novamente.
+            Para não agir por impulso e se proteger de fraudes reais, abra as <strong>Notas</strong> e confira as 3 pistas no celular. Depois disso, o veredito volta a ficar liberado.
           </p>
         </div>
 
@@ -1485,7 +1564,7 @@ const LockoutModal = ({
           onClick={onOpenNotes}
           className="w-full min-h-[48px] py-3 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow-lg transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
         >
-          <span>📋 Abrir Meu Dossiê de Investigação ➔</span>
+          <span>📋 Abrir as Notas ➔</span>
         </button>
       </motion.div>
     </div>
@@ -1611,12 +1690,13 @@ const BrowserScreen = ({
     const text = `${c.title} ${c.messageContent} ${c.sender}`.toLowerCase();
     const suggestions: string[] = [];
 
-    if (text.includes('correios') || text.includes('nl8392019br') || text.includes('alfandega')) {
-      suggestions.push('rastrear objeto NL8392019BR correios oficial');
-      suggestions.push('correios cobram taxa por link de sms .online?');
+    if (text.includes('correios') || text.includes('alfandega')) {
+      const trackingCode = c.messageContent.match(/\b[A-Z]{2}\d{7,9}BR\b/)?.[0];
+      suggestions.push(trackingCode ? `rastrear objeto ${trackingCode} correios oficial` : 'rastrear objeto correios oficial');
+      suggestions.push('correios cobram taxa por link no whatsapp?');
     }
-    if (text.includes('magalu') || text.includes('0800 729 0001') || text.includes('3.890')) {
-      suggestions.push('sms compra aprovada 0800 729 0001 magazine luiza');
+    if (text.includes('0800 729 0001') || text.includes('3.890')) {
+      suggestions.push('whatsapp compra aprovada 0800 729 0001 magazine luiza');
       suggestions.push('central 0800 pede pix para cancelar compra no cartão');
     }
     if (text.includes('mãe') || text.includes('filha') || text.includes('número novo')) {
@@ -1789,7 +1869,7 @@ const BrowserScreen = ({
                     g1.globo.com › economia › seguranca-digital
                   </div>
                   <h5 className="text-[12.5px] font-bold text-blue-700 leading-snug">
-                    Como funcionam os golpes de urgência por WhatsApp e SMS no Brasil
+                    Como funcionam os golpes de urgência por WhatsApp no Brasil
                   </h5>
                   <p className="text-[11px] text-slate-600 leading-relaxed">
                     Bancos, Correios e grandes empresas nunca enviam links terminados em <b>.online</b> nem pedem transferências Pix para pessoas físicas, cancelamento de compras ou liberação de vagas de emprego.
@@ -1861,7 +1941,7 @@ const BrowserScreen = ({
 // ============================================================================
 // GERADOR DE PERGUNTAS COTIDIANAS ("O QUE A DONA MARIA MANDARIA?")
 // ============================================================================
-const getClueConfrontationAction = (
+const rawClueConfrontationAction = (
   clue: InvestigativeClue,
   c: ScamCase,
   ageGroup: AgeGroup = 'adult',
@@ -1954,7 +2034,7 @@ const getClueConfrontationAction = (
     };
   }
 
-  // FASE 2: SMS dos Correios
+  // FASE 2: Falso Correios no WhatsApp
   if (clue.id === 'clue-2-rastreio') {
     return {
       id: `act-${c.id}-rastreio`,
@@ -1983,10 +2063,10 @@ const getClueConfrontationAction = (
         'Esse é o nosso número de atendimento regional, o oficial tá sobrecarregado essa semana. Mas pode confiar, é só pagar pelo link que libera hoje mesmo!',
       evidenceDiscovered: {
         id: `ev-${c.id}-remetente`,
-        title: 'SMS Enviado por Número de Celular Comum',
-        description: 'O aviso partiu de um número móvel comum de 9 dígitos.',
+        title: 'Perfil "Correios" num Celular Comum, sem Selo',
+        description: 'O aviso partiu de um celular comum de 9 dígitos, com nome e logo copiados dos Correios.',
         status: 'suspicious',
-        forensicFact: 'Órgãos oficiais utilizam códigos curtos (shortcodes) de 5 dígitos.',
+        forensicFact: 'Empresas grandes que atendem pelo WhatsApp usam conta comercial verificada; nome e logo no perfil qualquer um copia.',
       },
     };
   }
@@ -1998,18 +2078,18 @@ const getClueConfrontationAction = (
       actionType: 'investigation',
       playerMessage: 'O site dos Correios é correios.com.br. Por que esse link termina em .online?',
       replyMessage:
-        'É o nosso site parceiro de pagamento, é mais rápido pelo Pix. Mas corre que o prazo acaba às 18h!',
+        'É o nosso site parceiro de pagamento, é mais rápido pelo Pix. Mas corre que o prazo acaba hoje às 23h59!',
       evidenceDiscovered: {
         id: `ev-${c.id}-url`,
         title: 'Link Externo Terminado em .online',
-        description: 'O endereço indicado no SMS não pertence ao domínio oficial correios.com.br.',
+        description: 'O endereço indicado na mensagem não pertence ao domínio oficial correios.com.br.',
         status: 'suspicious',
         forensicFact: 'Os Correios nunca cobram taxas por links terminados em .online, .top ou .site.',
       },
     };
   }
 
-  // FASE 3: SMS Falsa Central 0800
+  // FASE 3: Compra falsa no WhatsApp com 0800
   if (clue.id === 'clue-3-extrato') {
     return {
       id: `act-${c.id}-extrato`,
@@ -2033,7 +2113,7 @@ const getClueConfrontationAction = (
       id: `act-${c.id}-0800`,
       label: 'Ligar no 0800 729 0001 para ver o que o atendente diz',
       actionType: 'investigation',
-      playerMessage: '[Ligação realizada para 0800 729 0001]',
+      playerMessage: 'Liguei agora no 0800 729 0001 que veio na mensagem. Alô?',
       replyMessage:
         '"Boa tarde, central de segurança. Pra cancelar essa compra de R$ 3.890, o senhor precisa passar o saldo via Pix pra uma conta de segurança agora, depois a gente devolve tudo."',
       evidenceDiscovered: {
@@ -2056,10 +2136,10 @@ const getClueConfrontationAction = (
         'Por aqui a gente não consegue cancelar, só por telefone. Liga urgente no 0800 729 0001, a compra entra na fatura em poucos minutos!',
       evidenceDiscovered: {
         id: `ev-${c.id}-google`,
-        title: 'Isca de SMS para Forçar Ligação ao 0800',
-        description: 'O SMS recusa comandos e insiste que a vítima ligue para a falsa central.',
+        title: 'Mensagem-Isca para Forçar Ligação ao 0800',
+        description: 'O perfil se recusa a cancelar pelo chat e insiste que a vítima ligue para a falsa central.',
         status: 'suspicious',
-        forensicFact: 'Nunca ligue para números 0800 recebidos por SMS de compras suspeitas.',
+        forensicFact: 'Nunca ligue para números 0800 recebidos em mensagens de compras suspeitas.',
       },
     };
   }
@@ -2129,12 +2209,12 @@ const getClueConfrontationAction = (
     // Empresa verdadeira não pressiona; golpista sempre empurra para a pressa
     replyMessage: c.isScam
       ? 'Olha, não dá pra explicar tudo por aqui agora. Faz o que eu pedi rapidinho que o prazo tá acabando!'
-      : 'Por aqui não pedimos senha, código nem pagamento. Se tiver dúvida, confira direto no aplicativo oficial ou ligue no número do verso do seu cartão.',
+      : 'Pode conferir com calma: por aqui ninguém vai te pedir senha, código nem pagamento. Se quiser, confira direto pelo canal oficial.',
     evidenceDiscovered: {
       id: `ev-${c.id}-${clue.id}`,
       title: clue.name,
       description: clue.inspection.observation,
-      status: 'suspicious',
+      status: clue.evidenceResult.status,
       forensicFact: clue.evidenceResult.fato,
     },
   };
@@ -2202,7 +2282,6 @@ const WhatsAppScreen = ({
   );
   const [isTypingReply, setIsTypingReply] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
-  const number = findContactNumber(c);
   const waId = getWaIdentity(c);
 
   const messageParagraphs = c.messageContent.split(/\n\n+/).filter(Boolean);
@@ -2532,8 +2611,8 @@ const WhatsAppScreen = ({
           </div>
         )}
 
-        {/* Botão de Veredito só aparece após as mensagens chegarem para não poluir */}
-        {hasFinishedTyping && onOpenVerdictModal && onOpenNotes && (
+        {/* Botão de Veredito sempre visível: o leigo precisa saber desde o início onde decidir */}
+        {onOpenVerdictModal && onOpenNotes && (
           <VerdictActionBar
             directChancesLeft={directChancesLeft}
             isDirectVerdictLocked={isDirectVerdictLocked}
@@ -2907,7 +2986,7 @@ const formatCallTimer = (sec: number) => {
 };
 
 // ============================================================================
-// CHAMADA TELEFÔNICA INTERATIVA ESTILO JOGO INDIE (0800 FALSA CENTRAL)
+// CHAMADA DE VOZ DO WHATSAPP INTERATIVA (FALSA CENTRAL)
 // ============================================================================
 const CallScreen = ({
   c,
@@ -3192,7 +3271,7 @@ const CallScreen = ({
         <div className="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-[10px] text-white/70">
           <span className="flex items-center gap-1 font-mono">
             <Phone className="w-3 h-3 text-emerald-400" />
-            <span>Linha conectada com {number ?? '0800 729 0001'}</span>
+            <span>Linha conectada com {number ?? 'contato do WhatsApp'}</span>
           </span>
           {isCallerTalking && (
             <span className="text-emerald-400 font-bold animate-pulse font-mono flex items-center gap-1">
@@ -3461,7 +3540,7 @@ const HomeScreen = ({
     return false;
   };
 
-  const ageLabel = ageGroup === 'senior' ? '60+ anos' : ageGroup === 'adult' ? '36–59 anos' : 'Até 35 anos';
+  const ageLabel = ageGroup === 'senior' ? '50+ anos' : ageGroup === 'adult' ? '35–49 anos' : '20–34 anos';
 
   return (
     <div className="relative flex flex-col h-full bg-gradient-to-b from-[#111827] via-[#0f172a] to-[#030712] text-white select-none overflow-hidden">
@@ -3701,14 +3780,21 @@ const HomeScreen = ({
   );
 };
 
+const getClueConfrontationAction = (
+  clue: InvestigativeClue,
+  c: ScamCase,
+  ageGroup: AgeGroup = 'adult',
+  isPixAlreadyChecked = false,
+): InteractiveAction => genderizeDeep(rawClueConfrontationAction(clue, c, ageGroup, isPixAlreadyChecked), readGender());
+
 // ============================================================================
 // COMPONENTE PRINCIPAL DO CELULAR (PHONE SCREEN HUB COM PERSISTÊNCIA REAL)
 // ============================================================================
 export const PhoneScreen: React.FC<PhoneScreenProps> = ({
-  scamCase,
+  scamCase: rawScamCase,
   stamped,
   wasCorrect,
-  onPerformAction,
+  onPerformAction: rawOnPerformAction,
   executedActionIds,
   actionHistory,
   onAppOpenChange,
@@ -3726,6 +3812,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   onCompleteInitialBoot,
   onAgeGroupChange,
 }) => {
+  const [gender, setGender] = useState<PlayerGender>(readGender);
+  const scamCase = useMemo(() => genderizeDeep(rawScamCase, gender), [rawScamCase, gender]);
+  // Ações montadas aqui (Pix, ligação, áudio) também passam pelo tratamento do jogador
+  const onPerformAction = (action: InteractiveAction) => rawOnPerformAction(genderizeDeep(action, gender));
   const [activeApp, setActiveApp] = useState<'home' | 'messaging' | 'notes' | 'bank' | 'browser'>('home');
   const [previousApp, setPreviousApp] = useState<'home' | 'messaging' | 'notes'>('home');
   const [isLocked, setIsLocked] = useState(true);
@@ -3749,12 +3839,37 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     }
   });
 
-  const [bootStage, setBootStage] = useState<'hello' | 'age' | 'about' | 'ready'>(() => {
+  const [bootStage, setBootStage] = useState<'hello' | 'age' | 'gender' | 'about' | 'ready'>(() => {
     if (!hasChosenAge) return 'hello';
     return initialBootDone ? 'ready' : 'hello';
   });
 
   const [notificationArrived, setNotificationArrived] = useState(false);
+  const [guidanceText, setGuidanceText] = useState<string | null>(null);
+  // Ref (e não state): incrementar o contador não pode reexecutar o efeito e apagar a dica recém-mostrada
+  const hintsShownRef = useRef(0);
+
+  useEffect(() => {
+    hintsShownRef.current = 0;
+    setGuidanceText(null);
+  }, [scamCase.id]);
+
+  // Reinicia a contagem a cada ação do jogador: a dica só vem quando ele trava
+  useEffect(() => {
+    setGuidanceText(null);
+    const { delayMs, maxHints } = GUIDANCE_BY_AGE[ageGroup];
+    if (bootStage !== 'ready' || !notificationArrived || stamped || hintsShownRef.current >= maxHints) return;
+    const t = setTimeout(() => {
+      const next = scamCase.clues.find((cl) => !inspectedClueIds.includes(cl.id));
+      setGuidanceText(
+        next
+          ? GUIDANCE_BY_CATEGORY[next.category]
+          : 'Você já juntou provas. Abra as Notas, releia o que encontrou e só então decida com calma.',
+      );
+      hintsShownRef.current += 1;
+    }, delayMs);
+    return () => clearTimeout(t);
+  }, [ageGroup, bootStage, notificationArrived, stamped, inspectedClueIds.length, actionHistory.length, scamCase]);
   const [hasOpenedScamMessage, setHasOpenedScamMessage] = useState(false);
   const [hasDeliveredStory, setHasDeliveredStory] = useState(false);
   const [revealedBubblesCount, setRevealedBubblesCount] = useState(0);
@@ -3825,6 +3940,15 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
       sessionStorage.setItem('hacklearn_age_group', selected);
     } catch {}
     onAgeGroupChange?.(selected);
+    setBootStage('gender');
+  };
+
+  const handleSelectGender = (selected: PlayerGender) => {
+    sound.playKeypress();
+    setGender(selected);
+    try {
+      sessionStorage.setItem('hacklearn_gender', selected);
+    } catch {}
     setBootStage('about');
   };
 
@@ -3937,7 +4061,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   // Chegada orgânica da mensagem do caso na LockScreen (calibrado -4s com ritmo natural por idade)
   useEffect(() => {
     if (bootStage !== 'ready' || notificationArrived) return;
-    const notifDelay = ageGroup === 'senior' ? 18000 : ageGroup === 'adult' ? 16000 : 12000;
+    const notifDelay = ageGroup === 'senior' ? 5000 : ageGroup === 'adult' ? 4000 : 3000;
     const notifTimer = setTimeout(() => {
       triggerNotificationArrival();
     }, notifDelay);
@@ -3958,8 +4082,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     }
 
     setIsContactTyping(true);
-    const initialBubbleDelay = ageGroup === 'senior' ? 4500 : ageGroup === 'adult' ? 3500 : 2500;
-    const subsequentBubbleDelay = ageGroup === 'senior' ? 16000 : ageGroup === 'adult' ? 12000 : 8000;
+    const initialBubbleDelay = ageGroup === 'senior' ? 2500 : ageGroup === 'adult' ? 2000 : 1500;
+    const subsequentBubbleDelay = ageGroup === 'senior' ? 5000 : ageGroup === 'adult' ? 4000 : 3000;
     const delay = revealedBubblesCount === 0 ? initialBubbleDelay : subsequentBubbleDelay;
 
     const timer = setTimeout(() => {
@@ -3980,8 +4104,8 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
   useEffect(() => {
     if (!hasDeliveredStory || revealedChoicesCount >= 3) return;
 
-    const initialPause = ageGroup === 'senior' ? 12000 : ageGroup === 'adult' ? 8000 : 4000;
-    const stepInterval = ageGroup === 'senior' ? 3500 : ageGroup === 'adult' ? 2500 : 1500;
+    const initialPause = ageGroup === 'senior' ? 2000 : ageGroup === 'adult' ? 1500 : 1000;
+    const stepInterval = ageGroup === 'senior' ? 1200 : ageGroup === 'adult' ? 1000 : 800;
     const delay = revealedChoicesCount === 0 ? initialPause : stepInterval;
 
     const timer = setTimeout(() => {
@@ -4055,6 +4179,15 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
     const isHypothesisRight = hypothesisIndex === scamCase.correctEvidenceIndex;
     const isMastery = inspectedClueIds.length >= 3;
 
+    apiService.recordResult({
+      age_group: ageGroup,
+      gender,
+      case_id: scamCase.id.startsWith('dynamic-') ? 'dynamic' : scamCase.id,
+      is_scam: scamCase.isScam,
+      correct: isVerdictRight,
+      clues_inspected: inspectedClueIds.length,
+    });
+
     if (isVerdictRight && (isHypothesisRight || isMastery)) {
       setUserHypothesisIndex(hypothesisIndex);
       try {
@@ -4103,8 +4236,16 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
 
   const handleConfrontPixInChat = (pixClue: InvestigativeClue) => {
     const titular = pixClue?.inspection?.field2Value || 'Valdir dos Santos';
-    const playerMsg = `Sofia, quem é esse ${titular} da chave Pix? A faculdade não cobra por boleto ou CNPJ?`;
-    const replyMsg = `Mãe, é o coordenador financeiro da faculdade! Ele disse que só segura minha vaga se pagar direto na conta dele agora, por favor faz logo!`;
+    const contactName = scamCase.whatsapp?.pushName || cleanName(scamCase.sender);
+    const isFacultyStory = scamCase.id === 'case-1-whatsapp';
+    const playerMsg = isFacultyStory
+      ? `${contactName}, quem é esse ${titular} da chave Pix? A faculdade não cobra por boleto ou CNPJ?`
+      : `Quem é esse ${titular} da chave Pix? Por que o dinheiro vai pra conta de outra pessoa?`;
+    const replyMsg = isFacultyStory
+      ? `Mãe, é o coordenador financeiro da faculdade! Ele disse que só segura minha vaga se pagar direto na conta dele agora, por favor faz logo!`
+      : scamCase.category.includes('Família')
+        ? `Mãe, é um amigo que tá me ajudando aqui, depois eu te explico! Por favor faz logo o Pix!`
+        : `É a conta responsável pelo procedimento, pode fazer sem medo. Mas tem que ser agora!`;
 
     setIsPixDoubtModalOpen(false);
     setActiveApp('messaging');
@@ -4123,9 +4264,9 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
         evidenceDiscovered: {
           id: `ev-${scamCase.id}-pix-favorecido`,
           title: `Favorecido Estranho: ${titular}`,
-          description: `A conta Pix pertence a ${titular}, e não à instituição.`,
+          description: `A conta Pix pertence a ${titular}, uma pessoa física estranha à história contada.`,
           status: 'suspicious',
-          forensicFact: 'Instituições de ensino e empresas cobram por CNPJ oficial ou boleto registrado.',
+          forensicFact: 'Instituições e empresas cobram por CNPJ oficial ou boleto registrado, nunca no CPF de um terceiro.',
         },
       });
     }, 600);
@@ -4164,10 +4305,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           sound.playMessagePing();
           sound.playTensionPulse();
 
-          const isRelative = /mãe|pai|filho|filha|primo|tio|irmã|irmão/i.test(scamCase.title + scamCase.sender);
+          const isRelative = scamCase.category.includes('Família') || /mãe|pai|filho|filha|primo|tio|irmã|irmão/i.test(scamCase.title + scamCase.sender);
           const replyText = isRelative
-            ? `Pai/Mãe, não consigo atender ligação agora! O microfone do celular quebrou quando caiu no chão. Por favor não desconfia de mim e me ajuda pelo texto!`
-            : `Atenção: Por protocolo de segurança, este canal opera exclusivamente via mensagens criptografadas e não aceita chamadas de voz. Favor responder por aqui.`;
+            ? `Mãe, não consigo atender ligação agora! O microfone do celular quebrou quando caiu no chão. Por favor não desconfia de mim e me ajuda pelo texto!`
+            : `Não consigo atender agora, tô em outro atendimento. Me responde por aqui mesmo que é mais rápido, tá bom?`;
 
           if (behaviorClue && !inspectedClueIds.includes(behaviorClue.id)) {
             handleInspectClue(behaviorClue);
@@ -4243,10 +4384,10 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
         sound.playMessagePing();
         sound.playTensionPulse();
 
-        const isRelative = /mãe|pai|filho|filha|primo|tio|irmã|irmão/i.test(scamCase.title + scamCase.sender);
+        const isRelative = scamCase.category.includes('Família') || /mãe|pai|filho|filha|primo|tio|irmã|irmão/i.test(scamCase.title + scamCase.sender);
         const replyText = isRelative
           ? `Já falei que não dá pra gravar áudio agora, meu microfone tá queimado! Poxa, você não confia em mim?! Por favor me manda o Pix logo!`
-          : `Sistema automático: Envio e recebimento de notas de voz desabilitados neste canal corporativo. Prossiga por texto.`;
+          : `Por aqui não consigo mandar áudio, o sistema não deixa. Vamos resolver por texto mesmo, é rapidinho!`;
 
         if (behaviorClue && !inspectedClueIds.includes(behaviorClue.id)) {
           handleInspectClue(behaviorClue);
@@ -4523,7 +4664,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                         }`}
                       >
                         <div>
-                          <div className="font-bold text-sm text-white">Até 35 anos</div>
+                          <div className="font-bold text-sm text-white">20 a 34 anos</div>
                           <div className="text-[11px] text-white/60">Ritmo rápido e respostas diretas</div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-white/60 shrink-0" />
@@ -4539,7 +4680,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                         }`}
                       >
                         <div>
-                          <div className="font-bold text-sm text-white">36 a 59 anos</div>
+                          <div className="font-bold text-sm text-white">35 a 49 anos</div>
                           <div className="text-[11px] text-white/60">Ritmo natural do dia a dia</div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-white/60 shrink-0" />
@@ -4555,8 +4696,55 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                         }`}
                       >
                         <div>
-                          <div className="font-bold text-sm text-white">60 anos ou mais</div>
+                          <div className="font-bold text-sm text-white">50 anos ou mais</div>
                           <div className="text-[11px] text-white/60">Letras maiores e leitura mais calma</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-white/60 shrink-0" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* PASSO 2B: TRATAMENTO (mãe/pai, senhora/senhor) */}
+                {bootStage === 'gender' && (
+                  <div className="flex flex-col items-center gap-4 my-auto w-full max-w-xs">
+                    <div className="space-y-1">
+                      <span className="text-2xl font-bold tracking-tight text-white font-display block">
+                        Como devem falar com você?
+                      </span>
+                      <p className="text-xs text-white/60 leading-relaxed">
+                        Os golpistas usam o seu tratamento pra parecer gente próxima. É só pra deixar a conversa real.
+                      </p>
+                    </div>
+
+                    <div className="w-full space-y-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectGender('female')}
+                        className={`w-full p-3.5 rounded-2xl border text-left transition cursor-pointer flex items-center justify-between ${
+                          gender === 'female'
+                            ? 'bg-white/15 border-white text-white'
+                            : 'bg-white/5 border-white/15 hover:bg-white/10 text-neutral-200'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-bold text-sm text-white">Feminino</div>
+                          <div className="text-[11px] text-white/60">“Oi mãe”, “a senhora”</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-white/60 shrink-0" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectGender('male')}
+                        className={`w-full p-3.5 rounded-2xl border text-left transition cursor-pointer flex items-center justify-between ${
+                          gender === 'male'
+                            ? 'bg-white/15 border-white text-white'
+                            : 'bg-white/5 border-white/15 hover:bg-white/10 text-neutral-200'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-bold text-sm text-white">Masculino</div>
+                          <div className="text-[11px] text-white/60">“Oi pai”, “o senhor”</div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-white/60 shrink-0" />
                       </button>
@@ -4591,7 +4779,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                       </div>
                       <div className="flex items-start gap-2.5">
                         <span className="text-base leading-none">⚖️</span>
-                        <span><strong>Decida com certeza:</strong> Quando descobrir a verdade, toque em Julgar Caso.</span>
+                        <span><strong>Decida com certeza:</strong> Quando descobrir a verdade, toque em Dar Veredito.</span>
                       </div>
                     </div>
 
@@ -4611,6 +4799,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
                   <div className="flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full transition-all ${bootStage === 'hello' ? 'w-6 bg-white' : 'bg-white/30'}`} />
                     <span className={`w-2 h-2 rounded-full transition-all ${bootStage === 'age' ? 'w-6 bg-white' : 'bg-white/30'}`} />
+                    <span className={`w-2 h-2 rounded-full transition-all ${bootStage === 'gender' ? 'w-6 bg-white' : 'bg-white/30'}`} />
                     <span className={`w-2 h-2 rounded-full transition-all ${bootStage === 'about' ? 'w-6 bg-white' : 'bg-white/30'}`} />
                   </div>
                 </div>
@@ -4843,6 +5032,34 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
               </div>
             );
           })()}
+
+          <AnimatePresence>
+            {guidanceText && (
+              <motion.div
+                role="status"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                className="absolute left-3 right-3 bottom-16 z-40 rounded-2xl bg-neutral-900/95 border border-amber-400/40 p-3 text-white shadow-xl backdrop-blur"
+              >
+                <div className="flex items-start gap-2">
+                  <span aria-hidden className="text-base leading-none">🧠</span>
+                  <p className={`flex-1 ${ageGroup === 'senior' ? 'text-[14px]' : 'text-[12.5px]'} leading-snug`}>
+                    <span className="font-semibold text-amber-300">Pensa comigo: </span>
+                    {guidanceText}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setGuidanceText(null)}
+                    className="text-white/60 hover:text-white text-xs px-1 cursor-pointer"
+                    aria-label="Fechar orientação"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* MODAL DE DICAS DE INVESTIGAÇÃO DO CELULAR */}
           <TipsModal

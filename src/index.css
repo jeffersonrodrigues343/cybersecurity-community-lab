@@ -112,3 +112,24 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* iOS dá zoom automático ao focar campo com fonte < 16px; no celular força 16px */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Botões só com ícone (p-1 + ícone de 16px = 24px) ficam pequenos demais pro dedo;
+   no celular garante área de toque de 40px sem mexer no visual do ícone */
+@media (max-width: 640px) {
+  button:has(> svg:only-child) {
+    min-width: 40px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

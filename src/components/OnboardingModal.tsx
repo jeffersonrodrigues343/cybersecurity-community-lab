@@ -56,7 +56,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           {/* Corpo Rolável dos 3 Passos */}
           <div className="flex-1 overflow-y-auto overscroll-contain space-y-2.5 py-3 pr-1 text-xs">
             <p className="text-[11.5px] sm:text-xs text-ink-soft pb-0.5">
-              Você vai encarar as 4 fases com os golpes mais perigosos que circulam em smartphones no Brasil. Siga a metodologia dos peritos:
+              Você vai encarar as 4 fases com os golpes de WhatsApp mais comuns no Brasil. É assim que funciona:
             </p>
 
             {/* Passo 1 */}
@@ -81,10 +81,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
               <div className="space-y-0.5 flex-1 min-w-0">
                 <h4 className="text-xs sm:text-sm font-display font-bold text-ink">
-                  Investigue com seu Dossiê 📋
+                  Investigue antes de decidir 📋
                 </h4>
                 <p className="text-[11.5px] sm:text-xs text-ink-soft leading-relaxed">
-                  Abra o aplicativo <strong>Meu Banco</strong> para auditar extratos e chaves Pix, use o <strong>Google</strong> para checar links e faça testes de voz por telefone.
+                  Abra o aplicativo <strong>Meu Banco</strong> para conferir o extrato e as chaves Pix, use o <strong>Google</strong> para checar links e peça um áudio ou ligue para confirmar.
                 </p>
               </div>
             </div>
@@ -96,10 +96,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
               <div className="space-y-0.5 flex-1 min-w-0">
                 <h4 className="text-xs sm:text-sm font-display font-bold text-ink">
-                  Veredito com Prova Material (2 Chances)
+                  Decida e mostre a pista
                 </h4>
                 <p className="text-[11.5px] sm:text-xs text-ink-soft leading-relaxed flex flex-wrap items-center gap-1.5 pt-0.5">
-                  Você pode julgar a qualquer momento, mas tem que provar apontando a evidência concreta. Se errar 2 vezes, terá que auditar todos os 3 pontos do Dossiê para liberar o veredito!
+                  Você pode decidir quando quiser, mas precisa dizer qual pista te convenceu. Se errar, o jogo te ajuda a conferir as pistas antes de tentar de novo.
                 </p>
               </div>
             </div>

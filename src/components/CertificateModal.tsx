@@ -13,6 +13,7 @@ interface CertificateModalProps {
 export const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, score }) => {
   const [participantName, setParticipantName] = useState('Membro da Comunidade / Aluno');
   const [testimonial, setTestimonial] = useState('');
+  const [saveError, setSaveError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
@@ -29,8 +30,9 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, scor
   const handleSaveTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (testimonial.trim().length > 3) {
-      await apiService.submitFeedback(participantName, testimonial);
-      setIsSaved(true);
+      const ok = await apiService.submitFeedback(participantName, testimonial);
+      setSaveError(!ok);
+      setIsSaved(ok);
     }
   };
 
@@ -114,7 +116,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, scor
             type="text"
             value={participantName}
             onChange={(e) => setParticipantName(e.target.value)}
-            className="flex-1 bg-white/[0.06] border border-white/[0.08] rounded-full px-3 py-1 text-white text-xs focus:outline-none focus:border-[#2997ff]"
+            className="flex-1 bg-white/[0.06] border border-white/[0.08] rounded-full px-3 py-1 text-white text-base sm:text-xs focus:outline-none focus:border-[#2997ff]"
           />
         </div>
       </div>
@@ -136,8 +138,16 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ isOpen, scor
               value={testimonial}
               onChange={(e) => setTestimonial(e.target.value)}
               placeholder="Ex: A simulação do golpe do falso WhatsApp é idêntica ao que tentaram mandar na minha família. Agora sei exatamente como identificar o golpe..."
-              className="w-full bg-black/60 border border-white/[0.08] rounded-[18px] p-3 text-xs text-white focus:outline-none focus:border-[#2997ff]"
+              className="w-full bg-black/60 border border-white/[0.08] rounded-[18px] p-3 text-base sm:text-xs text-white focus:outline-none focus:border-[#2997ff]"
             />
+            <p className="text-[#86868b] text-[11px]">
+              Seu nome e depoimento podem aparecer publicamente no app. Não escreva dados pessoais (CPF, telefone, endereço).
+            </p>
+            {saveError && (
+              <p role="alert" className="text-[#ff453a] text-xs">
+                Não foi possível enviar agora. Verifique a internet e tente de novo.
+              </p>
+            )}
             <button
               type="submit"
               className="w-full py-2.5 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-medium text-xs transition flex items-center justify-center space-x-2 shadow-md shadow-[#0071e3]/20"

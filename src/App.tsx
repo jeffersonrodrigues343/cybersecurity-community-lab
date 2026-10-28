@@ -8,10 +8,16 @@ import { ReportModal } from './components/ReportModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { Footer } from './components/Footer';
 import { ShieldCheck } from 'lucide-react';
+import { ResultsPanel } from './components/ResultsPanel';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export function App() {
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/painel')) return <ResultsPanel />;
+  return <Simulator />;
+}
+
+function Simulator() {
   const [score, setScore] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [allCompleted, setAllCompleted] = useState(false);

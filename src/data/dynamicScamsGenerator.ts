@@ -34,6 +34,9 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
     case 'whatsapp_parente': {
       const names = ['Camila', 'Beatriz', 'Lucas', 'Matheus', 'Gabriel', 'Sofia'];
       const relative = pick(names);
+      const isDaughter = ['Camila', 'Beatriz', 'Sofia'].includes(relative);
+      const filhoX = isDaughter ? 'Filha' : 'Filho';
+      const desesperadoX = isDaughter ? 'desesperada' : 'desesperado';
       const amount = pick(['R$ 420,00', 'R$ 540,00', 'R$ 680,00', 'R$ 790,00']);
       const reasons = [
         'meu carro furou o pneu voltando da faculdade e o borracheiro só aceita Pix imediato',
@@ -43,7 +46,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
       const reason = pick(reasons);
       const strangeDDD = pick(['85', '98', '62', '71', '81', '91']);
       const orangeName = pick(['Valter dos Santos', 'Cleiton Mendes', 'Renata Albuquerque', 'Marcio Souza']);
-      const phoneNum = `+55 (${strangeDDD}) 9${randomInt(8100, 9999)}-${randomInt(1000, 9999)}`;
+      const relativeNumber = `+55 ${strangeDDD} 9${randomInt(1000, 9999)}-${randomInt(1000, 9999)}`;
       const pixKey = `${randomInt(100, 999)}.${randomInt(100, 999)}.${randomInt(100, 999)}-${randomInt(10, 99)}`;
 
       const clues: InvestigativeClue[] = [
@@ -85,7 +88,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             field2Label: 'O que aconteceu na ligação',
             field2Value: `${relative} atendeu no número de sempre dizendo que o celular NÃO quebrou`,
             field3Label: 'DDD do número que mandou mensagem',
-            field3Value: `Mensagem veio de ${phoneNum} (DDD ${strangeDDD} fora do estado)`,
+            field3Value: `Mensagem veio de ${relativeNumber} (DDD ${strangeDDD} fora do estado)`,
             observation: `Você ligou no número antigo e ${relative} atendeu normalmente! Ela disse que está tudo bem e que nunca pediu dinheiro nenhum.`,
           },
           evidenceResult: {
@@ -105,7 +108,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             type: 'security',
             badge: 'Teste Prático no Chat',
             field1Label: 'Como você confere na vida real',
-            field1Value: 'Pede um áudio de 5 segundos: "Filho, manda um áudio falando meu nome"',
+            field1Value: `Pede um áudio de 5 segundos: "${filhoX}, manda um áudio falando meu nome"`,
             field2Label: 'Desculpa do golpista',
             field2Value: '"Tô com o microfone estragado / na sala de aula, só fala por texto!"',
             field3Label: 'Chamada de vídeo',
@@ -123,7 +126,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
 
       const correctHypo = `O app do banco mostra que o Pix vai para um desconhecido (${orangeName}), e o contato foge de mandar áudio ou atender chamada de voz.`;
       const distractors = [
-        'A mensagem é garantida como verdadeira se o contato estiver usando a mesma foto de perfil que o parente tem no Instagram.',
+        'A mensagem é garantida como verdadeira se o contato estiver usando a mesma foto de perfil que o parente usa nas redes sociais.',
         'O aviso amarelo de "criptografia de ponta-a-ponta" que o WhatsApp mostra na tela significa que a conversa foi grampeada por bandidos.',
         'O banco proíbe automaticamente qualquer transferência Pix feita para contatos que não estejam salvos na sua agenda há mais de 1 mês.',
       ];
@@ -138,9 +141,9 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         category: 'WhatsApp & Família',
         title: `Pedido de Pix Urgente com Foto de ${relative}`,
         dilemma: `Um número que você não tem salvo mandou mensagem com a foto de ${relative}, dizendo que o celular quebrou e pedindo um Pix de ${amount} para uma emergência.`,
-        sender: `+55 ${strangeDDD} 9${randomInt(1000, 9999)}-${randomInt(1000, 9999)}`,
+        sender: relativeNumber,
         channel: 'whatsapp',
-        whatsapp: { number: `+55 ${strangeDDD} 9${randomInt(1000, 9999)}-${randomInt(1000, 9999)}`, pushName: relative },
+        whatsapp: { number: relativeNumber, pushName: relative },
         time: `${randomInt(10, 18)}:${randomInt(10, 59)}`,
         preview: `Oi! Anota meu número novo aí... Meu celular antigo quebrou...`,
         messageContent: `Oi! Por favor salva meu número provisório na sua agenda. O meu celular antigo caiu no chão e parou de funcionar.\n\nPreciso te pedir um favorzinho urgente: ${reason}. Consegue me mandar um Pix de ${amount} agora? Prometo que te devolvo assim que chegar em casa!\n\nChave Pix: ${pixKey}`,
@@ -151,7 +154,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             id: 'act-wa-1',
             label: 'Pedir áudio de 5 segundos falando seu nome para ouvir a voz',
             actionType: 'investigation',
-            playerMessage: `Filho(a), manda um áudio de 5 segundos falando meu nome agora antes de eu fazer o Pix.`,
+            playerMessage: `${filhoX}, manda um áudio de 5 segundos falando meu nome agora antes de eu fazer o Pix.`,
             replyMessage: `Mãe, meu microfone queimou quando o celular caiu! Não dá pra mandar áudio agora, para de desconfiar de mim e me ajuda rápido!`,
             evidenceDiscovered: {
               id: 'ev-audio-refusal',
@@ -166,7 +169,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             label: 'Fazer uma pergunta que só a família sabe (ex: nome do pet)',
             actionType: 'investigation',
             playerMessage: `Qual é o nome do cachorro que a gente adotou no sítio ano passado?`,
-            replyMessage: `Ai que pergunta sem noção agora?! Tô no meio da rua desesperado e você me testando?! Me manda o Pix logo!`,
+            replyMessage: `Ai que pergunta sem noção agora?! Tô no meio da rua ${desesperadoX} e você me testando?! Me manda o Pix logo!`,
             evidenceDiscovered: {
               id: 'ev-secret-question',
               title: 'Errou / Desconversou Pergunta de Família',
@@ -232,10 +235,11 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
     }
 
     // ==========================================
-    // CENÁRIO 2: SMS DOS CORREIOS (TAXA ADUANEIRA)
+    // CENÁRIO 2: FALSO CORREIOS NO WHATSAPP (TAXA ADUANEIRA)
     // ==========================================
     case 'correios_sms': {
       const code = `NL${randomInt(1000000, 9999999)}BR`;
+      const correiosNumber = `+55 11 9${randomInt(1000, 9999)}-${randomInt(1000, 9999)}`;
       const fee = pick(['R$ 24,90', 'R$ 29,80', 'R$ 34,50', 'R$ 41,20']);
       const fakeDomain = pick([
         'correios-rastreio-alfandega.online',
@@ -335,10 +339,10 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         xpReward: 80,
         category: 'WhatsApp & Encomendas',
         title: `Correios no WhatsApp: Taxa de ${fee} para Liberar Pacote`,
-        dilemma: `Chegou um SMS alarmante dizendo que seu pacote ${code} está preso na alfândega e será devolvido hoje se você não pagar uma taxa de ${fee} no link indicado.`,
-        sender: '+55 11 9' + randomInt(1000, 9999) + '-' + randomInt(1000, 9999),
+        dilemma: `Chegou no WhatsApp uma mensagem alarmante dizendo que seu pacote ${code} está preso na alfândega e será devolvido hoje se você não pagar uma taxa de ${fee} no link indicado.`,
+        sender: correiosNumber,
         channel: 'whatsapp',
-        whatsapp: { number: '+55 11 9' + randomInt(1000, 9999) + '-' + randomInt(1000, 9999), pushName: 'Correios Encomendas', business: 'unverified' },
+        whatsapp: { number: correiosNumber, pushName: 'Correios Encomendas', business: 'unverified' },
         time: `${randomInt(8, 20)}:${randomInt(10, 59)}`,
         preview: `CORREIOS: Pacote ${code} retido na fiscalizacao...`,
         messageContent: `CORREIOS INFORMA: Sua encomenda ${code} foi retida na fiscalizacao aduaneira. Ha uma taxa pendente de ${fee}. Evite devolucao imediata pagando hoje no link oficial: https://${fakeDomain}/taxas`,
@@ -375,7 +379,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
           },
           {
             id: 'act-sms-3',
-            label: 'Clicar no link da mensagem e pagar os R$ 24,90 para não arriscar',
+            label: `Clicar no link da mensagem e pagar os ${fee} para não arriscar`,
             actionType: 'risk_decision',
             playerMessage: `Clicando no link da mensagem e digitando os dados do cartão de crédito para liberar logo...`,
             replyMessage: `Simulador: Você caiu numa página falsa que roubou os dados do seu cartão de crédito!`,
@@ -384,16 +388,16 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
               title: 'Mancada: Entregou os Dados do Cartão',
               description: 'Você preencheu o formulário do site falso. Os golpistas clonaram o seu cartão de crédito.',
               status: 'risk_taken',
-              forensicFact: 'Nunca clique em links enviados por SMS sobre encomendas. Abra o navegador e acesse correios.com.br você mesmo.',
+              forensicFact: 'Nunca clique em links enviados por WhatsApp sobre encomendas. Abra o navegador e acesse correios.com.br você mesmo.',
             },
           },
         ],
         evidenceHypotheses: hypotheses,
         correctEvidenceIndex: correctIndex,
         keyEvidenceReason: `O endereço do link não termina em correios.com.br e o código sequer existe no aplicativo oficial de rastreamento.`,
-        redFlags: ['Link com terminação estranha (.online, .site, .top)', 'SMS ameaçando devolver o pacote no mesmo dia', 'Código inexistente no app oficial'],
-        explanation: 'Golpe de Smishing da Taxa dos Correios. Os golpistas mandam SMS em massa torcendo para assustar pessoas que compram na internet.',
-        realWorldTip: 'Recebeu SMS sobre pacote? Nunca clique no link. Abra o app oficial dos Correios ou digite correios.com.br no Google.',
+        redFlags: ['Link com terminação estranha (.online, .site, .top)', 'Mensagem ameaçando devolver o pacote no mesmo dia', 'Código inexistente no app oficial'],
+        explanation: 'Golpe da Falsa Taxa dos Correios. Os golpistas mandam mensagens de WhatsApp em massa torcendo para assustar pessoas que compram na internet.',
+        realWorldTip: 'Recebeu mensagem sobre pacote? Nunca clique no link. Abra o app oficial dos Correios ou digite correios.com.br no Google.',
         pedagogy: {
           emotionalTrigger: 'Medo de Perder a Mercadoria Comprada',
           kidsAnalogy: 'É como receber uma cartinha anônima dizendo que vão jogar seu brinquedo fora se você não der dinheiro para um estranho.',
@@ -403,7 +407,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         },
         reinforcementDrill: {
           title: 'Treino de Olho: Links Suspeitos no WhatsApp',
-          question: 'O que você deve fazer ao receber um SMS dizendo que seu pacote vai ser devolvido se não pagar taxa agora?',
+          question: 'O que você deve fazer ao receber uma mensagem no WhatsApp dizendo que seu pacote vai ser devolvido se não pagar taxa agora?',
           context: 'Links no WhatsApp são a maior armadilha de roubo de cartão no Brasil.',
           options: [
             {
@@ -491,7 +495,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
           name: 'De Onde Veio o Aviso (Canal Oficial)',
           buttonLabel: 'Verificar Como Chegou a Notificação',
           category: 'behavior',
-          question: 'O aviso chegou pelo aplicativo instalado do banco ou por SMS de número desconhecido?',
+          question: 'O aviso chegou pelo perfil oficial verificado do banco ou por um número desconhecido?',
           inspection: {
             type: 'behavior',
             badge: 'Canal do Smartphone',
@@ -506,7 +510,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
           evidenceResult: {
             status: 'clean',
             headline: 'Alerta emitido pelo app oficial',
-            details: 'Não é um SMS aleatório nem ligação; é o seu próprio banco te avisando.',
+            details: 'Não é um número aleatório nem ligação; é o perfil verificado do seu banco te avisando.',
             fato: 'Notificações de compras no app ajudam você a saber na hora se seu cartão for usado indevidamente.',
           },
         },
@@ -516,7 +520,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
       const distractors = [
         'Toda notificação que apita no celular falando de dinheiro debitado é tentativa de golpe ou vírus no aparelho.',
         'Compras por aproximação na maquininha sem digitar senha foram proibidas por lei e são sempre anuladas.',
-        'Se você receber aviso de compra no cartão, tem obrigação de ligar correndo para o número 0800 que vier por SMS.',
+        'Se você receber aviso de compra no cartão, tem obrigação de ligar correndo para o número que vier na mensagem.',
       ];
 
       const { hypotheses, correctIndex } = shuffleHypotheses(correctHypo, distractors);
@@ -585,7 +589,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         correctEvidenceIndex: correctIndex,
         keyEvidenceReason: 'A notificação é do próprio app instalado informando a compra que você acabou de fazer na loja, sem links suspeitos nem pedidos de dados.',
         redFlags: [],
-        explanation: 'Comunicação 100% LEGÍTIMA. Aplicativos modernos de banco apitam na hora avisando compras no cartão. O perigo real acontece quando golpistas mandam SMS falso dizendo que foi clonado para você ligar para eles.',
+        explanation: 'Comunicação 100% LEGÍTIMA. Aplicativos modernos de banco apitam na hora avisando compras no cartão. O perigo real acontece quando golpistas mandam mensagem falsa dizendo que foi clonado para você ligar para eles.',
         realWorldTip: 'Mantenha as notificações ativas no app do banco: assim você sabe na hora qualquer coisa que passar no seu cartão.',
         pedagogy: {
           emotionalTrigger: 'Susto Financeiro sem Necessidade',
@@ -601,7 +605,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
           options: [
             {
               id: 'drill-b-1',
-              text: 'O banco real apenas avisa dentro do app e nunca coloca links ou números 0800 pedindo para cancelar.',
+              text: 'O banco real apenas avisa dentro do app e nunca coloca links ou números de telefone pedindo para cancelar.',
               isCorrect: true,
               feedback: 'Perfeito! O banco oficial nunca te manda clicar em links de emergência.',
             },
@@ -623,10 +627,11 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
     }
 
     // ==========================================
-    // CENÁRIO 4: FALSA CENTRAL TELEFÔNICA (LIGAÇÃO 0800)
+    // CENÁRIO 4: FALSA CENTRAL TELEFÔNICA (CHAMADA DE WHATSAPP)
     // ==========================================
     default: {
       const fakeOfficer = pick(['Juliana Costa', 'Rodrigo Fagundes', 'Aline Siqueira']);
+      const centralNumber = `+55 11 9${randomInt(1000, 9999)}-${randomInt(1000, 9999)}`;
       const bogusAmount = pick(['R$ 2.450,00', 'R$ 3.200,00', 'R$ 4.100,00']);
       const targetName = pick(['Marcos Vinicius', 'Lucas Albuquerque', 'Edson Pereira']);
 
@@ -667,16 +672,16 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             field1Label: 'Como você confere na vida real',
             field1Value: 'Pega seu cartão físico na carteira, olha o telefone do SAC impresso no verso e liga',
             field2Label: 'O que a central oficial do banco informou',
-            field2Value: '"Senhor, o banco nunca te ligou e não existe nenhuma compra de R$ 2.450 pendente"',
-            field3Label: 'O número 0800 que apareceu na tela',
-            field3Value: 'Golpistas usam programas de computador na internet para fazer aparecer o 0800 do banco na sua tela (Spoofing)',
+            field2Value: `"O senhor pode ficar tranquilo: o banco nunca te ligou e não existe nenhuma transação de ${bogusAmount} pendente"`,
+            field3Label: 'O número que te ligou no WhatsApp',
+            field3Value: 'Um celular comum (+55 11 9...) sem selo de verificação, só com o nome "Central Antifraude" no perfil',
             observation: 'Você desligou, pegou o cartão físico e ligou no SAC: o banco confirmou que NUNCA te ligou e que a sua conta está totalmente segura!',
           },
           evidenceResult: {
             status: 'suspicious',
             headline: 'O SAC oficial do cartão confirmou que nunca te ligou',
-            details: 'O 0800 na tela foi falsificado por programas de computador (BINA falsa).',
-            fato: 'Número 0800 de banco serve para VOCÊ ligar para eles, nunca para eles ligarem para você.',
+            details: 'Qualquer pessoa coloca "Central Antifraude" como nome de perfil num celular comum.',
+            fato: 'Banco não liga por chamada de WhatsApp de celular comum pedindo Pix. Quem liga para o banco é VOCÊ, no número do cartão.',
           },
         },
         {
@@ -705,9 +710,9 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         },
       ];
 
-      const correctHypo = 'Nenhum banco pede para o cliente fazer Pix para cancelar compras, e o número 0800 na tela do celular pode ser falsificado por golpistas.';
+      const correctHypo = 'Nenhum banco pede para o cliente fazer Pix para cancelar compras, e a chamada veio de um celular comum sem verificação, só com o nome "Central Antifraude".';
       const distractors = [
-        'A ligação é garantida como 100% verdadeira porque o identificador no visor do celular confirmou o mesmo número 0800 do banco.',
+        'A ligação é garantida como 100% verdadeira porque o perfil do WhatsApp se chama "Central Antifraude" e o atendente sabia o nome do banco.',
         'Se uma compra fraudulenta foi feita no seu cartão, a lei manda passar sua senha de 4 dígitos para o atendente bloquear.',
         'O procedimento de transferir saldo para a conta cofre do Banco Central é obrigatório para quem tem conta em banco digital.',
       ];
@@ -721,10 +726,10 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         xpReward: 110,
         category: 'Falsa Central Telefônica',
         title: `Ligação do "Suporte do Banco": Cancelar Fraude de ${bogusAmount}`,
-        dilemma: `Um atendente liga dizendo ser do setor de segurança do seu banco. O visor mostra o 0800 oficial, ele alerta sobre uma fraude de ${bogusAmount} e manda você transferir seu saldo para uma "Conta Cofre de Proteção".`,
-        sender: '+55 11 9' + randomInt(1000, 9999) + '-' + randomInt(1000, 9999),
+        dilemma: `Um atendente liga dizendo ser do setor de segurança do seu banco. A chamada de WhatsApp vem de um celular com o nome "Central Antifraude", ele alerta sobre uma fraude de ${bogusAmount} e manda você transferir seu saldo para uma "Conta Cofre de Proteção".`,
+        sender: centralNumber,
         channel: 'call',
-        whatsapp: { number: '+55 11 9' + randomInt(1000, 9999) + '-' + randomInt(1000, 9999), pushName: 'Central Antifraude', business: 'unverified' },
+        whatsapp: { number: centralNumber, pushName: 'Central Antifraude', business: 'unverified' },
         time: `${randomInt(14, 19)}:${randomInt(10, 59)}`,
         preview: `Chamada: Tentativa de transferencia suspeita de ${bogusAmount}...`,
         messageContent: `LIGAÇÃO TELEFÔNICA RECEBIDA:\n\nAtendente (${fakeOfficer}): "Identificamos uma tentativa de transferência Pix suspeita de ${bogusAmount} na sua conta. O senhor confirma essa operação?"\n\nVocê: "Não autorizei nada disso!"\n\nAtendente: "Perfeito, senhor. Para cancelar essa transação antes da compensação, o senhor precisa transferir seu saldo disponível agora para a Conta Cofre Provisória do Banco Central. Vou te passar a chave Pix de segurança..."`,
@@ -747,14 +752,14 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
           },
           {
             id: 'act-call-2',
-            label: 'Questionar: "Como vocês estão me ligando se 0800 só recebe chamadas?"',
+            label: 'Questionar: "Por que o banco me liga por WhatsApp de um celular comum?"',
             actionType: 'investigation',
-            playerMessage: `Número 0800 só serve para receber chamadas, não para fazer ligações. Como vocês estão me ligando?`,
+            playerMessage: `Banco não liga por chamada de WhatsApp de um celular comum. Que número é esse?`,
             replyMessage: `Atendente (gaguejando): "É... nós somos da central especial de emergência integrada do sistema nacional..."`,
             evidenceDiscovered: {
               id: 'ev-bina-spoofing',
-              title: 'Número 0800 Falsificado na Tela',
-              description: 'O atendente gaguejou ao ser confrontado. Criminosos falsificam o número da tela usando programas de internet.',
+              title: 'Celular Comum se Passando por Central',
+              description: 'O atendente gaguejou ao ser confrontado. Criminosos só trocam o nome do perfil para parecer uma central.',
               status: 'suspicious',
               forensicFact: 'Nunca confie no número que te liga; confie apenas no número que VOCÊ disca.',
             },
@@ -776,9 +781,9 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         ],
         evidenceHypotheses: hypotheses,
         correctEvidenceIndex: correctIndex,
-        keyEvidenceReason: 'Nenhum banco pede Pix para cancelar compra ou proteger conta, e o 0800 na tela é falsificado por programas de internet.',
+        keyEvidenceReason: 'Nenhum banco pede Pix para cancelar compra ou proteger conta, e a chamada veio de um celular comum, sem selo de verificação.',
         redFlags: ['Ligação alarmante dizendo que a conta foi invadida', 'Pedido de Pix para "conta segura"', 'Atendente desesperado impedindo você de desligar'],
-        explanation: 'Golpe da Falsa Central Telefônica. Os criminosos fraudam o visor do telefone para aparecer o 0800 do banco, tocam terror psicológico e fazem a própria vítima esvaziar a conta.',
+        explanation: 'Golpe da Falsa Central Telefônica. Os criminosos ligam pelo WhatsApp com o nome "Central Antifraude" no perfil, tocam terror psicológico e fazem a própria vítima esvaziar a conta.',
         realWorldTip: 'Desligue na hora! Se ficar com a pulga atrás da orelha, pegue o seu cartão físico e ligue para o número do SAC impresso no verso.',
         pedagogy: {
           emotionalTrigger: 'Terror de Ver a Conta Bancária Zerada',

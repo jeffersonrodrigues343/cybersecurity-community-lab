@@ -21,7 +21,78 @@ async function computeSha256(str: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+export interface GameResult {
+  age_group: 'young' | 'adult' | 'senior';
+  gender: 'female' | 'male';
+  case_id: string;
+  is_scam: boolean;
+  correct: boolean;
+  clues_inspected: number;
+}
+
+export interface AgeSummary {
+  age_group: GameResult['age_group'];
+  attempts: number;
+  correct: number;
+  avgClues: number;
+}
+
+const LOCAL_RESULTS_KEY = 'hacklearn_results';
+
+const readLocalResults = (): GameResult[] => {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_RESULTS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+};
+
+export const summarizeByAge = (rows: GameResult[]): AgeSummary[] =>
+  (['young', 'adult', 'senior'] as const).map((age) => {
+    const g = rows.filter((r) => r.age_group === age);
+    return {
+      age_group: age,
+      attempts: g.length,
+      correct: g.filter((r) => r.correct).length,
+      avgClues: g.length ? g.reduce((s, r) => s + r.clues_inspected, 0) / g.length : 0,
+    };
+  });
+
 export const apiService = {
+  // registra cada tentativa de veredito: local sempre, Supabase quando houver chave
+  recordResult(result: GameResult) {
+    try {
+      const all = readLocalResults();
+      all.push(result);
+      localStorage.setItem(LOCAL_RESULTS_KEY, JSON.stringify(all.slice(-500)));
+    } catch {}
+    if (!SUPABASE_ANON_KEY) return;
+    fetch(`${SUPABASE_URL}/rest/v1/game_results`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(result),
+    }).catch(() => {});
+  },
+
+  // resultados de todos os jogadores (Supabase); sem chave, só os deste navegador
+  async getResults(): Promise<{ rows: GameResult[]; source: 'online' | 'local' }> {
+    if (SUPABASE_ANON_KEY) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/game_results?select=age_group,gender,case_id,is_scam,correct,clues_inspected&limit=10000`, {
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+        });
+        if (res.ok) return { rows: await res.json(), source: 'online' };
+      } catch {}
+    }
+    return { rows: readLocalResults(), source: 'local' };
+  },
+
+
   // testa se a api local ta respondendo
   async checkHealth(): Promise<{ online: boolean; supabaseActive?: boolean }> {
     try {
@@ -110,37 +181,42 @@ export const apiService = {
     ];
   },
 
-  // envia novo depoimento
+  // envia novo depoimento; retorna false se nenhum destino gravou (nunca finge sucesso)
   async submitFeedback(author: string, text: string): Promise<boolean> {
-    const cleanAuthor = author.trim() || 'Participante da Comunidade';
-    const cleanText = text.trim();
+    const payload = JSON.stringify({
+      author: author.trim() || 'Participante da Comunidade',
+      text: text.trim(),
+      rating: 5,
+    });
 
+    // backend em localhost só existe na máquina do dev; em produção pula direto pro Supabase
+    const backendIsLocal = /localhost|127\.0\.0\.1/.test(BACKEND_URL);
+    const runningLocally = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    if (!backendIsLocal || runningLocally) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+        });
+        if (res.ok) return true;
+      } catch {}
+    }
+
+    if (!SUPABASE_ANON_KEY) return false;
     try {
-      const res = await fetch(`${BACKEND_URL}/api/feedback`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/feedbacks`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author: cleanAuthor, text: cleanText, rating: 5 }),
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: payload,
       });
       return res.ok;
     } catch {
-      // se a api estiver offline e tiver chave no env
-      if (SUPABASE_ANON_KEY) {
-        try {
-          const res = await fetch(`${SUPABASE_URL}/rest/v1/feedbacks`, {
-            method: 'POST',
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ author: cleanAuthor, text: cleanText, rating: 5 }),
-          });
-          return res.ok;
-        } catch {
-          return true;
-        }
-      }
-      return true;
+      return false;
     }
   },
 };

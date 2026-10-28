@@ -262,7 +262,7 @@ export const SCAM_CASES: ScamCase[] = [
     },
     reinforcementDrill: {
       title: "Treino de Olho: O Parente com Número Novo",
-      question: "Seu filho ou mãe te mandou mensagem de um número novo dizendo que quebrou o celular e precisa de R$ 900 com urgência. Qual é a ÚNICA atitude correta?",
+      question: "Seu filho ou filha te mandou mensagem de um número novo dizendo que quebrou o celular e precisa de R$ 480 com urgência. Qual é a ÚNICA atitude correta?",
       context: "Na vida real, a pressa e o medo de deixar o parente desamparado fazem milhares de pessoas transferirem sem pensar.",
       options: [
             {
@@ -611,7 +611,7 @@ export const SCAM_CASES: ScamCase[] = [
           type: 'security',
           badge: 'Atendimento Telefônico 0800',
           field1Label: 'Atendimento do 0800',
-          field1Value: 'Falso atendente atende fingindo ser da Central de Fraudes do Banco',
+          field1Value: 'Falso atendente atende fingindo ser da "Central de Prevenção a Fraudes" da Magalu',
           field2Label: 'Procedimento Exigido',
           field2Value: 'Exige que você faça um Pix do seu saldo para uma "Conta Segura do Bacen"',
           field3Label: 'Normativa do Banco Central',
@@ -862,7 +862,7 @@ export const SCAM_CASES: ScamCase[] = [
     },
     reinforcementDrill: {
       title: "Treino de Reação: A Ligação da Falsa Central",
-      question: "Um perfil com o logo do seu banco te liga pelo WhatsApp dizendo que uma compra de R$ 3.800 foi aprovada no seu cartão. O que você faz?",
+      question: "Um perfil com o logo do seu banco te liga pelo WhatsApp dizendo que tentaram fazer um Pix de R$ 2.800 da sua conta. O que você faz?",
       context: "Golpistas criam perfis no WhatsApp com o nome e o logo do banco para parecer atendimento oficial.",
       options: [
             {
@@ -996,7 +996,7 @@ export const SCAM_CASES: ScamCase[] = [
     pedagogy: {
       emotionalTrigger: 'Pressa de Aproveitar a Oferta: a promessa de um super desconto faz a pessoa querer comprar correndo sem olhar o endereço do site.',
       kidsAnalogy: 'É como alguém na internet prometer diamantes no jogo por um preço quase de graça, mas só se pagar adiantado.',
-      parentsGuide: 'Ensine que quando o preço é bom demais, quase sempre é golpe. Descontos de 80% em celulares não existem.',
+      parentsGuide: 'Ensine que quando o preço é bom demais, quase sempre é golpe. Descontos de 80% em eletrodomésticos não existem.',
       adultRemedy: 'Denuncie e bloqueie o contato no WhatsApp e nunca faça Pix para sites que você não conhece.',
       goldenRule: 'Desconto milagroso? Entre no site oficial digitando pelo navegador!',
     },
@@ -1168,7 +1168,7 @@ export const SCAM_CASES: ScamCase[] = [
     levelTitle: 'Nível 3 • Avançado',
     xpReward: 150,
     category: 'Emprego & Vagas Falsas',
-    title: 'Vaga de Trabalho Remoto: R$ 350/dia para Curtir Vídeos',
+    title: 'Vaga de Trabalho Remoto: Até R$ 500/dia para Curtir Vídeos',
     dilemma: 'Uma recrutadora te chama no WhatsApp oferecendo trabalho flexível de meio período para avaliar marcas e curtir vídeos no YouTube. No primeiro dia você ganha R$ 20 de verdade no Pix, mas no segundo pedem um depósito de R$ 100 para liberar tarefas VIP.',
     sender: '+62 821-4920-1823',
     channel: 'whatsapp',
@@ -1265,10 +1265,10 @@ export const SCAM_CASES: ScamCase[] = [
     redFlags: [
       'Mensagem inesperada de contratação no WhatsApp',
       'Convite para ir para grupos fechados do Telegram',
-      'Promessa de até R$ 350 por dia só para dar curtidas em vídeos',
+      'Promessa de até R$ 500 por dia só para dar curtidas em vídeos',
       'Pedido para você depositar dinheiro para poder sacar seus ganhos',
     ],
-    explanation: 'Golpe das Tarefas no Telegram. O golpista paga R$ 20 no primeiro dia como isca para fazer você confiar. Quando você deposita R$ 500 para a "tarefa VIP", eles bloqueiam você e somem com o dinheiro.',
+    explanation: 'Golpe das Tarefas no Telegram. O golpista paga R$ 20 no primeiro dia como isca para fazer você confiar. Quando você deposita R$ 100 (e depois mais) para a "tarefa VIP", eles bloqueiam você e somem com o dinheiro.',
     realWorldTip: 'REGRA DO TRABALHO: Se uma vaga de emprego exige que você PAGUE qualquer valor antes de receber, é golpe com certeza!',
     pedagogy: {
       emotionalTrigger: 'Esperança de Dinheiro Fácil: o golpista paga um valor pequeno no início para você achar que é verdade e transferir quantias maiores depois.',
@@ -1583,11 +1583,11 @@ export type AgeGroup = 'young' | 'adult' | 'senior';
 // Trilhas Geracionais Dinâmicas: dificuldade nunca desce (básico → avançado) e cada
 // trilha tem 1 caso legítimo numa posição diferente, para "é golpe" não ser resposta automática
 const AGE_TRACKS: Record<AgeGroup, string[]> = {
-  // Jovem (até 35): legítimo na fase 3
+  // Jovem (20 a 34): legítimo na fase 3
   young: ['case-2-correios', 'case-5-loja-falsa-promocao', 'case-6-sms-seguranca-real', 'case-7-vaga-tarefas'],
-  // Adulto (36 a 59): legítimo na fase 4
+  // Adulto (35 a 49): legítimo na fase 4
   adult: ['case-1-whatsapp', 'case-3-falsa-central-sms', 'case-4-falsa-central', 'case-8-receita-ecac'],
-  // 60+: curva mais suave (2 básicos), legítimo na fase 2
+  // Sênior (50 a 60): curva mais suave (2 básicos), legítimo na fase 2
   senior: ['case-1-whatsapp', 'case-3-compra-aprovada', 'case-4-falsa-central', 'case-9-mao-fantasma-suporte'],
 };
 
@@ -1650,7 +1650,7 @@ export const BADGES: Badge[] = [
   {
     id: 'badge-central-bank-expert',
     title: 'Muralha Bancária',
-    description: 'Identificou o Golpe da Falsa Central Telefônica 0800.',
+    description: 'Identificou o Golpe da Falsa Central Telefônica.',
     icon: '🏦',
     category: 'financial',
     rarity: 'ouro',

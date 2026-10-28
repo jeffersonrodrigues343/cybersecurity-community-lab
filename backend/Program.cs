@@ -35,7 +35,8 @@ builder.Services.AddCors(options =>
             try
             {
                 var uri = new Uri(origin);
-                return uri.Host == "localhost" || uri.Host == "127.0.0.1" || uri.Host.EndsWith("vercel.app");
+                // só o domínio exato do app: EndsWith("vercel.app") aceitaria qualquer projeto da Vercel
+                return uri.Host == "localhost" || uri.Host == "127.0.0.1" || uri.Host == "cybersecurity-community-lab.vercel.app";
             }
             catch
             {
