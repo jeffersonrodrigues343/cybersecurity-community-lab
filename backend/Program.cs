@@ -91,12 +91,16 @@ app.Use(async (context, next) =>
 });
 
 app.UseCors("AllowFrontend");
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+// Swagger só em desenvolvimento: em produção expõe o mapa de todos os endpoints
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "HackLearn v1");
-    c.RoutePrefix = "swagger";
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "HackLearn v1");
+        c.RoutePrefix = "swagger";
+    });
+}
 
 // inicializa as tabelas do sqlite e popula se tiver vazio
 using (var scope = app.Services.CreateScope())
