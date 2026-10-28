@@ -36,3 +36,5 @@ backend/bin/
 .env
 .env.local
 backend/appsettings.Development.json
+.vercel
+.env*
