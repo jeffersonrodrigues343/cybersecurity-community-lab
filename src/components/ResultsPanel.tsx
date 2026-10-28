@@ -4,7 +4,7 @@ import { apiService, summarizeByAge, type AgeSummary, type GameResult } from '..
 const AGE_LABEL: Record<AgeSummary['age_group'], string> = {
   young: '20–34 anos',
   adult: '35–49 anos',
-  senior: '50–60 anos',
+  senior: '50+ anos',
 };
 
 const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0);

@@ -22,7 +22,6 @@ import {
 import { generateDynamicScamCase } from '../data/dynamicScamsGenerator';
 import { sound } from '../utils/audio';
 import { PhoneScreen, type Skill } from './PhoneScreen';
-import { triggerBurst } from '../utils/burst';
 
 // 4 Fases Canônicas dos Golpes Mais Comuns no Smartphone
 export const CAMPAIGN_CASES: ScamCase[] = CANONICAL_CASES;
@@ -184,20 +183,21 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   };
 
   // Veredito Direto Point & Click
-  const handleDirectVerdict = useCallback((v: Verdict) => {
+  const handleDirectVerdict = useCallback((v: Verdict, meta?: { firstTry: boolean; hypothesisRight: boolean }) => {
     if (answered) return;
 
     const verdictCorrect = (v === 'scam') === current.isScam;
+    // O celular só avisa o acerto final; erro anterior (chance gasta) quebra o combo
+    const firstTry = meta?.firstTry ?? true;
     setFinalVerdict(v);
 
     let earned = 0;
     let newStreak = streak;
 
     if (verdictCorrect) {
-      newStreak = streak + 1;
-      earned = current.xpReward + inspected.length * CLUE_XP + comboBonusFor(newStreak);
+      newStreak = firstTry ? streak + 1 : 0;
+      earned = current.xpReward + inspected.length * CLUE_XP + (firstTry ? comboBonusFor(newStreak) : 0);
       sound.playSuccess();
-      triggerBurst('correct');
       confetti({
         particleCount: 70,
         spread: 75,
@@ -206,11 +206,22 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
       });
 
       if (newStreak >= 3) unlockBadge('badge-streak-fire');
-      if (current.category.includes('Família') || current.category.includes('WhatsApp')) {
+      // Badges de golpe só valem quando era golpe (acertar um aviso legítimo não "desmascara" nada)
+      if (current.isScam && current.category.includes('Família')) {
         unlockBadge('badge-family-shield');
       }
-      if (current.category.includes('Central') || current.category.includes('Banco')) {
+      const pixKeyClue = current.clues.find((k) => k.inspection.type === 'pix');
+      if (current.isScam && pixKeyClue && inspected.includes(pixKeyClue.id)) {
         unlockBadge('badge-pix-guard');
+      }
+      if (current.isScam && current.category.includes('Falsa Central')) {
+        unlockBadge('badge-central-bank-expert');
+      }
+      if (current.id === 'case-9-mao-fantasma-suporte') {
+        unlockBadge('badge-anti-ghost');
+      }
+      if (firstTry && meta?.hypothesisRight) {
+        unlockBadge('badge-surgical-mind');
       }
     } else {
       sound.playError();
@@ -233,7 +244,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   }, [
     answered,
     current,
-    inspected.length,
+    inspected,
     onScoreUpdate,
     solved,
     streak,
@@ -243,7 +254,7 @@ export const CaseDesk: React.FC<CaseDeskProps> = ({ onScoreUpdate }) => {
   ]);
 
   // Contador de campanha: entra na key do celular para forçar remontagem quando a
-  // trilha nova começa pelo mesmo caso (ex.: adulto e 60+ abrem com o WhatsApp)
+  // trilha nova começa pelo mesmo caso (ex.: adulto e 50+ abrem com o WhatsApp)
   const [campaignRun, setCampaignRun] = useState(0);
 
   const handleAgeGroupChange = useCallback(

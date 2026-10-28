@@ -38,7 +38,6 @@ import {
 import type { ScamCase, InteractiveAction, InvestigativeClue, AgeGroup } from '../data/scamsData';
 import { sound } from '../utils/audio';
 import { apiService } from '../services/api';
-import { triggerBurst } from '../utils/burst';
 
 type Verdict = 'scam' | 'safe' | null;
 export type { AgeGroup };
@@ -77,7 +76,8 @@ interface PhoneScreenProps {
   executedActionIds: string[];
   actionHistory: { player: string; reply: string }[];
   onAppOpenChange?: (open: boolean) => void;
-  onVerdict?: (v: 'scam' | 'safe') => void;
+  // meta: o pai só recebe o acerto final; sem isso não sabe se houve erro antes (combo/XP/badges)
+  onVerdict?: (v: 'scam' | 'safe', meta?: { firstTry: boolean; hypothesisRight: boolean }) => void;
   onNextCase?: () => void;
   inspectedClueIds?: string[];
   onInspectClue?: (clue: InvestigativeClue) => void;
@@ -663,6 +663,32 @@ const VoiceProofModal = ({
 // ============================================================================
 // OVERLAY DE CHAMADA TELEFÔNICA (PROVA DE VOZ CONTEXTUALIZADA)
 // ============================================================================
+// Fala da ligação de prova de voz: a mesma desculpa aparece na tela da chamada e no chat,
+// e golpe sempre recusa (a tela mostra "Chamada Recusada"), então nunca há fala de atendimento
+const CALL_REFUSAL_BY_CASE: Record<string, string> = {
+  'case-1-whatsapp': 'Mãe, tô em aula agora na faculdade, o professor não deixa atender! Faz o Pix logo por favor.',
+  'case-2-correios': 'Este canal é só para mensagens. Para liberar sua encomenda, pague a taxa pelo link ainda hoje.',
+  'case-3-falsa-central-sms': 'Este número é só para alertas por mensagem. Para cancelar a compra de R$ 3.890, ligue agora no 0800 que enviamos.',
+  'case-5-loja-falsa-promocao': 'Por aqui o atendimento é só por mensagem! Garanta a oferta pelo link antes que acabe o estoque.',
+  'case-7-vaga-tarefas': 'Oii, não consigo atender agora! Todo o treinamento é feito no nosso grupo do Telegram, entra lá que a mentora te explica.',
+};
+
+const getCallRefusalReply = (c: ScamCase): string => {
+  if (CALL_REFUSAL_BY_CASE[c.id]) return CALL_REFUSAL_BY_CASE[c.id];
+  const isRelative = c.category.includes('Família') || /mãe|pai|filho|filha|primo|tio|irmã|irmão/i.test(c.title + c.sender);
+  return isRelative
+    ? 'Mãe, não consigo atender ligação agora! O microfone do celular quebrou quando caiu no chão. Por favor não desconfia de mim e me ajuda pelo texto!'
+    : 'Não consigo atender agora, tô em outro atendimento. Me responde por aqui mesmo que é mais rápido, tá bom?';
+};
+
+const getCallDialogue = (c: ScamCase): string => {
+  if (c.isScam) return `Chamada recusada. Logo depois chega por texto: "${getCallRefusalReply(c)}"`;
+  if (c.whatsapp?.business === 'verified') {
+    return `Atendimento oficial ${cleanName(c.sender)}: "Este é o nosso canal verificado. Não pedimos senha, código nem Pix; confira tudo direto no app oficial."`;
+  }
+  return 'Alô? Sim, sou eu mesmo! Pode conferir tudo comigo.';
+};
+
 const VoiceCallOverlay = ({
   state,
   c,
@@ -675,18 +701,7 @@ const VoiceCallOverlay = ({
   if (!state) return null;
   const number = findContactNumber(c);
 
-  let contextualDialogue = 'Alô? Sim, sou eu mesmo! Pode prosseguir com a verificação.';
-  if (c.id === 'case-1-whatsapp') {
-    contextualDialogue = 'Chamada recusada pelo contato. Resposta por texto: "Mãe, tô em aula agora na faculdade, o professor não deixa atender! Faz o Pix logo por favor."';
-  } else if (c.id === 'case-2-correios') {
-    contextualDialogue = 'Ninguém atende a chamada de WhatsApp. Segundos depois chega por texto: "Este canal é só para mensagens. Para liberar sua encomenda, pague a taxa pelo link ainda hoje."';
-  } else if (c.id === 'case-3-falsa-central-sms') {
-    contextualDialogue = '"Aqui é da Central de Prevenção a Fraudes. A compra de R$ 3.890 no Magalu foi pré-aprovada. Para cancelar, você precisa transferir seu saldo disponível para a Conta Segura do Banco Central via Pix agora!"';
-  } else if (c.id === 'case-4-falsa-central') {
-    contextualDialogue = '"Aqui é o Ricardo, da central antifraude. A tentativa de Pix de R$ 2.800 ainda está ativa. Para proteger o saldo, o senhor precisa transferir o valor disponível para a conta de segurança agora!"';
-  } else if (c.id === 'case-7-vaga-tarefas') {
-    contextualDialogue = 'Chamada recusada. Logo depois a Larissa responde por texto: "Oii, não consigo atender agora! Todo o treinamento é feito no nosso grupo do Telegram, entra lá que a mentora te explica."';
-  }
+  const contextualDialogue = genderize(getCallDialogue(c), readGender());
 
   return (
     <div className="absolute inset-0 z-50 bg-[#121214] text-white flex flex-col justify-between p-6 select-none animate-fadeIn">
@@ -756,13 +771,23 @@ const getClueGuide = (clue: InvestigativeClue) => {
       ],
     };
   }
-  if (clue.category === 'pix' || clue.inspection.type === 'pix') {
+  if (clue.inspection.type === 'pix') {
     return {
       title: 'Você deve verificar quem é o titular da chave Pix no Banco Central.',
       steps: [
         'Abra o app Meu Banco e consulte a chave Pix.',
         'Confira o nome do dono da conta registrado no Banco Central.',
         'Veja se o dinheiro vai para uma pessoa desconhecida (laranja).',
+      ],
+    };
+  }
+  if (clue.category === 'pix') {
+    return {
+      title: 'Você deve conferir se e como a mensagem pede pagamento.',
+      steps: [
+        'Releia a mensagem e veja se ela pede pagamento, chave Pix ou depósito.',
+        'Confira a forma de pagamento pelo site ou app oficial, abertos por conta própria.',
+        'Desconfie quando só aceitam Pix para uma pessoa ou conta estranha.',
       ],
     };
   }
@@ -974,10 +999,13 @@ const BankScreen = ({
   onConfrontPixInChat?: (clue: InvestigativeClue) => void;
   onBack: () => void;
 }) => {
-  const pixClue = c.clues.find(
-    (k) => k.category === 'pix' || k.inspection.type === 'pix'
-  );
-  const bankClue = c.clues.find(
+  // Só pista com chave Pix de verdade abre a simulação de transferência: pistas de
+  // categoria 'pix' sem chave (extrato da padaria, checkout, cobrança da Receita) não
+  // podem virar um "Transferindo R$ ..." para um titular inventado
+  const pixClue = c.clues.find((k) => k.inspection.type === 'pix');
+  const bankClue =
+    c.clues.find((k) => k.id.includes('fatura') || k.id.includes('extrato')) ??
+    c.clues.find(
     (k) =>
       k.category === 'system' ||
       k.inspection.type === 'official' ||
@@ -1004,14 +1032,11 @@ const BankScreen = ({
     }
   }, [copiedPixKey]);
 
-  const pixTargetName = pixClue?.inspection.field2Value || 'Valdir dos Santos';
-  const pixBankName = pixClue?.inspection.field3Value || 'Pessoa Física - Nu Pagamentos S.A.';
-  const matchedAmount = c.messageContent.match(/R\$\s?[\d.,]+/)?.[0];
-  const pixAmount =
-    matchedAmount ||
-    (c.clues[0]?.inspection?.field3Value?.includes('R$')
-      ? c.clues[0].inspection.field3Value
-      : 'R$ 480,00');
+  const pixTargetName = pixClue?.inspection.field2Value || 'Chave não cadastrada no Pix';
+  const pixBankName = pixClue?.inspection.field3Value || 'Nenhuma instituição encontrada';
+  // Valor vem do próprio caso (mensagem, depois o enunciado); nunca de outro caso
+  const matchedAmount = (c.messageContent.match(/R\$\s?[\d.,]+/) || c.dilemma.match(/R\$\s?[\d.,]+/))?.[0];
+  const pixAmount = matchedAmount?.replace(/[.,]$/, '') || 'o valor pedido';
 
   const isPixInspected = Boolean(pixClue && inspectedClueIds.includes(pixClue.id));
   const isBankInspected = Boolean(bankClue && inspectedClueIds.includes(bankClue.id));
@@ -1036,6 +1061,19 @@ const BankScreen = ({
   }, [activeTab, bankClue, isBankInspected, onInspectClue]);
 
   const isCaseLegitimate = !c.isScam;
+  // Só os avisos legítimos de compra têm lançamento hoje; os outros casos legítimos
+  // (código de acesso, malha fina) não movimentaram a conta
+  const legitPurchase: { store: string; amount: string; when: string } | null = !isCaseLegitimate
+    ? null
+    : c.id === 'case-3-compra-aprovada'
+      ? { store: 'Padaria Estrela', amount: 'R$ 34,90', when: '08:44' }
+      : c.id.startsWith('dynamic-') && bankClue?.inspection.field2Value.includes(' - ')
+        ? {
+            amount: bankClue.inspection.field2Value.split(' - ')[0],
+            store: bankClue.inspection.field2Value.split(' - ')[1].replace(/\s*\(.*\)$/, ''),
+            when: c.time,
+          }
+        : null;
 
   return (
     <div className="flex flex-col h-full bg-[#0d0914] text-white select-none">
@@ -1204,14 +1242,14 @@ const BankScreen = ({
             <span className="text-xs font-semibold text-white block">Histórico de Movimentações</span>
 
             <div className="space-y-3 text-xs divide-y divide-white/5">
-              {isCaseLegitimate ? (
+              {legitPurchase ? (
                 <div className="pt-1">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-white">Padaria Estrela</span>
-                    <span className="font-mono font-bold text-white">- R$ 34,90</span>
+                    <span className="font-semibold text-white">{legitPurchase.store}</span>
+                    <span className="font-mono font-bold text-white">- {legitPurchase.amount}</span>
                   </div>
                   <span className="text-[10.5px] text-neutral-400 block mt-0.5">
-                    Hoje, 08:44 • Compra no débito
+                    Hoje, {legitPurchase.when} • Compra no débito
                   </span>
                 </div>
               ) : (
@@ -1981,7 +2019,7 @@ const rawClueConfrontationAction = (
         : 'Manda um áudio rápido aí pra eu ouvir sua voz',
       actionType: 'investigation',
       playerMessage: isSenior
-        ? 'Sofia, me manda um áudio curtinho falando comigo só pra mãe ouvir sua voz e ficar mais tranquila.'
+        ? 'Sofia, me manda um áudio curtinho falando comigo só pra mãe ouvir sua voz e ficar mais tranquilo(a).'
         : 'Me manda um áudio rápido aí falando comigo só pra eu ouvir sua voz antes de fazer qualquer Pix.',
       replyMessage:
         'Mãe, esse aparelho emprestado tá com o microfone estragado, quando tento gravar áudio sai tudo mudo! E tô dentro da secretaria agora, não posso atender ligação! Faz logo por favor!',
@@ -2278,9 +2316,8 @@ const WhatsAppScreen = ({
   revealedChoicesCount: number;
   ageGroup?: AgeGroup;
 }) => {
-  const pixClue = c.clues.find(
-    (k) => k.category === 'pix' || k.inspection.type === 'pix'
-  );
+  // Só pista com chave Pix real vira botão "Copiar chave" (nunca em aviso legítimo de banco)
+  const pixClue = c.clues.find((k) => k.inspection.type === 'pix');
   const [isTypingReply, setIsTypingReply] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const waId = getWaIdentity(c);
@@ -4196,9 +4233,11 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
         sessionStorage.removeItem(`hacklearn_chances_${scamCase.id}`);
         sessionStorage.removeItem(`hacklearn_locked_${scamCase.id}`);
       } catch {}
-      onVerdict?.(verdict);
+      onVerdict?.(verdict, {
+        firstTry: !isDirectVerdictLocked && directChancesLeft === CHANCES_BY_AGE[ageGroup],
+        hypothesisRight: isHypothesisRight,
+      });
     } else {
-      triggerBurst('wrong');
       const nextChances = Math.max(0, directChancesLeft - 1);
       setDirectChancesLeft(nextChances);
       try {
@@ -4308,10 +4347,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           sound.playMessagePing();
           sound.playTensionPulse();
 
-          const isRelative = scamCase.category.includes('Família') || /mãe|pai|filho|filha|primo|tio|irmã|irmão/i.test(scamCase.title + scamCase.sender);
-          const replyText = isRelative
-            ? `Mãe, não consigo atender ligação agora! O microfone do celular quebrou quando caiu no chão. Por favor não desconfia de mim e me ajuda pelo texto!`
-            : `Não consigo atender agora, tô em outro atendimento. Me responde por aqui mesmo que é mais rápido, tá bom?`;
+          const replyText = getCallRefusalReply(scamCase);
 
           if (behaviorClue && !inspectedClueIds.includes(behaviorClue.id)) {
             handleInspectClue(behaviorClue);
@@ -4353,7 +4389,7 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
             label: 'Ligar para o Contato (Chamada de Voz)',
             actionType: 'investigation',
             playerMessage: `Ligação telefônica atendida`,
-            replyMessage: `Alô? Olá, sou eu mesmo! Estou confirmando as informações diretamente com você.`,
+            replyMessage: getCallDialogue(scamCase),
             evidenceDiscovered: {
               id: `ev-${scamCase.id}-call-success`,
               title: 'Voz Autêntica Confirmada',
@@ -4425,13 +4461,19 @@ export const PhoneScreen: React.FC<PhoneScreenProps> = ({
           label: 'Pedir Áudio de Voz',
           actionType: 'investigation',
           playerMessage: playerMsg,
-          replyMessage: `[Áudio de Voz 0:04] "Oi! Sou eu sim, pode ficar tranquilo(a)!"`,
+          replyMessage: scamCase.whatsapp?.business === 'verified'
+            ? `Este é o canal oficial verificado, que não envia áudios. Para confirmar, abra o app oficial por conta própria: nada aqui pede senha, código ou Pix.`
+            : `[Áudio de Voz 0:04] "Oi! Sou eu sim, pode ficar tranquilo(a)!"`,
           evidenceDiscovered: {
             id: `ev-${scamCase.id}-audio-success`,
-            title: 'Áudio de Voz Autêntico',
-            description: 'A pessoa enviou mensagem de voz legítima comprovando quem é.',
+            title: scamCase.whatsapp?.business === 'verified' ? 'Canal Oficial Sem Pressão' : 'Áudio de Voz Autêntico',
+            description: scamCase.whatsapp?.business === 'verified'
+              ? 'O canal verificado não insistiu, não pediu nada e mandou conferir pelo app oficial.'
+              : 'A pessoa enviou mensagem de voz legítima comprovando quem é.',
             status: 'clean',
-            forensicFact: 'Pessoas reais não têm medo de mandar áudio rápido.',
+            forensicFact: scamCase.whatsapp?.business === 'verified'
+              ? 'Canais oficiais nunca pressionam: só orientam você a conferir pelo app.'
+              : 'Pessoas reais não têm medo de mandar áudio rápido.',
           },
         });
       }, 1000);

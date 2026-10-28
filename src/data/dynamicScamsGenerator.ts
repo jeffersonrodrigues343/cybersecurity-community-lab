@@ -343,7 +343,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         sender: correiosNumber,
         channel: 'whatsapp',
         whatsapp: { number: correiosNumber, pushName: 'Correios Encomendas', business: 'unverified' },
-        time: `${randomInt(8, 20)}:${randomInt(10, 59)}`,
+        time: `${String(randomInt(8, 20)).padStart(2, '0')}:${randomInt(10, 59)}`,
         preview: `CORREIOS: Pacote ${code} retido na fiscalizacao...`,
         messageContent: `CORREIOS INFORMA: Sua encomenda ${code} foi retida na fiscalizacao aduaneira. Ha uma taxa pendente de ${fee}. Evite devolucao imediata pagando hoje no link oficial: https://${fakeDomain}/taxas`,
         clues,
@@ -500,23 +500,23 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             type: 'behavior',
             badge: 'Canal do Smartphone',
             field1Label: 'Como você confere na vida real',
-            field1Value: 'Olha se a notificação é do próprio ícone do app do banco instalado no seu celular',
+            field1Value: 'Toca no nome do perfil e confere o selo de conta comercial verificada e o número oficial do banco',
             field2Label: 'Canal de envio',
-            field2Value: 'Notificação do próprio app do banco instalado',
+            field2Value: 'Conta verificada (selo azul) do Itaú Unibanco no WhatsApp, +55 11 4004-4828',
             field3Label: 'Orientação caso não reconheça',
             field3Value: 'Acessar o app oficial por conta própria e tocar em Bloquear Cartão',
-            observation: 'A notificação veio de dentro do próprio aplicativo que você já tem no telefone, sem intermediários.',
+            observation: 'O aviso veio da conta verificada do banco, no número oficial, e só manda você mesmo abrir o app se não reconhecer a compra.',
           },
           evidenceResult: {
             status: 'clean',
-            headline: 'Alerta emitido pelo app oficial',
+            headline: 'Alerta enviado pelo canal oficial verificado',
             details: 'Não é um número aleatório nem ligação; é o perfil verificado do seu banco te avisando.',
             fato: 'Notificações de compras no app ajudam você a saber na hora se seu cartão for usado indevidamente.',
           },
         },
       ];
 
-      const correctHypo = 'A notificação veio do próprio aplicativo do banco sobre a compra que você acabou de fazer na loja, sem links nem pedidos de senha.';
+      const correctHypo = 'O aviso veio da conta verificada do banco sobre a compra que você acabou de fazer na loja, sem links nem pedidos de senha.';
       const distractors = [
         'Toda notificação que apita no celular falando de dinheiro debitado é tentativa de golpe ou vírus no aparelho.',
         'Compras por aproximação na maquininha sem digitar senha foram proibidas por lei e são sempre anuladas.',
@@ -536,7 +536,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         sender: 'Itaú Unibanco',
         channel: 'whatsapp',
         whatsapp: { number: '+55 11 4004-4828', pushName: 'Itaú Unibanco', business: 'verified' },
-        time: `${randomInt(8, 20)}:${randomInt(10, 59)}`,
+        time: `${String(randomInt(8, 20)).padStart(2, '0')}:${randomInt(10, 59)}`,
         preview: `Compra de ${amount} aprovada em ${store}...`,
         messageContent: `COMPRA APROVADA: Compra no valor de ${amount} realizada no seu Cartão de Débito em ${store}.\n\nSe você reconhece essa transação, nenhuma ação é necessária. Caso não reconheça, abra o aplicativo oficial e toque em Bloquear Cartão.`,
         clues,
@@ -561,7 +561,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
             label: 'Ver se a mensagem pede senhas ou tem links suspeitos',
             actionType: 'verification',
             playerMessage: `Lendo a mensagem com calma para ver se tem links estranhos ou pedidos de dados...`,
-            replyMessage: `Aviso puramente informativo emitido pelo seu próprio app do banco, sem links externos nem pedidos de senha.`,
+            replyMessage: `Aviso puramente informativo da conta verificada do banco, sem links externos nem pedidos de senha.`,
             evidenceDiscovered: {
               id: 'ev-no-external-links',
               title: 'Aviso Informativo Oficial',
@@ -587,7 +587,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
         ],
         evidenceHypotheses: hypotheses,
         correctEvidenceIndex: correctIndex,
-        keyEvidenceReason: 'A notificação é do próprio app instalado informando a compra que você acabou de fazer na loja, sem links suspeitos nem pedidos de dados.',
+        keyEvidenceReason: 'O aviso veio da conta verificada do banco informando a compra que você acabou de fazer na loja, sem links suspeitos nem pedidos de dados.',
         redFlags: [],
         explanation: 'Comunicação 100% LEGÍTIMA. Aplicativos modernos de banco apitam na hora avisando compras no cartão. O perigo real acontece quando golpistas mandam mensagem falsa dizendo que foi clonado para você ligar para eles.',
         realWorldTip: 'Mantenha as notificações ativas no app do banco: assim você sabe na hora qualquer coisa que passar no seu cartão.',
@@ -596,7 +596,7 @@ export function generateDynamicScamCase(streak: number = 0): ScamCase {
           kidsAnalogy: 'É como a luz da geladeira acendendo quando você abre a porta: ela só tá mostrando o que você acabou de fazer.',
           parentsGuide: 'Ensine a todos em casa: primeiro olha o extrato com calma antes de entrar em desespero.',
           adultRemedy: 'Se realmente não reconhecer a compra, use o botão "Bloquear Cartão" no próprio app.',
-          goldenRule: 'Aviso no app oficial do banco sem link externo é proteção, não golpe!',
+          goldenRule: 'Aviso do canal oficial do banco sem link e sem pedir nada é proteção, não golpe!',
         },
         reinforcementDrill: {
           title: 'Treino de Calma: Alertas Reais vs Falsos',

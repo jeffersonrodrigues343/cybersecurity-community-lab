@@ -1587,7 +1587,7 @@ const AGE_TRACKS: Record<AgeGroup, string[]> = {
   young: ['case-2-correios', 'case-5-loja-falsa-promocao', 'case-6-sms-seguranca-real', 'case-7-vaga-tarefas'],
   // Adulto (35 a 49): legítimo na fase 4
   adult: ['case-1-whatsapp', 'case-3-falsa-central-sms', 'case-4-falsa-central', 'case-8-receita-ecac'],
-  // Sênior (50 a 60): curva mais suave (2 básicos), legítimo na fase 2
+  // Sênior (50+): curva mais suave (2 básicos), legítimo na fase 2
   senior: ['case-1-whatsapp', 'case-3-compra-aprovada', 'case-4-falsa-central', 'case-9-mao-fantasma-suporte'],
 };
 
@@ -1627,7 +1627,7 @@ export const BADGES: Badge[] = [
     icon: '🛡️',
     category: 'financial',
     rarity: 'prata',
-    unlockedHint: 'Resolva com louvor o caso do WhatsApp ou da Falsa Central.',
+    unlockedHint: 'Confira no app do banco o titular da chave Pix de um golpe e acerte o caso.',
   },
   {
     id: 'badge-family-shield',
@@ -1636,7 +1636,7 @@ export const BADGES: Badge[] = [
     icon: '👨‍👩‍👧‍👦',
     category: 'family',
     rarity: 'bronze',
-    unlockedHint: 'Acerte o primeiro caso do WhatsApp com a evidência correta.',
+    unlockedHint: 'Desmascare o golpe do parente com número novo no WhatsApp.',
   },
   {
     id: 'badge-streak-fire',
@@ -1654,7 +1654,7 @@ export const BADGES: Badge[] = [
     icon: '🏦',
     category: 'financial',
     rarity: 'ouro',
-    unlockedHint: 'Resolva com sucesso o caso da Falsa Central ou da Receita Federal.',
+    unlockedHint: 'Desmascare um golpe da Falsa Central.',
   },
   {
     id: 'badge-anti-ghost',
@@ -1686,11 +1686,11 @@ export const BADGES: Badge[] = [
   {
     id: 'badge-grand-master',
     title: 'Delegado Digital de Elite',
-    description: 'Concluiu com êxito todas as 9 investigações do simulador.',
+    description: 'Concluiu com êxito as 4 fases da sua trilha de investigação.',
     icon: '👑',
     category: 'detective',
     rarity: 'platina',
-    unlockedHint: 'Finalize todos os casos dos três níveis de dificuldade.',
+    unlockedHint: 'Finalize as 4 fases da sua trilha.',
   },
 ];
 
